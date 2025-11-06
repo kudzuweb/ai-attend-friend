@@ -18,6 +18,7 @@ interface SessionState {
     lengthMs: number;
     startTime: number;
     endTime: number;
+    focusGoal: string;
 }
 
 // stored session with summaries grouped by date
@@ -26,6 +27,7 @@ interface StoredSession {
     startTime: number;
     endTime: number;
     lengthMs: number;
+    focusGoal: string;
     summaries: string[];
     finalSummary: string | null;
 }
@@ -35,6 +37,7 @@ let sessionState: SessionState = {
     lengthMs: 0,
     startTime: 0,
     endTime: 0,
+    focusGoal: '',
 };
 
 let sessionTimerRef: NodeJS.Timeout | null = null;
@@ -362,6 +365,7 @@ function stopSession() {
     sessionState.lengthMs = 0;
     sessionState.startTime = 0;
     sessionState.endTime = 0;
+    sessionState.focusGoal = '';
 
     if (sessionTimerRef) clearTimeout(sessionTimerRef);
     if (sessionScreenshotTimerRef) clearTimeout(sessionScreenshotTimerRef);
@@ -440,7 +444,12 @@ async function sendRecentImagestoLLM(limit = 10) {
             {
                 'role': 'user',
                 'content': [
-                    { 'type': 'text', 'text': 'these screenshots portray the last five minutes of activity:' },
+                    {
+                        'type': 'text',
+                        'text': sessionState.focusGoal
+                            ? `The user stated they want to focus on: "${sessionState.focusGoal}"\n\nThese screenshots portray the last five minutes of activity:`
+                            : 'these screenshots portray the last five minutes of activity:'
+                    },
                     ...dataUrls.map(url => ({
                         'type': 'image_url',
                         'image_url': { url, detail: 'low' }
@@ -639,7 +648,7 @@ ipcMain.handle('ui:request-session-setup', () => {
 });
 
 // session handlers
-ipcMain.handle('session:start', async (_evt, lengthMs: number) => {
+ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string) => {
     if (sessionState.isActive) {
         return { ok: false as const, error: 'session already active' };
     }
@@ -651,10 +660,11 @@ ipcMain.handle('session:start', async (_evt, lengthMs: number) => {
     sessionState.lengthMs = lengthMs;
     sessionState.startTime = startTime;
     sessionState.endTime = endTime;
+    sessionState.focusGoal = focusGoal;
 
     // Create session file and track session info
     try {
-        currentSessionId = await sessionStorage.createSession(startTime, lengthMs);
+        currentSessionId = await sessionStorage.createSession(startTime, lengthMs, focusGoal);
         currentSessionDate = sessionStorage.formatDateFolder(new Date(startTime));
     } catch (e) {
         console.error('Error creating session:', e);

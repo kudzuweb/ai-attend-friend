@@ -41,10 +41,9 @@ declare global {
             analyzeRecent(limit?: number): Promise<{
                 ok: true;
                 structured: {
-                    status: 'on_task' | 'drifted';
+                    status: 'focused' | 'distracted';
                     analysis: string;
                     suggested_prompt: string;
-                    summary: string;
                 };
                 raw?: unknown;
                 count: number

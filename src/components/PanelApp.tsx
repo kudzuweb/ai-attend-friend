@@ -10,6 +10,8 @@ export default function PanelApp() {
     const [sessionState, setSessionState] = useState<SessionState | null>(null);
     // duration selection state
     const [selectedDuration, setSelectedDuration] = useState<number>(25 * 60 * 1000); // 25 mins default
+    // focus goal state
+    const [focusGoal, setFocusGoal] = useState<string>('');
     // llm output
     const [llmText, setLlmText] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -29,10 +31,11 @@ export default function PanelApp() {
     }, []);
 
     async function handleStartSession() {
-        const res = await window.api.sessionStart(selectedDuration);
+        const res = await window.api.sessionStart(selectedDuration, focusGoal);
         if (res.ok) {
             // Reset session setup state
             setInSessionSetup(false);
+            setFocusGoal('');
             // Panel will close automatically - this is handled via the session state listener
             await window.api.hidePanel();
         } else {
@@ -154,6 +157,22 @@ export default function PanelApp() {
                                 </div>
                                 <span style={{ fontSize: 12, opacity: 0.7 }}>minutes</span>
                             </div>
+                            <input
+                                type="text"
+                                value={focusGoal}
+                                onChange={(e) => setFocusGoal(e.target.value)}
+                                placeholder="What would you like to focus on?"
+                                style={{
+                                    background: 'rgba(0,0,0,0.2)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 6,
+                                    padding: '10px 12px',
+                                    color: 'inherit',
+                                    fontSize: 14,
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                }}
+                            />
                             <button
                                 className={'panel'}
                                 onClick={handleStartSession}
@@ -174,6 +193,7 @@ export default function PanelApp() {
                                 className={'panel'}
                                 onClick={() => {
                                     setInSessionSetup(false);
+                                    setFocusGoal('');
                                     window.api.hidePanel();
                                 }}
                                 style={{

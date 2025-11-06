@@ -127,6 +127,8 @@ const api = Object.freeze({
         ipcRenderer.on('session:updated', (_event, state) => callback(state)),
     onSessionSetupRequested: (callback) =>
         ipcRenderer.on('panel:show-session-setup', () => callback()),
+    requestSessionSetup: () =>
+        ipcRenderer.invoke('ui:request-session-setup'),
 })
 
 contextBridge.exposeInMainWorld('api', api)

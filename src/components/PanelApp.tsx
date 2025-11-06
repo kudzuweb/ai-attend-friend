@@ -1,51 +1,38 @@
 import { useState, useEffect, useRef } from "react";
 
 export default function PanelApp() {
+    // session setup state
+    const [inSessionSetup, setInSessionSetup] = useState(false);
     // refs
     const dialRef = useRef<HTMLDivElement>(null);
 
     // session state
     const [sessionState, setSessionState] = useState<SessionState | null>(null);
-    // session setup state
+    // duration selection state
     const [selectedDuration, setSelectedDuration] = useState<number>(25 * 60 * 1000); // 25 mins default
-    const [inSessionSetup, setInSessionSetup] = useState(false);
     // llm output
     const [llmText, setLlmText] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // listen to session state updates and IPC events
+    // listen to session state updates and session setup requests
     useEffect(() => {
-        // Listen for session setup signal from main process
-        window.api.onSessionSetupRequested(() => {
-            console.log('session setup requested');
-            setInSessionSetup(true);
-        });
-
         window.api.onSessionUpdated((state) => {
             setSessionState(state);
-            // If panel is open and session just started, we're no longer in setup
-            if (state.isActive) {
-                setInSessionSetup(false);
-            }
+        });
+
+        window.api.onSessionSetupRequested(() => {
+            setInSessionSetup(true);
         });
 
         // get initial session state
         window.api.sessionGetState().then(setSessionState).catch(console.error);
     }, []);
 
-    // reset inSessionSetup when panel loads (in case it was set from a previous session)
-    useEffect(() => {
-        const isPanel = window.location.hash === '#/panel';
-        if (isPanel && !inSessionSetup) {
-            // Panel just loaded, check if we should be in setup mode
-            // The IPC event from main process will set this if needed
-            console.log('panel loaded, waiting for setup signal');
-        }
-    }, []);
-
     async function handleStartSession() {
         const res = await window.api.sessionStart(selectedDuration);
         if (res.ok) {
+            // Reset session setup state
+            setInSessionSetup(false);
             // Panel will close automatically - this is handled via the session state listener
             await window.api.hidePanel();
         } else {
@@ -69,10 +56,6 @@ export default function PanelApp() {
         setLlmText(res.structured.analysis);
         setLoading(false);
     }
-
-    // Determine if we should show session setup
-    // Show setup if explicitly in setup mode OR if no session state loaded yet (initial load)
-    const showSessionSetup = !sessionState?.isActive && inSessionSetup;
 
     // Convert selectedDuration (in ms) to minutes for display
     const durationMinutes = selectedDuration / (60 * 1000);
@@ -106,7 +89,7 @@ export default function PanelApp() {
     return (
         <>
             <div className={'panel-root'}>
-                {showSessionSetup ? (
+                {inSessionSetup ? (
                     // Session setup UI
                     <>
                         <h2 className={'panel'} style={{ fontWeight: 600 }}>new session</h2>
@@ -189,7 +172,10 @@ export default function PanelApp() {
                             </button>
                             <button
                                 className={'panel'}
-                                onClick={() => window.api.hidePanel()}
+                                onClick={() => {
+                                    setInSessionSetup(false);
+                                    window.api.hidePanel();
+                                }}
                                 style={{
                                     background: 'rgba(0,0,0,0.2)',
                                     border: '1px solid rgba(255,255,255,0.1)',

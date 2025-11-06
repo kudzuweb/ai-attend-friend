@@ -44,8 +44,8 @@ let sessionScreenshotTimerRef: NodeJS.Timeout | null = null;
 let currentSessionId: string | null = null;
 let currentSessionDate: string | null = null;
 
-// track pending panel options to send after load
-let pendingPanelOptions: { setupSession?: boolean } | null = null;
+// track if we need to show session setup after panel loads
+let shouldShowSessionSetup = false;
 
 const CIRCLE_SIZE = 200;
 const PANEL_WIDTH = 440;
@@ -127,11 +127,12 @@ function showPanel() {
             },
         });
 
-        // Listen for when the panel is ready, then send pending options
-        panelWin.webContents.once('did-finish-load', () => {
-            if (pendingPanelOptions?.setupSession) {
+        // Listen for when the panel finishes loading
+        panelWin.webContents.on('did-finish-load', () => {
+            if (shouldShowSessionSetup) {
+                console.log('Panel loaded, sending session setup message');
                 panelWin?.webContents.send('panel:show-session-setup');
-                pendingPanelOptions = null;
+                shouldShowSessionSetup = false;
             }
         });
 
@@ -142,6 +143,11 @@ function showPanel() {
         } else {
             panelWin.loadURL(`file://${path.join(__dirname, '../dist/index.html')}#/panel`);
         }
+    } else if (shouldShowSessionSetup) {
+        // Panel already exists and is loaded, send immediately
+        console.log('Panel already loaded, sending session setup message immediately');
+        panelWin.webContents.send('panel:show-session-setup');
+        shouldShowSessionSetup = false;
     }
     const parentBounds = win.getBounds();
     const centeredX = parentBounds.x + (parentBounds.width - PANEL_WIDTH) / 2;
@@ -614,16 +620,22 @@ ipcMain.handle('llm:send-recent', async (_evt, limit?: number) => {
 });
 
 // show/hide interface panel
-ipcMain.handle('panel:show', (_evt, options?: { setupSession?: boolean }) => {
-    // Store options to send after panel loads
-    if (options?.setupSession) {
-        pendingPanelOptions = options;
-    }
+ipcMain.handle('panel:show', () => {
     showPanel();
 });
 
 ipcMain.handle('panel:hide', () => {
-    if (panelWin) panelWin.hide();
+    if (panelWin) {
+        panelWin.hide();
+        // Reset session setup flag if panel is hidden
+        shouldShowSessionSetup = false;
+    }
+});
+
+// request session setup in panel
+ipcMain.handle('ui:request-session-setup', () => {
+    console.log('ui:request-session-setup received, setting flag');
+    shouldShowSessionSetup = true;
 });
 
 // session handlers

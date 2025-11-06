@@ -106,7 +106,10 @@ export default function WidgetApp() {
 
     // handler to open panel for session setup
     async function openSessionPanel() {
-        await window.api.showPanel({ setupSession: true });
+        console.log('openSessionPanel called');
+        await window.api.requestSessionSetup();
+        console.log('requestSessionSetup completed');
+        await window.api.showPanel();
     }
 
     // handler to end session

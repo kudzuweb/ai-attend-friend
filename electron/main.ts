@@ -419,7 +419,7 @@ async function sendRecentImagestoLLM(limit = 10) {
                         properties: {
                             status: {
                                 type: 'string',
-                                enum: ['on_task', 'drifted'],
+                                enum: ['focused', 'distracted'],
                             },
                             analysis: {
                                 type: 'string',
@@ -427,11 +427,8 @@ async function sendRecentImagestoLLM(limit = 10) {
                             suggested_prompt: {
                                 type: 'string',
                             },
-                            summary: {
-                                type: 'string',
-                            },
                         },
-                        required: ['status', 'analysis', 'suggested_prompt', 'summary'],
+                        required: ['status', 'analysis', 'suggested_prompt'],
                         additionalProperties: false,
                     },
                     // strict: true,
@@ -504,7 +501,7 @@ async function generateFinalSummary(summaries: string[]): Promise<string | null>
             },
             {
                 'role': 'user',
-                'content': `here are the summaries from a completed work session:\n\n${summaryText}`,
+                'content': `here are the analyses from a completed work session:\n\n${summaryText}`,
             },
             ],
         }),
@@ -608,16 +605,16 @@ ipcMain.handle('llm:send-recent', async (_evt, limit?: number) => {
         if (res?.ok && res?.structured) {
             const status = res.structured.status;
 
-            // Save summary to current session if one is active
+            // Save analysis to current session if one is active
             if (currentSessionId && currentSessionDate) {
-                await sessionStorage.addSummaryToSession(currentSessionId, currentSessionDate, res.structured.summary);
+                await sessionStorage.addSummaryToSession(currentSessionId, currentSessionDate, res.structured.analysis);
             }
 
-            if (status === 'drifted') {
+            if (status === 'distracted') {
                 showPanel();
                 // push data into panel here?
                 // panelWin?.webContents.send('panel:update-data', res.structured);
-            } else if (status === 'on_task') {
+            } else if (status === 'focused') {
                 panelWin?.hide();
             }
         }

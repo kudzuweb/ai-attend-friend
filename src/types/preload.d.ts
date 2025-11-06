@@ -57,6 +57,7 @@ declare global {
             sessionGet: (sessionId: string, date: string) => Promise<{ ok: true; session: StoredSession } | { ok: false; error: string }>;
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             onSessionSetupRequested: (callback: () => void) => void;
+            requestSessionSetup: () => Promise<void>;
         };
     }
     // media track constraints for chromium to allow more granular config

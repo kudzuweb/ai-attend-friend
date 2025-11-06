@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 import 'dotenv/config';
+import * as sessionStorage from './session-storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +20,16 @@ interface SessionState {
     endTime: number;
 }
 
+// stored session with summaries grouped by date
+interface StoredSession {
+    id: string;
+    startTime: number;
+    endTime: number;
+    lengthMs: number;
+    summaries: string[];
+    finalSummary: string | null;
+}
+
 let sessionState: SessionState = {
     isActive: false,
     lengthMs: 0,
@@ -28,6 +39,10 @@ let sessionState: SessionState = {
 
 let sessionTimerRef: NodeJS.Timeout | null = null;
 let sessionScreenshotTimerRef: NodeJS.Timeout | null = null;
+
+// track current session for storage
+let currentSessionId: string | null = null;
+let currentSessionDate: string | null = null;
 
 // track pending panel options to send after load
 let pendingPanelOptions: { setupSession?: boolean } | null = null;
@@ -264,6 +279,10 @@ const get_system_prompt = async function loadPrompt(): Promise<string> {
 
 const systemPromptText = await get_system_prompt();
 
+// load session finalize prompt
+const sessionFinalizePromptPath = 'src/prompts/session-finalize.md';
+const sessionFinalizePromptText = await resolvePromptPath(sessionFinalizePromptPath).then(p => fs.readFile(p, 'utf8'));
+
 // session management functions
 function broadcastSessionState() {
     win?.webContents.send('session:updated', sessionState);
@@ -309,6 +328,10 @@ function stopSession() {
     if (sessionScreenshotTimerRef) clearTimeout(sessionScreenshotTimerRef);
     sessionTimerRef = null;
     sessionScreenshotTimerRef = null;
+
+    // Clear current session tracking
+    currentSessionId = null;
+    currentSessionDate = null;
 
     broadcastSessionState();
 }
@@ -406,6 +429,50 @@ async function sendRecentImagestoLLM(limit = 10) {
     return { ok: true as const, structured: structured, raw: responseString, count: recent.length };
 }
 
+async function generateFinalSummary(summaries: string[]): Promise<string | null> {
+    if (summaries.length === 0) {
+        return null;
+    }
+
+    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com').replace(/\/+$/, '');
+    const apiKey = process.env.OPENAI_API_KEY || '';
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    if (!apiKey) return null;
+
+    const summaryText = summaries.map((s, i) => `${i + 1}. ${s}`).join('\n');
+
+    const res = await fetch(`${baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model,
+            temperature: 0,
+            messages: [{
+                'role': 'system',
+                'content': sessionFinalizePromptText,
+            },
+            {
+                'role': 'user',
+                'content': `here are the summaries from a completed work session:\n\n${summaryText}`,
+            },
+            ],
+        }),
+    });
+
+    const responseString = await res.json().catch(() => null);
+    const content = responseString?.choices?.[0]?.message?.content;
+
+    if (!content) {
+        console.error('failed to generate final summary');
+        return null;
+    }
+
+    return content;
+}
+
 
 
 // IPC handlers 
@@ -488,6 +555,12 @@ ipcMain.handle('llm:send-recent', async (_evt, limit?: number) => {
 
         if (res?.ok && res?.structured) {
             const status = res.structured.status;
+
+            // Save summary to current session if one is active
+            if (currentSessionId && currentSessionDate) {
+                await sessionStorage.addSummaryToSession(currentSessionId, currentSessionDate, res.structured.summary);
+            }
+
             if (status === 'drifted') {
                 showPanel();
                 // push data into panel here?
@@ -517,7 +590,7 @@ ipcMain.handle('panel:hide', () => {
 });
 
 // session handlers
-ipcMain.handle('session:start', (_evt, lengthMs: number) => {
+ipcMain.handle('session:start', async (_evt, lengthMs: number) => {
     if (sessionState.isActive) {
         return { ok: false as const, error: 'session already active' };
     }
@@ -529,6 +602,15 @@ ipcMain.handle('session:start', (_evt, lengthMs: number) => {
     sessionState.lengthMs = lengthMs;
     sessionState.startTime = startTime;
     sessionState.endTime = endTime;
+
+    // Create session file and track session info
+    try {
+        currentSessionId = await sessionStorage.createSession(startTime, lengthMs);
+        currentSessionDate = sessionStorage.formatDateFolder(new Date(startTime));
+    } catch (e) {
+        console.error('Error creating session:', e);
+        return { ok: false as const, error: 'failed to create session file' };
+    }
 
     broadcastSessionState();
 
@@ -549,11 +631,56 @@ ipcMain.handle('session:get-state', () => {
     return sessionState;
 });
 
-ipcMain.handle('session:stop', () => {
+ipcMain.handle('session:stop', async () => {
+    // Generate final summary before clearing session
+    if (currentSessionId && currentSessionDate) {
+        try {
+            const session = await sessionStorage.loadSession(currentSessionId, currentSessionDate);
+            if (session && session.summaries.length > 0) {
+                const finalSummary = await generateFinalSummary(session.summaries);
+                if (finalSummary) {
+                    await sessionStorage.setFinalSummary(currentSessionId, currentSessionDate, finalSummary);
+                }
+            }
+        } catch (e) {
+            console.error('Error generating final summary:', e);
+        }
+    }
+
     stopSession();
     return { ok: true as const };
 });
 
+// session retrieval handlers
+ipcMain.handle('session:list-by-date', async (_evt, dateString: string) => {
+    try {
+        const sessions = await sessionStorage.listSessionsByDate(dateString);
+        return { ok: true as const, sessions };
+    } catch (e: any) {
+        return { ok: false as const, error: e?.message ?? 'failed to list sessions by date' };
+    }
+});
+
+ipcMain.handle('session:list-all', async () => {
+    try {
+        const sessions = await sessionStorage.listAllSessions();
+        return { ok: true as const, sessions };
+    } catch (e: any) {
+        return { ok: false as const, error: e?.message ?? 'failed to list all sessions' };
+    }
+});
+
+ipcMain.handle('session:get', async (_evt, sessionId: string, dateString: string) => {
+    try {
+        const session = await sessionStorage.loadSession(sessionId, dateString);
+        if (!session) {
+            return { ok: false as const, error: 'session not found' };
+        }
+        return { ok: true as const, session };
+    } catch (e: any) {
+        return { ok: false as const, error: e?.message ?? 'failed to get session' };
+    }
+});
 
 
 // app life cycle events

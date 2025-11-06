@@ -115,6 +115,12 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:get-state'),
     sessionStop: () =>
         ipcRenderer.invoke('session:stop'),
+    sessionListByDate: (dateString) =>
+        ipcRenderer.invoke('session:list-by-date', dateString),
+    sessionListAll: () =>
+        ipcRenderer.invoke('session:list-all'),
+    sessionGet: (sessionId, dateString) =>
+        ipcRenderer.invoke('session:get', sessionId, dateString),
     onSessionUpdated: (callback) =>
         ipcRenderer.on('session:updated', (_event, state) => callback(state)),
     onSessionSetupRequested: (callback) =>

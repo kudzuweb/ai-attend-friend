@@ -31,6 +31,8 @@ export default function PanelApp() {
     async function handleStartSession() {
         const res = await window.api.sessionStart(selectedDuration);
         if (res.ok) {
+            // Reset session setup state
+            setInSessionSetup(false);
             // Panel will close automatically - this is handled via the session state listener
             await window.api.hidePanel();
         } else {
@@ -170,7 +172,10 @@ export default function PanelApp() {
                             </button>
                             <button
                                 className={'panel'}
-                                onClick={() => window.api.hidePanel()}
+                                onClick={() => {
+                                    setInSessionSetup(false);
+                                    window.api.hidePanel();
+                                }}
                                 style={{
                                     background: 'rgba(0,0,0,0.2)',
                                     border: '1px solid rgba(255,255,255,0.1)',

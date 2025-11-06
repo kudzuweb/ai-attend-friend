@@ -12,6 +12,16 @@ declare global {
         endTime: number;
     };
 
+    // stored session with summaries grouped by date
+    type StoredSession = {
+        id: string;
+        startTime: number;
+        endTime: number;
+        lengthMs: number;
+        summaries: string[]; // array of batch summaries captured during session
+        finalSummary: string | null; // synthesized summary created when session ends
+    };
+
     // add window.api to Window type so TS doesn't freak out
     interface Window {
         api: {
@@ -42,6 +52,9 @@ declare global {
             sessionStart: (lengthMs: number) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;
+            sessionListByDate: (date: string) => Promise<{ ok: true; sessions: StoredSession[] } | { ok: false; error: string }>;
+            sessionListAll: () => Promise<{ ok: true; sessions: Record<string, StoredSession[]> } | { ok: false; error: string }>;
+            sessionGet: (sessionId: string, date: string) => Promise<{ ok: true; session: StoredSession } | { ok: false; error: string }>;
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             onSessionSetupRequested: (callback: () => void) => void;
         };

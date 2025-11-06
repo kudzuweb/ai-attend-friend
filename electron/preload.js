@@ -99,6 +99,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('open-screen-recording-settings'),
     relaunchApp: () =>
         ipcRenderer.invoke('relaunch-app'),
+    quitApp: () =>
+        ipcRenderer.invoke('quit-app'),
     captureFrames: captureFrames,
     saveImage: (payload) =>
         ipcRenderer.invoke('save-image', payload),

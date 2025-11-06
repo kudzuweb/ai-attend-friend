@@ -498,6 +498,10 @@ ipcMain.handle('relaunch-app', () => {
     app.exit(0);
 });
 
+// quit application
+ipcMain.handle('quit-app', () => {
+    app.quit();
+});
 
 // get media sources for screenshots
 ipcMain.handle('desktopCapturer-get-sources', (_e, opts) => {

@@ -119,6 +119,11 @@ export default function WidgetApp() {
         }
     }
 
+    // handler to quit application
+    async function handleQuitApp() {
+        await window.api.quitApp();
+    }
+
     // render react UI, conditionally render img if available
     return (
         <>
@@ -139,6 +144,14 @@ export default function WidgetApp() {
                 {/* analyze button for dev/debugging */}
                 <button style={noDragBtnStyle} onClick={() => window.api.showPanel()}>
                     open panel
+                </button>
+                {/* quit button */}
+                <button
+                    style={{...noDragBtnStyle, background: '#666', color: 'white', padding: '6px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 12}}
+                    onClick={handleQuitApp}
+                    title="Quit application"
+                >
+                    quit
                 </button>
             </WidgetShell>
 

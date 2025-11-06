@@ -229,6 +229,39 @@ async function getRecentImages(limit = 10): Promise<string[]> {
         .map(x => x.f);
 }
 
+async function deleteSessionScreenshots(sessionStartTime: number, sessionEndTime: number): Promise<void> {
+    try {
+        const dir = capturesDir();
+        const entries = await fs.readdir(dir).catch(() => []);
+        const jpgFiles = entries.filter(f => /\.(jpg|jpeg)$/i.test(f));
+
+        // Get file timestamps and delete those within session time range
+        const filesToDelete = await Promise.all(
+            jpgFiles.map(async f => {
+                const filePath = path.join(dir, f);
+                const stat = await fs.stat(filePath).catch(() => null);
+                if (!stat) return null;
+
+                const fileTime = stat.mtime.getTime();
+                // Include file if it was created during or just after session (some buffer for last capture)
+                if (fileTime >= sessionStartTime && fileTime <= sessionEndTime + 5000) {
+                    return filePath;
+                }
+                return null;
+            })
+        );
+
+        // Delete files asynchronously without blocking
+        filesToDelete.filter(Boolean).forEach(filePath => {
+            fs.unlink(filePath!).catch(err => {
+                console.error(`Failed to delete screenshot ${filePath}:`, err);
+            });
+        });
+    } catch (err) {
+        console.error('Error cleaning up session screenshots:', err);
+    }
+}
+
 async function fileToDataUrl(file: string): Promise<string> {
     const buffer = await fs.readFile(file);
     const mime = 'image/jpeg';
@@ -650,6 +683,12 @@ ipcMain.handle('session:stop', async () => {
             console.error('Error generating final summary:', e);
         }
     }
+
+    // Clean up session screenshots asynchronously (non-blocking)
+    // TODO: Re-enable after debugging
+    // const startTime = sessionState.startTime;
+    // const endTime = sessionState.endTime;
+    // void deleteSessionScreenshots(startTime, endTime);
 
     stopSession();
     return { ok: true as const };

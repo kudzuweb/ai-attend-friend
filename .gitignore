@@ -25,3 +25,6 @@ dist-ssr
 
 #secrets
 .env
+
+# Claude Code codebase map (local reference only)
+.codebase-map.md

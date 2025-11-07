@@ -90,13 +90,11 @@ declare global {
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             requestSessionSetup: () => Promise<void>;
             requestSettings: () => Promise<void>;
-            sessionResumeAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-            sessionEndAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            handleInterruption: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             onViewChangeRequested: (callback: (payload: ViewChangePayload) => void) => void;
             pauseSession: () => Promise<void>;
-            saveReflectionAndResume: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-            saveReflectionAndEndSession: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             quitApp: () => Promise<void>;
         };
     }

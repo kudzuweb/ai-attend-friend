@@ -113,14 +113,13 @@ export function registerIPCHandlers(
 
     // ========== Interruption Handlers ==========
 
-    ipcMain.handle('session:resume-after-interruption', async (_evt, reflection: string) => {
-        console.log('[IPCHandlers] session:resume-after-interruption called');
-        return await sessionManager.resumeAfterInterruption(reflection);
-    });
-
-    ipcMain.handle('session:end-after-interruption', async (_evt, reflection: string) => {
-        console.log('[IPCHandlers] session:end-after-interruption called');
-        return await sessionManager.endAfterInterruption(reflection);
+    ipcMain.handle('session:handle-interruption', async (_evt, payload: { action: 'resume' | 'end', reflection: string }) => {
+        console.log('[IPCHandlers] session:handle-interruption called with action:', payload.action);
+        if (payload.action === 'resume') {
+            return await sessionManager.resumeAfterInterruption(payload.reflection);
+        } else {
+            return await sessionManager.endAfterInterruption(payload.reflection);
+        }
     });
 
     // ========== Reflection Handlers ==========
@@ -130,14 +129,13 @@ export function registerIPCHandlers(
         sessionManager.pauseSession();
     });
 
-    ipcMain.handle('session:save-reflection-and-resume', async (_evt, reflection: string) => {
-        console.log('[IPCHandlers] session:save-reflection-and-resume called');
-        return await sessionManager.saveReflectionAndResume(reflection);
-    });
-
-    ipcMain.handle('session:save-reflection-and-end-session', async (_evt, reflection: string) => {
-        console.log('[IPCHandlers] session:save-reflection-and-end-session called');
-        return await sessionManager.saveReflectionAndEndSession(reflection);
+    ipcMain.handle('session:handle-reflection', async (_evt, payload: { action: 'resume' | 'end', reflection: string }) => {
+        console.log('[IPCHandlers] session:handle-reflection called with action:', payload.action);
+        if (payload.action === 'resume') {
+            return await sessionManager.saveReflectionAndResume(payload.reflection);
+        } else {
+            return await sessionManager.saveReflectionAndEndSession(payload.reflection);
+        }
     });
 
     // ========== Distraction Handlers ==========

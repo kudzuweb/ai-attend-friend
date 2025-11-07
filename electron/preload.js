@@ -129,10 +129,10 @@ const api = Object.freeze({
         ipcRenderer.invoke('ui:request-session-setup'),
     requestSettings: () =>
         ipcRenderer.invoke('ui:request-settings'),
-    sessionResumeAfterInterruption: (reflection) =>
-        ipcRenderer.invoke('session:resume-after-interruption', reflection),
-    sessionEndAfterInterruption: (reflection) =>
-        ipcRenderer.invoke('session:end-after-interruption', reflection),
+    handleInterruption: (action, reflection) =>
+        ipcRenderer.invoke('session:handle-interruption', { action, reflection }),
+    handleReflection: (action, reflection) =>
+        ipcRenderer.invoke('session:handle-reflection', { action, reflection }),
     saveDistractionReason: (reason) =>
         ipcRenderer.invoke('session:save-distraction-reason', reason),
     // unified view change listener
@@ -140,10 +140,6 @@ const api = Object.freeze({
         ipcRenderer.on('panel:change-view', (_event, payload) => callback(payload)),
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
-    saveReflectionAndResume: (reflection) =>
-        ipcRenderer.invoke('session:save-reflection-and-resume', reflection),
-    saveReflectionAndEndSession: (reflection) =>
-        ipcRenderer.invoke('session:save-reflection-and-end-session', reflection),
 })
 
 contextBridge.exposeInMainWorld('api', api)

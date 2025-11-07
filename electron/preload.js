@@ -125,26 +125,19 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:get', sessionId, dateString),
     onSessionUpdated: (callback) =>
         ipcRenderer.on('session:updated', (_event, state) => callback(state)),
-    onSessionSetupRequested: (callback) =>
-        ipcRenderer.on('panel:show-session-setup', () => callback()),
     requestSessionSetup: () =>
         ipcRenderer.invoke('ui:request-session-setup'),
-    onSettingsRequested: (callback) =>
-        ipcRenderer.on('panel:show-settings', () => callback()),
     requestSettings: () =>
         ipcRenderer.invoke('ui:request-settings'),
-    onTasksViewRequested: (callback) =>
-        ipcRenderer.on('panel:show-tasks', () => callback()),
-    onInterruptionReflectionRequested: (callback) =>
-        ipcRenderer.on('session:show-interruption-reflection', () => callback()),
     sessionResumeAfterInterruption: (reflection) =>
         ipcRenderer.invoke('session:resume-after-interruption', reflection),
     sessionEndAfterInterruption: (reflection) =>
         ipcRenderer.invoke('session:end-after-interruption', reflection),
-    onDistractionReasonRequested: (callback) =>
-        ipcRenderer.on('session:show-distraction-reason', (_event, analysisText) => callback(analysisText)),
     saveDistractionReason: (reason) =>
         ipcRenderer.invoke('session:save-distraction-reason', reason),
+    // unified view change listener
+    onViewChangeRequested: (callback) =>
+        ipcRenderer.on('panel:change-view', (_event, payload) => callback(payload)),
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
     saveReflectionAndResume: (reflection) =>

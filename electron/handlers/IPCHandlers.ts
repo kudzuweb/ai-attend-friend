@@ -88,7 +88,7 @@ export function registerIPCHandlers(
                 if (status === 'distracted') {
                     windowManager.showPanel();
                     // Send analysis text to panel to trigger distraction reason view
-                    windowManager.sendToPanel('session:show-distraction-reason', res.structured.analysis);
+                    windowManager.changeView({ view: 'distracted-reason', data: res.structured.analysis });
                 } else if (status === 'focused') {
                     windowManager.hidePanel();
                 }

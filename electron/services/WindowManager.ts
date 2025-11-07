@@ -10,12 +10,16 @@ const CIRCLE_SIZE = 200;
 const PANEL_WIDTH = 440;
 const PANEL_HEIGHT = 380;
 
+type ViewChangePayload = {
+    view: 'session-setup' | 'settings' | 'tasks' | 'interruption-reflection' | 'distracted-reason' | 'analysis';
+    data?: any;
+};
+
 export class WindowManager {
     private widgetWindow: BrowserWindow | null = null;
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
-    private shouldShowSessionSetup = false;
-    private shouldShowSettings = false;
+    private pendingViewChange: ViewChangePayload | null = null;
 
     constructor() {
         // absolute path to built preload
@@ -107,14 +111,10 @@ export class WindowManager {
 
             // Listen for when the panel finishes loading
             this.panelWindow.webContents.on('did-finish-load', () => {
-                if (this.shouldShowSessionSetup) {
-                    console.log('Panel loaded, sending session setup message');
-                    this.panelWindow?.webContents.send('panel:show-session-setup');
-                    this.shouldShowSessionSetup = false;
-                } else if (this.shouldShowSettings) {
-                    console.log('Panel loaded, sending settings message');
-                    this.panelWindow?.webContents.send('panel:show-settings');
-                    this.shouldShowSettings = false;
+                if (this.pendingViewChange) {
+                    console.log('Panel loaded, sending view change:', this.pendingViewChange);
+                    this.panelWindow?.webContents.send('panel:change-view', this.pendingViewChange);
+                    this.pendingViewChange = null;
                 }
             });
 
@@ -125,16 +125,11 @@ export class WindowManager {
             } else {
                 this.panelWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}#/panel`);
             }
-        } else if (this.shouldShowSessionSetup) {
+        } else if (this.pendingViewChange) {
             // Panel already exists and is loaded, send immediately
-            console.log('Panel already loaded, sending session setup message immediately');
-            this.panelWindow.webContents.send('panel:show-session-setup');
-            this.shouldShowSessionSetup = false;
-        } else if (this.shouldShowSettings) {
-            // Panel already exists and is loaded, send immediately
-            console.log('Panel already loaded, sending settings message immediately');
-            this.panelWindow.webContents.send('panel:show-settings');
-            this.shouldShowSettings = false;
+            console.log('Panel already loaded, sending view change immediately:', this.pendingViewChange);
+            this.panelWindow.webContents.send('panel:change-view', this.pendingViewChange);
+            this.pendingViewChange = null;
         }
 
         this.positionPanelBelowWidget();
@@ -147,8 +142,8 @@ export class WindowManager {
     hidePanel(): void {
         if (this.panelWindow) {
             this.panelWindow.hide();
-            // Reset session setup flag if panel is hidden
-            this.shouldShowSessionSetup = false;
+            // Reset pending view change if panel is hidden
+            this.pendingViewChange = null;
         }
     }
 
@@ -170,19 +165,33 @@ export class WindowManager {
     }
 
     /**
+     * Change the panel view
+     */
+    changeView(payload: ViewChangePayload): void {
+        console.log('changeView called:', payload);
+        if (this.panelWindow && this.panelWindow.isVisible()) {
+            // Panel already visible, send immediately
+            this.panelWindow.webContents.send('panel:change-view', payload);
+        } else {
+            // Panel not visible, store for when it opens
+            this.pendingViewChange = payload;
+        }
+    }
+
+    /**
      * Request session setup UI to be shown when panel opens
      */
     requestSessionSetup(): void {
-        console.log('requestSessionSetup called, setting flag');
-        this.shouldShowSessionSetup = true;
+        console.log('requestSessionSetup called');
+        this.pendingViewChange = { view: 'session-setup' };
     }
 
     /**
      * Request settings UI to be shown when panel opens
      */
     requestSettings(): void {
-        console.log('requestSettings called, setting flag');
-        this.shouldShowSettings = true;
+        console.log('requestSettings called');
+        this.pendingViewChange = { view: 'settings' };
     }
 
     /**
@@ -191,7 +200,7 @@ export class WindowManager {
     showTasksView(): void {
         console.log('showTasksView called, showing panel and sending tasks view message');
         this.showPanel();
-        this.panelWindow?.webContents.send('panel:show-tasks');
+        this.changeView({ view: 'tasks' });
     }
 
     /**

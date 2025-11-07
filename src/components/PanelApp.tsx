@@ -13,31 +13,18 @@ export default function PanelApp() {
     const [currentView, setCurrentView] = useState<PanelView>('analysis');
     const [distractedAnalysisText, setDistractedAnalysisText] = useState<string>('');
 
-    // Listen to IPC events for view changes
+    // Listen to unified view change events
     useEffect(() => {
-        window.api.onSessionSetupRequested(() => {
-            setCurrentView('session-setup');
-        });
+        window.api.onViewChangeRequested((payload) => {
+            console.log('[PanelApp] onViewChangeRequested fired:', payload);
 
-        window.api.onSettingsRequested(() => {
-            console.log('[PanelApp] onSettingsRequested fired!');
-            setCurrentView('settings');
-        });
+            // Handle view changes
+            setCurrentView(payload.view);
 
-        window.api.onTasksViewRequested(() => {
-            console.log('[PanelApp] onTasksViewRequested fired!');
-            setCurrentView('tasks');
-        });
-
-        window.api.onInterruptionReflectionRequested(() => {
-            console.log('[PanelApp] onInterruptionReflectionRequested fired!');
-            setCurrentView('interruption-reflection');
-        });
-
-        window.api.onDistractionReasonRequested((analysisText: string) => {
-            console.log('[PanelApp] onDistractionReasonRequested fired!');
-            setDistractedAnalysisText(analysisText);
-            setCurrentView('distracted-reason');
+            // Handle additional data if needed
+            if (payload.view === 'distracted-reason' && payload.data) {
+                setDistractedAnalysisText(payload.data);
+            }
         });
     }, []);
 

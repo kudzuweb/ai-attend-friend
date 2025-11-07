@@ -61,6 +61,8 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
 
         if (res.ok) {
             setReason('');
+            // Pause the session before opening reflection view
+            await window.api.pauseSession();
             onReflectDeeper();
         } else {
             console.error('Failed to save distraction reason:', res.error);

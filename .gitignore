@@ -28,3 +28,6 @@ dist-ssr
 
 # Claude Code codebase map (local reference only)
 .codebase-map.md
+
+# Planning documents (local reference only)
+plan.md

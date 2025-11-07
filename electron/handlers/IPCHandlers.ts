@@ -130,7 +130,6 @@ export function registerIPCHandlers(
         }
 
         return result;
-        return await sessionManager.startSession(lengthMs, focusGoal, tasks);
     });
 
     ipcMain.handle('session:get-state', () => {

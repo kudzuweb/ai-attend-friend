@@ -13,8 +13,6 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
         const saved = localStorage.getItem('tasksEnabled');
         return saved !== null ? JSON.parse(saved) : true;
     });
-    // TODO: Replace with actual condition when ready
-    const [showTasks, setShowTasks] = useState<boolean>(true); // Placeholder state
     const dialRef = useRef<HTMLDivElement>(null);
 
     // Sync showTasks with localStorage whenever component is rendered
@@ -37,7 +35,6 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
         const hasTasks = tasksToSend && tasksToSend.some(t => t.trim());
 
         const res = await window.api.sessionStart(selectedDuration, focusGoal, tasksToSend);
-        const res = await window.api.sessionStart(selectedDuration, focusGoal, tasks);
         if (res.ok) {
             // Only call onComplete and hide panel if no tasks
             // When tasks are present, the backend will handle showing the tasks view

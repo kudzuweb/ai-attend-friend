@@ -4,13 +4,10 @@ import SessionSetupView from "./panel-views/SessionSetupView";
 import InterruptionReflectionView from "./panel-views/InterruptionReflectionView";
 import SettingsView from "./panel-views/SettingsView";
 import TasksView from "./panel-views/TasksView";
-
-type PanelView = 'analysis' | 'session-setup' | 'interruption-reflection' | 'settings' | 'tasks';
 import DistractedReasonView from "./panel-views/DistractedReasonView";
 import DeeperReflectionView from "./panel-views/DeeperReflectionView";
-import TasksView from "./panel-views/TasksView";
 
-type PanelView = 'analysis' | 'session-setup' | 'interruption-reflection' | 'distracted-reason' | 'deeper-reflection' | 'tasks';
+type PanelView = 'analysis' | 'session-setup' | 'interruption-reflection' | 'settings' | 'tasks' | 'distracted-reason' | 'deeper-reflection';
 
 export default function PanelApp() {
     const [currentView, setCurrentView] = useState<PanelView>('analysis');
@@ -67,7 +64,11 @@ export default function PanelApp() {
                     />
                 );
             case 'tasks':
-                return <TasksView />;
+                return (
+                    <TasksView
+                        onClose={() => setCurrentView('analysis')}
+                    />
+                );
             case 'distracted-reason':
                 return (
                     <DistractedReasonView
@@ -80,12 +81,6 @@ export default function PanelApp() {
                 return (
                     <DeeperReflectionView
                         onComplete={() => setCurrentView('analysis')}
-                    />
-                );
-            case 'tasks':
-                return (
-                    <TasksView
-                        onClose={() => setCurrentView('analysis')}
                     />
                 );
             case 'analysis':

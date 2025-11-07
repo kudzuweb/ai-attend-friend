@@ -82,7 +82,6 @@ export class SessionManager {
         this.sessionState.startTime = startTime;
         this.sessionState.endTime = endTime;
         this.sessionState.focusGoal = focusGoal;
-        this.sessionState.tasks = tasks;
         if (tasks) {
             this.sessionState.tasks = tasks;
         }

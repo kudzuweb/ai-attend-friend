@@ -6,9 +6,15 @@ import SettingsView from "./panel-views/SettingsView";
 import TasksView from "./panel-views/TasksView";
 
 type PanelView = 'analysis' | 'session-setup' | 'interruption-reflection' | 'settings' | 'tasks';
+import DistractedReasonView from "./panel-views/DistractedReasonView";
+import DeeperReflectionView from "./panel-views/DeeperReflectionView";
+import TasksView from "./panel-views/TasksView";
+
+type PanelView = 'analysis' | 'session-setup' | 'interruption-reflection' | 'distracted-reason' | 'deeper-reflection' | 'tasks';
 
 export default function PanelApp() {
     const [currentView, setCurrentView] = useState<PanelView>('analysis');
+    const [distractedAnalysisText, setDistractedAnalysisText] = useState<string>('');
 
     // Listen to IPC events for view changes
     useEffect(() => {
@@ -29,6 +35,12 @@ export default function PanelApp() {
         window.api.onInterruptionReflectionRequested(() => {
             console.log('[PanelApp] onInterruptionReflectionRequested fired!');
             setCurrentView('interruption-reflection');
+        });
+
+        window.api.onDistractionReasonRequested((analysisText: string) => {
+            console.log('[PanelApp] onDistractionReasonRequested fired!');
+            setDistractedAnalysisText(analysisText);
+            setCurrentView('distracted-reason');
         });
     }, []);
 
@@ -56,6 +68,26 @@ export default function PanelApp() {
                 );
             case 'tasks':
                 return <TasksView />;
+            case 'distracted-reason':
+                return (
+                    <DistractedReasonView
+                        analysisText={distractedAnalysisText}
+                        onComplete={() => setCurrentView('analysis')}
+                        onReflectDeeper={() => setCurrentView('deeper-reflection')}
+                    />
+                );
+            case 'deeper-reflection':
+                return (
+                    <DeeperReflectionView
+                        onComplete={() => setCurrentView('analysis')}
+                    />
+                );
+            case 'tasks':
+                return (
+                    <TasksView
+                        onClose={() => setCurrentView('analysis')}
+                    />
+                );
             case 'analysis':
                 return <AnalysisView />;
         }

@@ -18,6 +18,16 @@ export interface SessionInterruption {
     userReflection: string | null;
 }
 
+export interface DistractionReason {
+    timestamp: number;
+    userReason: string;
+}
+
+export interface Reflection {
+    timestamp: number;
+    content: string;
+}
+
 export interface StoredSession {
     id: string;
     startTime: number;
@@ -26,6 +36,8 @@ export interface StoredSession {
     focusGoal: string;
     tasks?: [string, string, string];
     interruptions: SessionInterruption[];
+    distractions: DistractionReason[];
+    reflections: Reflection[];
     summaries: string[];
     finalSummary: string | null;
 }

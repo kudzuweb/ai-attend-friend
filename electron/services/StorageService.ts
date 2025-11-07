@@ -1,4 +1,4 @@
-import type { SessionInterruption, StoredSession } from '../types/session.types.js';
+import type { SessionInterruption, DistractionReason, Reflection, StoredSession } from '../types/session.types.js';
 import * as sessionStorage from '../session-storage.js';
 
 /**
@@ -11,6 +11,7 @@ export class StorageService {
      */
     async createSession(startTime: number, lengthMs: number, focusGoal: string = '', tasks?: [string, string, string]): Promise<string> {
         return await (sessionStorage as any).createSession(startTime, lengthMs, focusGoal, tasks);
+        return await sessionStorage.createSession(startTime, lengthMs, focusGoal, tasks);
     }
 
     /**
@@ -36,6 +37,28 @@ export class StorageService {
         interruption: SessionInterruption
     ): Promise<boolean> {
         return await sessionStorage.addInterruptionToSession(sessionId, dateFolder, interruption);
+    }
+
+    /**
+     * Add a distraction reason to a session
+     */
+    async addDistractionToSession(
+        sessionId: string,
+        dateFolder: string,
+        distraction: DistractionReason
+    ): Promise<boolean> {
+        return await sessionStorage.addDistractionToSession(sessionId, dateFolder, distraction);
+    }
+
+    /**
+     * Add a reflection to a session
+     */
+    async addReflectionToSession(
+        sessionId: string,
+        dateFolder: string,
+        reflection: Reflection
+    ): Promise<boolean> {
+        return await sessionStorage.addReflectionToSession(sessionId, dateFolder, reflection);
     }
 
     /**

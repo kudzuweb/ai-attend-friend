@@ -1,5 +1,5 @@
 import { powerMonitor } from 'electron';
-import type { SessionState, SessionInterruption } from '../types/session.types.js';
+import type { SessionState, SessionInterruption, Reflection } from '../types/session.types.js';
 import type { WindowManager } from './WindowManager.js';
 import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
@@ -83,6 +83,9 @@ export class SessionManager {
         this.sessionState.endTime = endTime;
         this.sessionState.focusGoal = focusGoal;
         this.sessionState.tasks = tasks;
+        if (tasks) {
+            this.sessionState.tasks = tasks;
+        }
 
         // Create session file and track session info
         try {
@@ -255,6 +258,84 @@ export class SessionManager {
 
         // Clear interruption state
         this.currentInterruption = null;
+
+        // End the session
+        this.stopSession();
+
+        return { ok: true };
+    }
+
+    /**
+     * Save reflection and resume session (called from deeper reflection view)
+     */
+    async saveReflectionAndResume(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
+        console.log('[SessionManager] saveReflectionAndResume called');
+
+        if (!this.sessionState.isActive) {
+            console.log('[SessionManager] Error: no active session');
+            return { ok: false, error: 'no active session' };
+        }
+
+        // Create reflection object
+        const reflection: Reflection = {
+            timestamp: Date.now(),
+            content: reflectionContent,
+        };
+
+        // Save reflection to session
+        if (this.currentSessionId && this.currentSessionDate) {
+            await this.storageService.addReflectionToSession(
+                this.currentSessionId,
+                this.currentSessionDate,
+                reflection
+            );
+        }
+
+        // Resume the session timer with remaining time
+        this.sessionTimer = setTimeout(() => {
+            this.stopSession();
+            this.windowManager.showPanel();
+        }, this.remainingSessionTime);
+
+        // Resume screenshot timer
+        this.screenshotTimer = setInterval(() => {
+            if (!this.sessionState.isActive) {
+                this.stopScreenshotTimer();
+            }
+        }, 30_000);
+
+        // Hide panel
+        this.windowManager.hidePanel();
+
+        this.broadcastSessionState();
+        return { ok: true };
+    }
+
+    /**
+     * Save reflection and end session (called from deeper reflection view)
+     */
+    async saveReflectionAndEndSession(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
+        console.log('[SessionManager] saveReflectionAndEndSession called');
+
+        if (!this.sessionState.isActive) {
+            console.log('[SessionManager] Error: no active session');
+            return { ok: false, error: 'no active session' };
+        }
+
+        // Create reflection object
+        const reflection: Reflection = {
+            timestamp: Date.now(),
+            content: reflectionContent,
+        };
+
+        // Save reflection to session
+        if (this.currentSessionId && this.currentSessionDate) {
+            await this.storageService.addReflectionToSession(
+                this.currentSessionId,
+                this.currentSessionDate,
+                reflection
+            );
+        }
 
         // End the session
         this.stopSession();

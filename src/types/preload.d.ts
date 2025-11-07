@@ -12,6 +12,18 @@ declare global {
         userReflection: string | null;
     };
 
+    // distraction reason during session
+    type DistractionReason = {
+        timestamp: number;
+        userReason: string;
+    };
+
+    // deeper reflection during session
+    type Reflection = {
+        timestamp: number;
+        content: string;
+    };
+
     // session state type
     type SessionState = {
         isActive: boolean;
@@ -31,6 +43,8 @@ declare global {
         focusGoal: string;
         tasks?: [string, string, string];
         interruptions: SessionInterruption[];
+        distractions: DistractionReason[];
+        reflections: Reflection[];
         summaries: string[]; // array of batch summaries captured during session
         finalSummary: string | null; // synthesized summary created when session ends
     };
@@ -76,6 +90,11 @@ declare global {
             onInterruptionReflectionRequested: (callback: () => void) => void;
             sessionResumeAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionEndAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            onDistractionReasonRequested: (callback: (analysisText: string) => void) => void;
+            saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            pauseSession: () => Promise<void>;
+            saveReflectionAndResume: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            saveReflectionAndEndSession: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             quitApp: () => Promise<void>;
         };
     }

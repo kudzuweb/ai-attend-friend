@@ -10,9 +10,32 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
     const [reason, setReason] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    async function handleSubmit() {
+    async function handleSaveAndEndSession() {
         setIsSubmitting(true);
 
+        const res = await window.api.saveDistractionReason(reason);
+
+        if (res.ok) {
+            // End the session
+            await window.api.sessionStop();
+            setReason('');
+            await window.api.hidePanel();
+            onComplete();
+        } else {
+            console.error('Failed to save distraction reason:', res.error);
+        }
+
+        setIsSubmitting(false);
+    }
+
+    async function handleResumeSession() {
+        if (!reason.trim()) {
+            return; // Don't allow resume without a reason
+        }
+
+        setIsSubmitting(true);
+
+        // Save the reason first
         const res = await window.api.saveDistractionReason(reason);
 
         if (res.ok) {
@@ -26,15 +49,29 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
         setIsSubmitting(false);
     }
 
-    async function handleDismiss() {
-        setReason('');
-        await window.api.hidePanel();
-        onComplete();
+    async function handleReflectDeeper() {
+        if (!reason.trim()) {
+            return; // Don't allow deeper reflection without a reason
+        }
+
+        setIsSubmitting(true);
+
+        // Save the reason first
+        const res = await window.api.saveDistractionReason(reason);
+
+        if (res.ok) {
+            setReason('');
+            onReflectDeeper();
+        } else {
+            console.error('Failed to save distraction reason:', res.error);
+        }
+
+        setIsSubmitting(false);
     }
 
     return (
         <>
-            <h2 className={'panel'} style={{ fontWeight: 600 }}>looks like you got distracted</h2>
+            <h2 className={'panel'} style={{ fontWeight: 600 }}>Attention drifting?</h2>
 
             <div
                 style={{
@@ -52,7 +89,7 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
             </div>
 
             <p style={{ fontSize: 14, opacity: 0.8, marginBottom: 8 }}>
-                What pulled you off-task?
+                What pulled you off-task? <span style={{ fontSize: 12, opacity: 0.6 }}>(required)</span>
             </p>
 
             <textarea
@@ -66,18 +103,21 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
                     padding: '10px 12px',
                     color: 'inherit',
                     fontSize: 14,
+                    lineHeight: 1.5,
                     width: '100%',
                     minHeight: 60,
+                    maxHeight: 85,
                     boxSizing: 'border-box',
-                    resize: 'vertical',
+                    resize: 'none',
                     fontFamily: 'inherit',
+                    overflowY: 'auto',
                 }}
             />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                 <button
                     className={'panel'}
-                    onClick={handleSubmit}
+                    onClick={handleSaveAndEndSession}
                     disabled={isSubmitting || !reason.trim()}
                     style={{
                         background: reason.trim() ? '#8B7355' : 'rgba(0,0,0,0.3)',
@@ -90,38 +130,44 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
                         opacity: reason.trim() ? 1 : 0.5,
                     }}
                 >
-                    {isSubmitting ? 'saving...' : 'note it'}
+                    {isSubmitting ? 'saving...' : 'save and end session'}
                 </button>
-                <button
-                    className={'panel'}
-                    onClick={() => {
-                        onReflectDeeper();
-                    }}
-                    disabled={isSubmitting}
-                    style={{
-                        background: 'rgba(139, 115, 85, 0.3)',
-                        border: '1px solid rgba(139, 115, 85, 0.5)',
-                        padding: '8px 16px',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                    }}
-                >
-                    reflect deeper
-                </button>
-                <button
-                    className={'panel'}
-                    onClick={handleDismiss}
-                    disabled={isSubmitting}
-                    style={{
-                        background: 'rgba(0,0,0,0.2)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        padding: '8px 16px',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                    }}
-                >
-                    dismiss
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                        className={'panel'}
+                        onClick={handleResumeSession}
+                        disabled={isSubmitting || !reason.trim()}
+                        style={{
+                            flex: 1,
+                            background: reason.trim() ? 'rgba(139, 115, 85, 0.4)' : 'rgba(0,0,0,0.3)',
+                            border: '1px solid rgba(139, 115, 85, 0.6)',
+                            padding: '8px 12px',
+                            borderRadius: 6,
+                            cursor: reason.trim() ? 'pointer' : 'not-allowed',
+                            opacity: reason.trim() ? 1 : 0.5,
+                            fontSize: 13,
+                        }}
+                    >
+                        {isSubmitting ? 'saving...' : 'resume session'}
+                    </button>
+                    <button
+                        className={'panel'}
+                        onClick={handleReflectDeeper}
+                        disabled={isSubmitting || !reason.trim()}
+                        style={{
+                            flex: 1,
+                            background: reason.trim() ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.3)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            padding: '8px 12px',
+                            borderRadius: 6,
+                            cursor: reason.trim() ? 'pointer' : 'not-allowed',
+                            opacity: reason.trim() ? 1 : 0.5,
+                            fontSize: 13,
+                        }}
+                    >
+                        {isSubmitting ? 'saving...' : 'reflect deeper'}
+                    </button>
+                </div>
             </div>
         </>
     );

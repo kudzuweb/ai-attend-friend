@@ -180,6 +180,11 @@ export function registerIPCHandlers(
         return await sessionManager.saveReflectionAndResume(reflection);
     });
 
+    ipcMain.handle('session:save-reflection-and-end-session', async (_evt, reflection: string) => {
+        console.log('[IPCHandlers] session:save-reflection-and-end-session called');
+        return await sessionManager.saveReflectionAndEndSession(reflection);
+    });
+
     // ========== Distraction Handlers ==========
 
     ipcMain.handle('session:save-distraction-reason', async (_evt, reason: string) => {

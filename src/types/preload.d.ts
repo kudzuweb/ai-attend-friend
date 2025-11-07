@@ -89,6 +89,7 @@ declare global {
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             pauseSession: () => Promise<void>;
             saveReflectionAndResume: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            saveReflectionAndEndSession: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             quitApp: () => Promise<void>;
         };
     }

@@ -308,6 +308,38 @@ export class SessionManager {
     }
 
     /**
+     * Save reflection and end session (called from deeper reflection view)
+     */
+    async saveReflectionAndEndSession(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
+        console.log('[SessionManager] saveReflectionAndEndSession called');
+
+        if (!this.sessionState.isActive) {
+            console.log('[SessionManager] Error: no active session');
+            return { ok: false, error: 'no active session' };
+        }
+
+        // Create reflection object
+        const reflection: Reflection = {
+            timestamp: Date.now(),
+            content: reflectionContent,
+        };
+
+        // Save reflection to session
+        if (this.currentSessionId && this.currentSessionDate) {
+            await this.storageService.addReflectionToSession(
+                this.currentSessionId,
+                this.currentSessionDate,
+                reflection
+            );
+        }
+
+        // End the session
+        this.stopSession();
+
+        return { ok: true };
+    }
+
+    /**
      * Handle system wake event
      */
     handleSystemWake(): void {

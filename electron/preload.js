@@ -143,6 +143,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:pause'),
     saveReflectionAndResume: (reflection) =>
         ipcRenderer.invoke('session:save-reflection-and-resume', reflection),
+    saveReflectionAndEndSession: (reflection) =>
+        ipcRenderer.invoke('session:save-reflection-and-end-session', reflection),
 })
 
 contextBridge.exposeInMainWorld('api', api)

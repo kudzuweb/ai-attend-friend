@@ -29,6 +29,22 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
         setIsSubmitting(false);
     }
 
+    async function handleSaveAndEndSession() {
+        setIsSubmitting(true);
+
+        const res = await window.api.saveReflectionAndEndSession(reflection);
+
+        if (res.ok) {
+            setReflection('');
+            await window.api.hidePanel();
+            onComplete();
+        } else {
+            console.error('Failed to save reflection and end session:', res.error);
+        }
+
+        setIsSubmitting(false);
+    }
+
     return (
         <>
             <h2 className={'panel'} style={{ fontWeight: 600 }}>take a moment</h2>
@@ -48,11 +64,14 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
                     padding: '10px 12px',
                     color: 'inherit',
                     fontSize: 14,
+                    lineHeight: 1.5,
                     width: '100%',
                     minHeight: 100,
+                    maxHeight: 150,
                     boxSizing: 'border-box',
-                    resize: 'vertical',
+                    resize: 'none',
                     fontFamily: 'inherit',
+                    overflowY: 'auto',
                 }}
             />
 
@@ -72,7 +91,22 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
                         opacity: isSubmitting ? 0.5 : 1,
                     }}
                 >
-                    {isSubmitting ? 'resuming...' : 'resume session'}
+                    {isSubmitting ? 'saving...' : 'resume session'}
+                </button>
+                <button
+                    className={'panel'}
+                    onClick={handleSaveAndEndSession}
+                    disabled={isSubmitting}
+                    style={{
+                        background: 'rgba(0,0,0,0.2)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '8px 16px',
+                        borderRadius: 6,
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: isSubmitting ? 0.5 : 1,
+                    }}
+                >
+                    {isSubmitting ? 'saving...' : 'save and end session'}
                 </button>
             </div>
         </>

@@ -64,11 +64,7 @@ export default function PanelApp() {
                     />
                 );
             case 'tasks':
-                return (
-                    <TasksView
-                        onClose={() => setCurrentView('analysis')}
-                    />
-                );
+                return <TasksView />;
             case 'distracted-reason':
                 return (
                     <DistractedReasonView

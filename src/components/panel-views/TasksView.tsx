@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 
-interface TasksViewProps {
-    onClose: () => void;
-}
-
-export default function TasksView({ onClose }: TasksViewProps) {
+export default function TasksView() {
     const [tasks, setTasks] = useState<[string, string, string] | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -36,11 +32,6 @@ export default function TasksView({ onClose }: TasksViewProps) {
     return (
         <>
             <h2 className={'panel'} style={{ fontWeight: 600 }}>tasks</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className={'panel'} onClick={onClose}>close</button>
-                </div>
-            </div>
 
             {loading ? (
                 <div style={{ padding: '16px 0', opacity: 0.7 }}>

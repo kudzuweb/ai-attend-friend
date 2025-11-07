@@ -47,17 +47,21 @@ output format
 
         - looks like you were deep in your editor for a while, still working on the same file. steady progress—no major shifts.
 
-        - you moved between the IDE and terminal, running tests and fixing errors. coherent workflow, all related to the same task.
+        - you moved between the document and research tabs, pulling in references and writing steadily. coherent workflow, all related to the same piece.
+
+        - the design file stayed open, with gradual changes to the layout visible across screenshots. focused iteration on the same design.
+
+        - you worked through the spreadsheet, adding data and updating formulas. all attention on the same task.
 
     - when distracted (scattered attention)
 
-        - you hopped between your editor, a browser tab, and what looks like email, then back again. attention scattered across unrelated things.
+        - you hopped between several different documents, a browser tab, and what looks like email, then back again. attention scattered across unrelated things.
 
-        - there's a quick jump from coding to youtube, then reddit, then back. might've been a break—or a slide off-task.
+        - there's a quick jump from your work document to youtube, then social media, then back. might've been a break—or a slide off-task.
 
     - when distracted (idle/away)
 
-        - the IDE stayed open the whole time, but nothing changed. same code visible, same cursor position. looks like you stepped away.
+        - the document stayed open the whole time, but nothing changed. same text visible, same cursor position. looks like you stepped away.
 
         - screen looks frozen—same browser tab, same scroll position across all five screenshots. no activity detected.
 

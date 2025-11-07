@@ -487,7 +487,7 @@ async function sendRecentImagestoLLM(limit = 10) {
     return { ok: true as const, structured: structured, raw: responseString, count: recent.length };
 }
 
-async function generateFinalSummary(summaries: string[], interruptions: SessionInterruption[] = []): Promise<string | null> {
+async function generateFinalSummary(summaries: string[], interruptions: SessionInterruption[] = [], focusGoal: string = ''): Promise<string | null> {
     if (summaries.length === 0) {
         return null;
     }
@@ -498,6 +498,11 @@ async function generateFinalSummary(summaries: string[], interruptions: SessionI
     if (!apiKey) return null;
 
     const summaryText = summaries.map((s, i) => `${i + 1}. ${s}`).join('\n');
+
+    let focusGoalText = '';
+    if (focusGoal) {
+        focusGoalText = `\n\nUser's stated focus goal at the start of the session: "${focusGoal}"`;
+    }
 
     let interruptionText = '';
     if (interruptions.length > 0) {
@@ -523,7 +528,7 @@ async function generateFinalSummary(summaries: string[], interruptions: SessionI
             },
             {
                 'role': 'user',
-                'content': `here are the analyses from a completed work session:\n\n${summaryText}${interruptionText}`,
+                'content': `here are the analyses from a completed work session:${focusGoalText}\n\n${summaryText}${interruptionText}`,
             },
             ],
         }),
@@ -717,7 +722,8 @@ ipcMain.handle('session:stop', async () => {
             if (session && session.summaries.length > 0) {
                 const finalSummary = await generateFinalSummary(
                     session.summaries,
-                    session.interruptions || []
+                    session.interruptions || [],
+                    session.focusGoal || ''
                 );
                 if (finalSummary) {
                     await sessionStorage.setFinalSummary(currentSessionId, currentSessionDate, finalSummary);

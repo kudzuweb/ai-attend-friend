@@ -8,7 +8,20 @@ interface SessionSetupViewProps {
 export default function SessionSetupView({ onComplete, onCancel }: SessionSetupViewProps) {
     const [selectedDuration, setSelectedDuration] = useState<number>(25 * 60 * 1000); // 25 mins default
     const [focusGoal, setFocusGoal] = useState<string>('');
+    const [tasks, setTasks] = useState<[string, string, string]>(['', '', '']);
+    const [showTasks, setShowTasks] = useState<boolean>(() => {
+        const saved = localStorage.getItem('tasksEnabled');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
     const dialRef = useRef<HTMLDivElement>(null);
+
+    // Sync showTasks with localStorage whenever component is rendered
+    useEffect(() => {
+        const saved = localStorage.getItem('tasksEnabled');
+        if (saved !== null) {
+            setShowTasks(JSON.parse(saved));
+        }
+    }, []);
 
     // Convert selectedDuration (in ms) to minutes for display
     const durationMinutes = selectedDuration / (60 * 1000);
@@ -18,10 +31,18 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
     };
 
     async function handleStartSession() {
-        const res = await window.api.sessionStart(selectedDuration, focusGoal);
+        const tasksToSend = showTasks ? tasks : undefined;
+        const hasTasks = tasksToSend && tasksToSend.some(t => t.trim());
+
+        const res = await window.api.sessionStart(selectedDuration, focusGoal, tasksToSend);
         if (res.ok) {
-            onComplete();
-            await window.api.hidePanel();
+            // Only call onComplete and hide panel if no tasks
+            // When tasks are present, the backend will handle showing the tasks view
+            if (!hasTasks) {
+                onComplete();
+                await window.api.hidePanel();
+            }
+            // When tasks are present, don't call onComplete() - let the IPC event handler manage the view change
         } else {
             console.error('Failed to start session:', res.error);
         }
@@ -29,6 +50,7 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
 
     function handleCancel() {
         setFocusGoal('');
+        setTasks(['', '', '']);
         onCancel();
         window.api.hidePanel();
     }
@@ -135,6 +157,34 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
                         boxSizing: 'border-box',
                     }}
                 />
+                {showTasks && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <label style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>priority tasks (optional)</label>
+                        {[0, 1, 2].map((index) => (
+                            <input
+                                key={index}
+                                type="text"
+                                value={tasks[index]}
+                                onChange={(e) => {
+                                    const newTasks: [string, string, string] = [...tasks] as [string, string, string];
+                                    newTasks[index] = e.target.value;
+                                    setTasks(newTasks);
+                                }}
+                                placeholder={`Task ${index + 1}`}
+                                style={{
+                                    background: 'rgba(0,0,0,0.15)',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: 5,
+                                    padding: '8px 10px',
+                                    color: 'inherit',
+                                    fontSize: 13,
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
                 <button
                     className={'panel'}
                     onClick={handleStartSession}

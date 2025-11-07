@@ -19,6 +19,7 @@ declare global {
         startTime: number;
         endTime: number;
         focusGoal: string;
+        tasks?: [string, string, string];
     };
 
     // stored session with summaries grouped by date
@@ -28,6 +29,7 @@ declare global {
         endTime: number;
         lengthMs: number;
         focusGoal: string;
+        tasks?: [string, string, string];
         interruptions: SessionInterruption[];
         summaries: string[]; // array of batch summaries captured during session
         finalSummary: string | null; // synthesized summary created when session ends
@@ -59,7 +61,7 @@ declare global {
             } | { ok: false; error: string }>;
             showPanel: (options?: { setupSession?: boolean }) => Promise<void>;
             hidePanel: () => Promise<void>;
-            sessionStart: (lengthMs: number, focusGoal: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            sessionStart: (lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionListByDate: (date: string) => Promise<{ ok: true; sessions: StoredSession[] } | { ok: false; error: string }>;
@@ -68,6 +70,9 @@ declare global {
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             onSessionSetupRequested: (callback: () => void) => void;
             requestSessionSetup: () => Promise<void>;
+            onSettingsRequested: (callback: () => void) => void;
+            requestSettings: () => Promise<void>;
+            onTasksViewRequested: (callback: () => void) => void;
             onInterruptionReflectionRequested: (callback: () => void) => void;
             sessionResumeAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionEndAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;

@@ -5,7 +5,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-    const [tasksEnabled, setTasksEnabled] = useState<boolean>(true); // TODO: Persist to localStorage
+    const [tasksEnabled, setTasksEnabled] = useState<boolean>(true);
 
     // Load settings from localStorage
     useEffect(() => {

@@ -61,42 +61,7 @@ export function registerIPCHandlers(
     // ========== AI Analysis Handlers ==========
 
     ipcMain.handle('llm:send-recent', async (_evt, limit?: number) => {
-        try {
-            const recentFiles = await screenshotService.getRecentScreenshots(limit ?? 10);
-
-            if (recentFiles.length === 0) {
-                return { ok: false as const, error: 'no images' };
-            }
-
-            // Convert files to data URLs
-            const dataUrls = await Promise.all(
-                recentFiles.map(file => screenshotService.fileToDataUrl(file))
-            );
-
-            const sessionState = sessionManager.getSessionState();
-            const res = await aiService.analyzeScreenshots(dataUrls, sessionState.focusGoal);
-
-            if (res?.ok && res?.structured) {
-                const status = res.structured.status;
-
-                // Save analysis to current session if one is active
-                const { id: sessionId, date: sessionDate } = sessionManager.getCurrentSession();
-                if (sessionId && sessionDate) {
-                    await storageService.addSummaryToSession(sessionId, sessionDate, res.structured.analysis);
-                }
-
-                if (status === 'distracted') {
-                    windowManager.showPanel();
-                    // Send analysis text to panel to trigger distraction reason view
-                    windowManager.changeView({ view: 'distracted-reason', data: res.structured.analysis });
-                } else if (status === 'focused') {
-                    windowManager.hidePanel();
-                }
-            }
-            return res;
-        } catch (e: any) {
-            return { ok: false as const, error: e?.message ?? 'send recent image handler failed' };
-        }
+        return await sessionManager.handleDistractionAnalysis(limit);
     });
 
     // ========== Panel Handlers ==========

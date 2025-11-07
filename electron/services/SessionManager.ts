@@ -64,6 +64,59 @@ export class SessionManager {
     }
 
     /**
+     * Handle distraction analysis from recent screenshots
+     */
+    async handleDistractionAnalysis(limit?: number): Promise<{
+        ok: true;
+        structured: {
+            status: 'focused' | 'distracted';
+            analysis: string;
+            suggested_prompt: string;
+        };
+        raw?: unknown;
+        count: number
+    } | { ok: false; error: string }> {
+        try {
+            const recentFiles = await this.screenshotService.getRecentScreenshots(limit ?? 10);
+
+            if (recentFiles.length === 0) {
+                return { ok: false as const, error: 'no images' };
+            }
+
+            // Convert files to data URLs
+            const dataUrls = await Promise.all(
+                recentFiles.map(file => this.screenshotService.fileToDataUrl(file))
+            );
+
+            const res = await this.aiService.analyzeScreenshots(dataUrls, this.sessionState.focusGoal);
+
+            if (res?.ok && res?.structured) {
+                const status = res.structured.status;
+
+                // Save analysis to current session if one is active
+                if (this.currentSessionId && this.currentSessionDate) {
+                    await this.storageService.addSummaryToSession(
+                        this.currentSessionId,
+                        this.currentSessionDate,
+                        res.structured.analysis
+                    );
+                }
+
+                if (status === 'distracted') {
+                    this.windowManager.showPanel();
+                    // Send analysis text to panel to trigger distraction reason view
+                    this.windowManager.changeView({ view: 'distracted-reason', data: res.structured.analysis });
+                } else if (status === 'focused') {
+                    this.windowManager.hidePanel();
+                }
+            }
+            return res;
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'distraction analysis failed' };
+        }
+    }
+
+    /**
      * Broadcast session state to all windows
      */
     private broadcastSessionState(): void {

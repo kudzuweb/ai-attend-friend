@@ -111,8 +111,8 @@ const api = Object.freeze({
     showPanel: (options) => ipcRenderer.invoke('panel:show', options),
     hidePanel: () => ipcRenderer.invoke('panel:hide'),
     // session APIs
-    sessionStart: (lengthMs, focusGoal) =>
-        ipcRenderer.invoke('session:start', lengthMs, focusGoal),
+    sessionStart: (lengthMs, focusGoal, tasks) =>
+        ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),
     sessionGetState: () =>
         ipcRenderer.invoke('session:get-state'),
     sessionStop: () =>

@@ -69,7 +69,7 @@ export class SessionManager {
     /**
      * Start a new session
      */
-    async startSession(lengthMs: number, focusGoal: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    async startSession(lengthMs: number, focusGoal: string, tasks?: [string, string, string]): Promise<{ ok: true } | { ok: false; error: string }> {
         if (this.sessionState.isActive) {
             return { ok: false, error: 'session already active' };
         }
@@ -82,10 +82,13 @@ export class SessionManager {
         this.sessionState.startTime = startTime;
         this.sessionState.endTime = endTime;
         this.sessionState.focusGoal = focusGoal;
+        if (tasks) {
+            this.sessionState.tasks = tasks;
+        }
 
         // Create session file and track session info
         try {
-            this.currentSessionId = await this.storageService.createSession(startTime, lengthMs, focusGoal);
+            this.currentSessionId = await this.storageService.createSession(startTime, lengthMs, focusGoal, tasks);
             this.currentSessionDate = this.storageService.formatDateFolder(new Date(startTime));
         } catch (e) {
             console.error('Error creating session:', e);

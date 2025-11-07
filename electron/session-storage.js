@@ -42,7 +42,7 @@ async function ensureSessionsDir(date) {
 /**
  * Create a new session file with initial data
  */
-export async function createSession(startTime, lengthMs, focusGoal = '') {
+export async function createSession(startTime, lengthMs, focusGoal = '', tasks = null) {
     const date = new Date(startTime);
     await ensureSessionsDir(date);
 
@@ -55,6 +55,7 @@ export async function createSession(startTime, lengthMs, focusGoal = '') {
         endTime: startTime + lengthMs,
         lengthMs,
         focusGoal,
+        tasks,
         interruptions: [],
         distractions: [],
         reflections: [],

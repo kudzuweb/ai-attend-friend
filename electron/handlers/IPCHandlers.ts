@@ -116,8 +116,8 @@ export function registerIPCHandlers(
 
     // ========== Session Handlers ==========
 
-    ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string) => {
-        return await sessionManager.startSession(lengthMs, focusGoal);
+    ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => {
+        return await sessionManager.startSession(lengthMs, focusGoal, tasks);
     });
 
     ipcMain.handle('session:get-state', () => {

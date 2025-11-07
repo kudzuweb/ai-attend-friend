@@ -230,20 +230,16 @@ export class SessionManager {
     }
 
     /**
-     * Resume session after interruption
+     * Save interruption reflection to session
+     * Returns true if successful, false if no active interruption
      */
-    async resumeAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
-        console.log('[SessionManager] resumeAfterInterruption called');
-
+    private async saveInterruptionReflection(reflection: string): Promise<boolean> {
         if (!this.sessionState.isActive || !this.currentInterruption) {
-            console.log('[SessionManager] Error: no active interruption');
-            return { ok: false, error: 'no active interruption' };
+            return false;
         }
 
-        // Store user's reflection
         this.currentInterruption.userReflection = reflection;
 
-        // Save interruption to session
         if (this.currentSessionId && this.currentSessionDate) {
             await this.storageService.addInterruptionToSession(
                 this.currentSessionId,
@@ -252,10 +248,39 @@ export class SessionManager {
             );
         }
 
-        // Adjust session end time by adding the sleep duration
-        this.sessionState.endTime += this.currentInterruption.durationMs;
-        console.log('[SessionManager] Adjusted session end time by', this.currentInterruption.durationMs, 'ms');
+        this.currentInterruption = null;
+        return true;
+    }
 
+    /**
+     * Save reflection to current session
+     * Returns true if successful, false if no active session
+     */
+    private async saveReflection(content: string): Promise<boolean> {
+        if (!this.sessionState.isActive) {
+            return false;
+        }
+
+        const reflection: Reflection = {
+            timestamp: Date.now(),
+            content: content,
+        };
+
+        if (this.currentSessionId && this.currentSessionDate) {
+            await this.storageService.addReflectionToSession(
+                this.currentSessionId,
+                this.currentSessionDate,
+                reflection
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Resume session and screenshot timers
+     */
+    private resumeSessionTimers(): void {
         // Resume the session timer with remaining time
         this.sessionTimer = setTimeout(async () => {
             await this.stopSession();
@@ -268,9 +293,32 @@ export class SessionManager {
                 this.stopScreenshotTimer();
             }
         }, 30_000);
+    }
 
-        // Clear interruption state
-        this.currentInterruption = null;
+    /**
+     * Resume session after interruption
+     */
+    async resumeAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
+        console.log('[SessionManager] resumeAfterInterruption called');
+
+        if (!this.currentInterruption) {
+            console.log('[SessionManager] Error: no active interruption');
+            return { ok: false, error: 'no active interruption' };
+        }
+
+        // Adjust session end time by adding the sleep duration
+        const interruptionDuration = this.currentInterruption.durationMs;
+        this.sessionState.endTime += interruptionDuration;
+        console.log('[SessionManager] Adjusted session end time by', interruptionDuration, 'ms');
+
+        // Save interruption reflection
+        if (!await this.saveInterruptionReflection(reflection)) {
+            console.log('[SessionManager] Error: could not save interruption reflection');
+            return { ok: false, error: 'no active interruption' };
+        }
+
+        // Resume timers
+        this.resumeSessionTimers();
 
         // Hide panel
         this.windowManager.hidePanel();
@@ -285,24 +333,11 @@ export class SessionManager {
     async endAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
         console.log('[SessionManager] endAfterInterruption called');
 
-        if (!this.sessionState.isActive || !this.currentInterruption) {
+        // Save interruption reflection
+        if (!await this.saveInterruptionReflection(reflection)) {
+            console.log('[SessionManager] Error: no active interruption');
             return { ok: false, error: 'no active interruption' };
         }
-
-        // Store user's reflection
-        this.currentInterruption.userReflection = reflection;
-
-        // Save interruption to session
-        if (this.currentSessionId && this.currentSessionDate) {
-            await this.storageService.addInterruptionToSession(
-                this.currentSessionId,
-                this.currentSessionDate,
-                this.currentInterruption
-            );
-        }
-
-        // Clear interruption state
-        this.currentInterruption = null;
 
         // End the session
         await this.stopSession();
@@ -321,33 +356,11 @@ export class SessionManager {
             return { ok: false, error: 'no active session' };
         }
 
-        // Create reflection object
-        const reflection: Reflection = {
-            timestamp: Date.now(),
-            content: reflectionContent,
-        };
-
         // Save reflection to session
-        if (this.currentSessionId && this.currentSessionDate) {
-            await this.storageService.addReflectionToSession(
-                this.currentSessionId,
-                this.currentSessionDate,
-                reflection
-            );
-        }
+        await this.saveReflection(reflectionContent);
 
-        // Resume the session timer with remaining time
-        this.sessionTimer = setTimeout(async () => {
-            await this.stopSession();
-            this.windowManager.showPanel();
-        }, this.remainingSessionTime);
-
-        // Resume screenshot timer
-        this.screenshotTimer = setInterval(() => {
-            if (!this.sessionState.isActive) {
-                this.stopScreenshotTimer();
-            }
-        }, 30_000);
+        // Resume timers
+        this.resumeSessionTimers();
 
         // Hide panel
         this.windowManager.hidePanel();
@@ -367,20 +380,8 @@ export class SessionManager {
             return { ok: false, error: 'no active session' };
         }
 
-        // Create reflection object
-        const reflection: Reflection = {
-            timestamp: Date.now(),
-            content: reflectionContent,
-        };
-
         // Save reflection to session
-        if (this.currentSessionId && this.currentSessionDate) {
-            await this.storageService.addReflectionToSession(
-                this.currentSessionId,
-                this.currentSessionDate,
-                reflection
-            );
-        }
+        await this.saveReflection(reflectionContent);
 
         // End the session
         await this.stopSession();

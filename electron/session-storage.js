@@ -56,6 +56,8 @@ export async function createSession(startTime, lengthMs, focusGoal = '') {
         lengthMs,
         focusGoal,
         interruptions: [],
+        distractions: [],
+        reflections: [],
         summaries: [],
         finalSummary: null,
     };
@@ -117,6 +119,54 @@ export async function addInterruptionToSession(sessionId, dateFolder, interrupti
         return true;
     } catch (e) {
         console.error('Error adding interruption to session:', e);
+        return false;
+    }
+}
+
+/**
+ * Add a distraction reason to an existing session
+ */
+export async function addDistractionToSession(sessionId, dateFolder, distraction) {
+    try {
+        const session = await loadSession(sessionId, dateFolder);
+        if (!session) return false;
+
+        // Ensure distractions array exists (for backwards compatibility)
+        if (!session.distractions) {
+            session.distractions = [];
+        }
+
+        session.distractions.push(distraction);
+
+        const sessionPath = path.join(getBaseSessionsDir(), dateFolder, `${sessionId}.json`);
+        await fs.writeFile(sessionPath, JSON.stringify(session, null, 2), 'utf-8');
+        return true;
+    } catch (e) {
+        console.error('Error adding distraction to session:', e);
+        return false;
+    }
+}
+
+/**
+ * Add a reflection to an existing session
+ */
+export async function addReflectionToSession(sessionId, dateFolder, reflection) {
+    try {
+        const session = await loadSession(sessionId, dateFolder);
+        if (!session) return false;
+
+        // Ensure reflections array exists (for backwards compatibility)
+        if (!session.reflections) {
+            session.reflections = [];
+        }
+
+        session.reflections.push(reflection);
+
+        const sessionPath = path.join(getBaseSessionsDir(), dateFolder, `${sessionId}.json`);
+        await fs.writeFile(sessionPath, JSON.stringify(session, null, 2), 'utf-8');
+        return true;
+    } catch (e) {
+        console.error('Error adding reflection to session:', e);
         return false;
     }
 }

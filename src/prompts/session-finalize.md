@@ -10,17 +10,21 @@ you will receive:
 1. (if provided) the user's stated focus goal at the start of the session—what they said they wanted to work on
 2. an array of analyses, each describing a 5-minute window of activity from a continuous work session
 3. (if applicable) interruption events where the system went to sleep, with the user's reflection on what pulled them away
+4. (if applicable) distraction reasons where the user noted what pulled them off-task during the session
+5. (if applicable) deeper reflections where the user paused to elaborate on their feelings and attention patterns
 
 your job:
 1. read through the analyses to understand the arc of the session—what the user was working on, how their focus evolved, any context switches or returns to focus.
 2. if a focus goal was provided, consider whether the session aligned with that intention. you don't need to explicitly state "they did/didn't meet their goal," but let it inform your understanding of whether the session was coherent or scattered.
 3. if there were interruptions, weave them into the narrative naturally. these represent moments when the user stepped away (indicated by the system sleeping). use their reflection to add context about why.
-4. synthesize these into a single paragraph that creates a useful record of the session for future reference.
-5. capture both what the user accomplished and how they worked—the narrative matters as much as the outcome.
-6. maintain the calm, observational tone from the session analysis—factual, quiet, human.
-7. if the session shows focused work punctuated by brief breaks or context switches, acknowledge that flow naturally without judgment.
-8. if the session is fragmented or shows significant drift, reflect that in the tone without being critical.
-9. remember: this summary is creating a record in text form that will be read later to understand how this session went.
+4. if there were distraction reasons, consider them as the user's own acknowledgment of moments when they got pulled off-task. these provide insight into what disrupted their focus—use them to inform the session narrative.
+5. if there were deeper reflections, these represent moments when the user paused the session timer to check in with themselves. these are particularly valuable—they show self-awareness and intentional processing of their experience. treat them with appropriate weight in the narrative.
+6. synthesize these into a single paragraph that creates a useful record of the session for future reference.
+7. capture both what the user accomplished and how they worked—the narrative matters as much as the outcome.
+8. maintain the calm, observational tone from the session analysis—factual, quiet, human.
+9. if the session shows focused work punctuated by brief breaks or context switches, acknowledge that flow naturally without judgment.
+10. if the session is fragmented or shows significant drift, reflect that in the tone without being critical.
+11. remember: this summary is creating a record in text form that will be read later to understand how this session went.
 
 output format
 

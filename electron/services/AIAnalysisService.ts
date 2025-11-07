@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
-import type { AnalysisResult, SessionInterruption } from '../types/session.types.js';
+import type { AnalysisResult, SessionInterruption, DistractionReason, Reflection } from '../types/session.types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,6 +192,8 @@ export class AIAnalysisService {
     async generateFinalSummary(
         summaries: string[],
         interruptions: SessionInterruption[] = [],
+        distractions: DistractionReason[] = [],
+        reflections: Reflection[] = [],
         focusGoal: string = ''
     ): Promise<string | null> {
         if (summaries.length === 0) {
@@ -221,6 +223,20 @@ export class AIAnalysisService {
             }).join('\n');
         }
 
+        let distractionText = '';
+        if (distractions.length > 0) {
+            distractionText = '\n\nDistraction reasons during the session:\n' + distractions.map((dist, i) => {
+                return `${i + 1}. User noted: "${dist.userReason}"`;
+            }).join('\n');
+        }
+
+        let reflectionText = '';
+        if (reflections.length > 0) {
+            reflectionText = '\n\nDeeper reflections during the session:\n' + reflections.map((ref, i) => {
+                return `${i + 1}. User reflected: "${ref.content}"`;
+            }).join('\n');
+        }
+
         const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: {
@@ -236,7 +252,7 @@ export class AIAnalysisService {
                 },
                 {
                     'role': 'user',
-                    'content': `here are the analyses from a completed work session:${focusGoalText}\n\n${summaryText}${interruptionText}`,
+                    'content': `here are the analyses from a completed work session:${focusGoalText}\n\n${summaryText}${interruptionText}${distractionText}${reflectionText}`,
                 },
                 ],
             }),

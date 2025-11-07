@@ -135,6 +135,16 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:resume-after-interruption', reflection),
     sessionEndAfterInterruption: (reflection) =>
         ipcRenderer.invoke('session:end-after-interruption', reflection),
+    onDistractionReasonRequested: (callback) =>
+        ipcRenderer.on('session:show-distraction-reason', (_event, analysisText) => callback(analysisText)),
+    saveDistractionReason: (reason) =>
+        ipcRenderer.invoke('session:save-distraction-reason', reason),
+    pauseSession: () =>
+        ipcRenderer.invoke('session:pause'),
+    saveReflectionAndResume: (reflection) =>
+        ipcRenderer.invoke('session:save-reflection-and-resume', reflection),
+    saveReflectionAndEndSession: (reflection) =>
+        ipcRenderer.invoke('session:save-reflection-and-end-session', reflection),
 })
 
 contextBridge.exposeInMainWorld('api', api)

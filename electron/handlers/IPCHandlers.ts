@@ -87,6 +87,8 @@ export function registerIPCHandlers(
 
                 if (status === 'distracted') {
                     windowManager.showPanel();
+                    // Send analysis text to panel to trigger distraction reason view
+                    windowManager.sendToPanel('session:show-distraction-reason', res.structured.analysis);
                 } else if (status === 'focused') {
                     windowManager.hidePanel();
                 }
@@ -132,6 +134,8 @@ export function registerIPCHandlers(
                     const finalSummary = await aiService.generateFinalSummary(
                         session.summaries,
                         session.interruptions || [],
+                        session.distractions || [],
+                        session.reflections || [],
                         session.focusGoal || ''
                     );
                     if (finalSummary) {
@@ -162,6 +166,49 @@ export function registerIPCHandlers(
     ipcMain.handle('session:end-after-interruption', async (_evt, reflection: string) => {
         console.log('[IPCHandlers] session:end-after-interruption called');
         return await sessionManager.endAfterInterruption(reflection);
+    });
+
+    // ========== Reflection Handlers ==========
+
+    ipcMain.handle('session:pause', () => {
+        console.log('[IPCHandlers] session:pause called');
+        sessionManager.pauseSession();
+    });
+
+    ipcMain.handle('session:save-reflection-and-resume', async (_evt, reflection: string) => {
+        console.log('[IPCHandlers] session:save-reflection-and-resume called');
+        return await sessionManager.saveReflectionAndResume(reflection);
+    });
+
+    ipcMain.handle('session:save-reflection-and-end-session', async (_evt, reflection: string) => {
+        console.log('[IPCHandlers] session:save-reflection-and-end-session called');
+        return await sessionManager.saveReflectionAndEndSession(reflection);
+    });
+
+    // ========== Distraction Handlers ==========
+
+    ipcMain.handle('session:save-distraction-reason', async (_evt, reason: string) => {
+        console.log('[IPCHandlers] session:save-distraction-reason called');
+        try {
+            const { id: sessionId, date: sessionDate } = sessionManager.getCurrentSession();
+            if (!sessionId || !sessionDate) {
+                return { ok: false as const, error: 'no active session' };
+            }
+
+            const distraction = {
+                timestamp: Date.now(),
+                userReason: reason,
+            };
+
+            const success = await storageService.addDistractionToSession(sessionId, sessionDate, distraction);
+            if (success) {
+                return { ok: true as const };
+            } else {
+                return { ok: false as const, error: 'failed to save distraction' };
+            }
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'unknown error' };
+        }
     });
 
     // ========== Session Retrieval Handlers ==========

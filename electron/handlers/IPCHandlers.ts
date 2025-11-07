@@ -137,34 +137,12 @@ export function registerIPCHandlers(
     });
 
     ipcMain.handle('session:stop', async () => {
-        // Generate final summary before clearing session
-        const { id: sessionId, date: sessionDate } = sessionManager.getCurrentSession();
-        if (sessionId && sessionDate) {
-            try {
-                const session = await storageService.loadSession(sessionId, sessionDate);
-                if (session && session.summaries.length > 0) {
-                    const finalSummary = await aiService.generateFinalSummary(
-                        session.summaries,
-                        session.interruptions || [],
-                        session.distractions || [],
-                        session.reflections || [],
-                        session.focusGoal || ''
-                    );
-                    if (finalSummary) {
-                        await storageService.setFinalSummary(sessionId, sessionDate, finalSummary);
-                    }
-                }
-            } catch (e) {
-                console.error('Error generating final summary:', e);
-            }
-        }
-
         // Clean up session screenshots asynchronously (non-blocking)
         // TODO: Re-enable after debugging
         // const sessionState = sessionManager.getSessionState();
         // void screenshotService.deleteSessionScreenshots(sessionState.startTime, sessionState.endTime);
 
-        sessionManager.stopSession();
+        await sessionManager.stopSession();
         return { ok: true as const };
     });
 

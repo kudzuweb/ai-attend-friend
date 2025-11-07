@@ -3,6 +3,7 @@ import type { SessionState, SessionInterruption, Reflection } from '../types/ses
 import type { WindowManager } from './WindowManager.js';
 import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
+import type { AIAnalysisService } from './AIAnalysisService.js';
 
 export class SessionManager {
     private sessionState: SessionState;
@@ -16,15 +17,18 @@ export class SessionManager {
     private windowManager: WindowManager;
     private storageService: StorageService;
     private screenshotService: ScreenshotService;
+    private aiService: AIAnalysisService;
 
     constructor(
         windowManager: WindowManager,
         storageService: StorageService,
-        screenshotService: ScreenshotService
+        screenshotService: ScreenshotService,
+        aiService: AIAnalysisService
     ) {
         this.windowManager = windowManager;
         this.storageService = storageService;
         this.screenshotService = screenshotService;
+        this.aiService = aiService;
 
         this.sessionState = {
             isActive: false,
@@ -111,8 +115,8 @@ export class SessionManager {
         }, 30_000);
 
         // Schedule session end
-        this.sessionTimer = setTimeout(() => {
-            this.stopSession();
+        this.sessionTimer = setTimeout(async () => {
+            await this.stopSession();
             // Reopen panel to show analysis
             this.windowManager.showPanel();
         }, lengthMs);
@@ -121,9 +125,51 @@ export class SessionManager {
     }
 
     /**
+     * Generate final summary for the current session
+     * Called before session ends to create AI-generated summary
+     */
+    private async generateFinalSummary(): Promise<void> {
+        if (!this.currentSessionId || !this.currentSessionDate) {
+            return;
+        }
+
+        try {
+            const session = await this.storageService.loadSession(
+                this.currentSessionId,
+                this.currentSessionDate
+            );
+
+            if (session && session.summaries.length > 0) {
+                const finalSummary = await this.aiService.generateFinalSummary(
+                    session.summaries,
+                    session.interruptions || [],
+                    session.distractions || [],
+                    session.reflections || [],
+                    session.focusGoal || ''
+                );
+
+                if (finalSummary) {
+                    await this.storageService.setFinalSummary(
+                        this.currentSessionId,
+                        this.currentSessionDate,
+                        finalSummary
+                    );
+                }
+            }
+        } catch (e) {
+            console.error('[SessionManager] Error generating final summary:', e);
+        }
+    }
+
+    /**
      * Stop the current session
      */
-    stopSession(): void {
+    async stopSession(): Promise<void> {
+        console.log('[SessionManager] stopSession called');
+
+        // Generate final summary before clearing session
+        await this.generateFinalSummary();
+
         this.sessionState.isActive = false;
         this.sessionState.lengthMs = 0;
         this.sessionState.startTime = 0;
@@ -211,8 +257,8 @@ export class SessionManager {
         console.log('[SessionManager] Adjusted session end time by', this.currentInterruption.durationMs, 'ms');
 
         // Resume the session timer with remaining time
-        this.sessionTimer = setTimeout(() => {
-            this.stopSession();
+        this.sessionTimer = setTimeout(async () => {
+            await this.stopSession();
             this.windowManager.showPanel();
         }, this.remainingSessionTime);
 
@@ -259,7 +305,7 @@ export class SessionManager {
         this.currentInterruption = null;
 
         // End the session
-        this.stopSession();
+        await this.stopSession();
 
         return { ok: true };
     }
@@ -291,8 +337,8 @@ export class SessionManager {
         }
 
         // Resume the session timer with remaining time
-        this.sessionTimer = setTimeout(() => {
-            this.stopSession();
+        this.sessionTimer = setTimeout(async () => {
+            await this.stopSession();
             this.windowManager.showPanel();
         }, this.remainingSessionTime);
 
@@ -337,7 +383,7 @@ export class SessionManager {
         }
 
         // End the session
-        this.stopSession();
+        await this.stopSession();
 
         return { ok: true };
     }

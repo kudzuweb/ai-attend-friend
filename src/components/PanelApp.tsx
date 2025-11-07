@@ -28,6 +28,16 @@ export default function PanelApp() {
         });
     }, []);
 
+    // Listen for session state changes and navigate away from tasks view if session ends
+    useEffect(() => {
+        window.api.onSessionUpdated((state) => {
+            // If session becomes inactive, go back to analysis view
+            if (!state.isActive && currentView === 'tasks') {
+                setCurrentView('analysis');
+            }
+        });
+    }, [currentView]);
+
     function renderView() {
         switch (currentView) {
             case 'interruption-reflection':

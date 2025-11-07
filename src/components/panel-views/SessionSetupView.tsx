@@ -144,7 +144,8 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
                 <input
                     type="text"
                     value={focusGoal}
-                    onChange={(e) => setFocusGoal(e.target.value)}
+                    onChange={(e) => setFocusGoal(e.target.value.slice(0, 280))}
+                    maxLength={280}
                     placeholder="What would you like to focus on?"
                     style={{
                         background: 'rgba(0,0,0,0.2)',
@@ -167,9 +168,10 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
                                 value={tasks[index]}
                                 onChange={(e) => {
                                     const newTasks: [string, string, string] = [...tasks] as [string, string, string];
-                                    newTasks[index] = e.target.value;
+                                    newTasks[index] = e.target.value.slice(0, 280);
                                     setTasks(newTasks);
                                 }}
+                                maxLength={280}
                                 placeholder={`Task ${index + 1}`}
                                 style={{
                                     background: 'rgba(0,0,0,0.15)',

@@ -4,6 +4,14 @@ declare global {
     // screenshot type
     type Screenshot = { dataUrl: string; capturedAt: string };
 
+    // session interruption when system sleeps
+    type SessionInterruption = {
+        suspendTime: number;
+        resumeTime: number | null;
+        durationMs: number;
+        userReflection: string | null;
+    };
+
     // session state type
     type SessionState = {
         isActive: boolean;
@@ -20,6 +28,7 @@ declare global {
         endTime: number;
         lengthMs: number;
         focusGoal: string;
+        interruptions: SessionInterruption[];
         summaries: string[]; // array of batch summaries captured during session
         finalSummary: string | null; // synthesized summary created when session ends
     };
@@ -59,6 +68,10 @@ declare global {
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             onSessionSetupRequested: (callback: () => void) => void;
             requestSessionSetup: () => Promise<void>;
+            onInterruptionReflectionRequested: (callback: () => void) => void;
+            sessionResumeAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            sessionEndAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            quitApp: () => Promise<void>;
         };
     }
     // media track constraints for chromium to allow more granular config

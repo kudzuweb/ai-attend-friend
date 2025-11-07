@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from "react";
 export default function PanelApp() {
     // session setup state
     const [inSessionSetup, setInSessionSetup] = useState(false);
+    // interruption reflection state
+    const [showInterruptionReflection, setShowInterruptionReflection] = useState(false);
+    const [interruptionReflection, setInterruptionReflection] = useState<string>('');
     // refs
     const dialRef = useRef<HTMLDivElement>(null);
 
@@ -24,6 +27,12 @@ export default function PanelApp() {
 
         window.api.onSessionSetupRequested(() => {
             setInSessionSetup(true);
+        });
+
+        window.api.onInterruptionReflectionRequested(() => {
+            console.log('[PanelApp] onInterruptionReflectionRequested fired!');
+            setShowInterruptionReflection(true);
+            console.log('[PanelApp] showInterruptionReflection set to true');
         });
 
         // get initial session state
@@ -67,6 +76,33 @@ export default function PanelApp() {
         setSelectedDuration(Math.max(1, minutes) * 60 * 1000); // at least 1 minute
     };
 
+    // Handle resuming session after interruption
+    async function handleResumeAfterInterruption() {
+        console.log('[PanelApp] handleResumeAfterInterruption called, reflection:', interruptionReflection);
+        const res = await window.api.sessionResumeAfterInterruption(interruptionReflection);
+        console.log('[PanelApp] Resume result:', res);
+        if (res.ok) {
+            setShowInterruptionReflection(false);
+            setInterruptionReflection('');
+        } else {
+            console.error('Failed to resume session:', res.error);
+        }
+    }
+
+    // Handle ending session after interruption
+    async function handleEndAfterInterruption() {
+        console.log('[PanelApp] handleEndAfterInterruption called, reflection:', interruptionReflection);
+        const res = await window.api.sessionEndAfterInterruption(interruptionReflection);
+        console.log('[PanelApp] End result:', res);
+        if (res.ok) {
+            setShowInterruptionReflection(false);
+            setInterruptionReflection('');
+            await window.api.hidePanel();
+        } else {
+            console.error('Failed to end session:', res.error);
+        }
+    }
+
     // Set up non-passive wheel listener for the dial
     useEffect(() => {
         const dial = dialRef.current;
@@ -92,7 +128,63 @@ export default function PanelApp() {
     return (
         <>
             <div className={'panel-root'}>
-                {inSessionSetup ? (
+                {showInterruptionReflection ? (
+                    // Interruption reflection UI
+                    <>
+                        <h2 className={'panel'} style={{ fontWeight: 600 }}>your screen went to sleep</h2>
+                        <p style={{ fontSize: 14, opacity: 0.8, marginTop: 8 }}>
+                            What pulled you away?
+                        </p>
+                        <textarea
+                            value={interruptionReflection}
+                            onChange={(e) => setInterruptionReflection(e.target.value)}
+                            placeholder="I stepped away for..."
+                            style={{
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 6,
+                                padding: '10px 12px',
+                                color: 'inherit',
+                                fontSize: 14,
+                                width: '100%',
+                                minHeight: 80,
+                                boxSizing: 'border-box',
+                                resize: 'vertical',
+                                fontFamily: 'inherit',
+                            }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                            <button
+                                className={'panel'}
+                                onClick={handleResumeAfterInterruption}
+                                style={{
+                                    background: '#8B7355',
+                                    border: 'none',
+                                    padding: '10px 16px',
+                                    borderRadius: 6,
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                resume session
+                            </button>
+                            <button
+                                className={'panel'}
+                                onClick={handleEndAfterInterruption}
+                                style={{
+                                    background: 'rgba(0,0,0,0.2)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    padding: '8px 16px',
+                                    borderRadius: 6,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                end session
+                            </button>
+                        </div>
+                    </>
+                ) : inSessionSetup ? (
                     // Session setup UI
                     <>
                         <h2 className={'panel'} style={{ fontWeight: 600 }}>new session</h2>

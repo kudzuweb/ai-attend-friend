@@ -1,4 +1,4 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, shell, systemPreferences } from 'electron';
+import { app, BrowserWindow, desktopCapturer, ipcMain, shell, systemPreferences, powerMonitor } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
@@ -21,6 +21,14 @@ interface SessionState {
     focusGoal: string;
 }
 
+// interruption event when system sleeps during session
+interface SessionInterruption {
+    suspendTime: number;
+    resumeTime: number | null;
+    durationMs: number;
+    userReflection: string | null;
+}
+
 // stored session with summaries grouped by date
 interface StoredSession {
     id: string;
@@ -28,6 +36,7 @@ interface StoredSession {
     endTime: number;
     lengthMs: number;
     focusGoal: string;
+    interruptions: SessionInterruption[];
     summaries: string[];
     finalSummary: string | null;
 }
@@ -49,6 +58,10 @@ let currentSessionDate: string | null = null;
 
 // track if we need to show session setup after panel loads
 let shouldShowSessionSetup = false;
+
+// track interruption state
+let currentInterruption: SessionInterruption | null = null;
+let remainingSessionTime: number = 0;
 
 const CIRCLE_SIZE = 200;
 const PANEL_WIDTH = 440;
@@ -474,7 +487,7 @@ async function sendRecentImagestoLLM(limit = 10) {
     return { ok: true as const, structured: structured, raw: responseString, count: recent.length };
 }
 
-async function generateFinalSummary(summaries: string[]): Promise<string | null> {
+async function generateFinalSummary(summaries: string[], interruptions: SessionInterruption[] = []): Promise<string | null> {
     if (summaries.length === 0) {
         return null;
     }
@@ -485,6 +498,15 @@ async function generateFinalSummary(summaries: string[]): Promise<string | null>
     if (!apiKey) return null;
 
     const summaryText = summaries.map((s, i) => `${i + 1}. ${s}`).join('\n');
+
+    let interruptionText = '';
+    if (interruptions.length > 0) {
+        interruptionText = '\n\nInterruptions during the session:\n' + interruptions.map((int, i) => {
+            const duration = Math.round(int.durationMs / 60000); // convert to minutes
+            const reflection = int.userReflection || 'no reflection provided';
+            return `${i + 1}. System went to sleep for ${duration} minutes. User noted: "${reflection}"`;
+        }).join('\n');
+    }
 
     const res = await fetch(`${baseUrl}/v1/chat/completions`, {
         method: 'POST',
@@ -501,7 +523,7 @@ async function generateFinalSummary(summaries: string[]): Promise<string | null>
             },
             {
                 'role': 'user',
-                'content': `here are the analyses from a completed work session:\n\n${summaryText}`,
+                'content': `here are the analyses from a completed work session:\n\n${summaryText}${interruptionText}`,
             },
             ],
         }),
@@ -693,7 +715,10 @@ ipcMain.handle('session:stop', async () => {
         try {
             const session = await sessionStorage.loadSession(currentSessionId, currentSessionDate);
             if (session && session.summaries.length > 0) {
-                const finalSummary = await generateFinalSummary(session.summaries);
+                const finalSummary = await generateFinalSummary(
+                    session.summaries,
+                    session.interruptions || []
+                );
                 if (finalSummary) {
                     await sessionStorage.setFinalSummary(currentSessionId, currentSessionDate, finalSummary);
                 }
@@ -710,6 +735,93 @@ ipcMain.handle('session:stop', async () => {
     // void deleteSessionScreenshots(startTime, endTime);
 
     stopSession();
+    return { ok: true as const };
+});
+
+// interruption handlers
+ipcMain.handle('session:resume-after-interruption', async (_evt, reflection: string) => {
+    console.log('[IPC] session:resume-after-interruption called. reflection:', reflection);
+    console.log('[IPC] sessionState.isActive:', sessionState.isActive, 'currentInterruption:', currentInterruption);
+
+    if (!sessionState.isActive || !currentInterruption) {
+        console.log('[IPC] Returning error: no active interruption');
+        return { ok: false as const, error: 'no active interruption' };
+    }
+
+    // Store user's reflection
+    currentInterruption.userReflection = reflection;
+    console.log('[IPC] Stored reflection in interruption');
+
+    // Save interruption to session
+    if (currentSessionId && currentSessionDate) {
+        console.log('[IPC] Saving interruption to session storage');
+        await sessionStorage.addInterruptionToSession(
+            currentSessionId,
+            currentSessionDate,
+            currentInterruption
+        );
+    }
+
+    // Adjust session end time by adding the sleep duration
+    sessionState.endTime += currentInterruption.durationMs;
+    console.log('[IPC] Adjusted session end time by', currentInterruption.durationMs, 'ms');
+
+    // Resume the session timer with remaining time
+    console.log('[IPC] Resuming session timer with', remainingSessionTime, 'ms remaining');
+    sessionTimerRef = setTimeout(() => {
+        stopSession();
+        showPanel();
+    }, remainingSessionTime);
+
+    // Resume screenshot timer
+    console.log('[IPC] Resuming screenshot timer');
+    void startSessionScreenshots(0); // Will start immediately
+
+    // Clear interruption state
+    currentInterruption = null;
+    console.log('[IPC] Cleared interruption state');
+
+    // Hide panel
+    console.log('[IPC] Hiding panel');
+    panelWin?.hide();
+
+    broadcastSessionState();
+    console.log('[IPC] Broadcasted session state, returning success');
+    return { ok: true as const };
+});
+
+ipcMain.handle('session:end-after-interruption', async (_evt, reflection: string) => {
+    console.log('[IPC] session:end-after-interruption called. reflection:', reflection);
+    console.log('[IPC] sessionState.isActive:', sessionState.isActive, 'currentInterruption:', currentInterruption);
+
+    if (!sessionState.isActive || !currentInterruption) {
+        console.log('[IPC] Returning error: no active interruption');
+        return { ok: false as const, error: 'no active interruption' };
+    }
+
+    // Store user's reflection
+    currentInterruption.userReflection = reflection;
+    console.log('[IPC] Stored reflection in interruption');
+
+    // Save interruption to session
+    if (currentSessionId && currentSessionDate) {
+        console.log('[IPC] Saving interruption to session storage');
+        await sessionStorage.addInterruptionToSession(
+            currentSessionId,
+            currentSessionDate,
+            currentInterruption
+        );
+    }
+
+    // Clear interruption state
+    currentInterruption = null;
+    console.log('[IPC] Cleared interruption state');
+
+    // End the session
+    console.log('[IPC] Calling stopSession()');
+    stopSession();
+
+    console.log('[IPC] Returning success');
     return { ok: true as const };
 });
 
@@ -745,8 +857,144 @@ ipcMain.handle('session:get', async (_evt, sessionId: string, dateString: string
 });
 
 
+// Set up power monitoring for session interruptions
+// Note: macOS typically fires lock-screen/unlock-screen when display sleeps,
+// while suspend/resume fires when the system actually goes to sleep
+function setupPowerMonitoring() {
+    console.log('[PowerMonitor] Setting up power monitoring listeners');
+    console.log('[PowerMonitor] powerMonitor available:', !!powerMonitor);
+
+    // Listen for system suspend (actual sleep, not just display sleep)
+    powerMonitor.on('suspend', () => {
+        console.log('[PowerMonitor] suspend event fired. sessionState.isActive:', sessionState.isActive);
+
+        if (!sessionState.isActive) {
+            console.log('[PowerMonitor] No active session, ignoring suspend');
+            return;
+        }
+
+        console.log('[PowerMonitor] System going to sleep, pausing session');
+
+        // Calculate remaining time
+        const now = Date.now();
+        remainingSessionTime = sessionState.endTime - now;
+        console.log('[PowerMonitor] Remaining time (ms):', remainingSessionTime);
+
+        // Pause session timer
+        if (sessionTimerRef) clearTimeout(sessionTimerRef);
+        if (sessionScreenshotTimerRef) clearTimeout(sessionScreenshotTimerRef);
+        console.log('[PowerMonitor] Timers paused');
+
+        // Create interruption record
+        currentInterruption = {
+            suspendTime: now,
+            resumeTime: null,
+            durationMs: 0,
+            userReflection: null,
+        };
+        console.log('[PowerMonitor] Interruption record created:', currentInterruption);
+    });
+
+    powerMonitor.on('resume', () => {
+        console.log('[PowerMonitor] resume event fired. sessionState.isActive:', sessionState.isActive, 'currentInterruption:', currentInterruption);
+
+        if (!sessionState.isActive || !currentInterruption) {
+            console.log('[PowerMonitor] No active session or no interruption, ignoring resume');
+            return;
+        }
+
+        console.log('[PowerMonitor] System woke up, showing reflection UI');
+
+        // Record resume time
+        const now = Date.now();
+        currentInterruption.resumeTime = now;
+        currentInterruption.durationMs = now - currentInterruption.suspendTime;
+        console.log('[PowerMonitor] Interruption duration (ms):', currentInterruption.durationMs);
+
+        // Show panel with reflection UI
+        console.log('[PowerMonitor] Calling showPanel()');
+        showPanel();
+        console.log('[PowerMonitor] Sending session:show-interruption-reflection event, panelWin exists:', !!panelWin);
+        panelWin?.webContents.send('session:show-interruption-reflection');
+        console.log('[PowerMonitor] Event sent');
+    });
+
+    // macOS fires lock-screen when display sleeps, not suspend
+    powerMonitor.on('lock-screen', () => {
+        console.log('[PowerMonitor] lock-screen event fired. sessionState.isActive:', sessionState.isActive);
+
+        if (!sessionState.isActive) {
+            console.log('[PowerMonitor] No active session, ignoring lock-screen');
+            return;
+        }
+
+        console.log('[PowerMonitor] Screen locked, pausing session');
+
+        // Calculate remaining time
+        const now = Date.now();
+        remainingSessionTime = sessionState.endTime - now;
+        console.log('[PowerMonitor] Remaining time (ms):', remainingSessionTime);
+
+        // Pause session timer
+        if (sessionTimerRef) clearTimeout(sessionTimerRef);
+        if (sessionScreenshotTimerRef) clearTimeout(sessionScreenshotTimerRef);
+        console.log('[PowerMonitor] Timers paused');
+
+        // Create interruption record
+        currentInterruption = {
+            suspendTime: now,
+            resumeTime: null,
+            durationMs: 0,
+            userReflection: null,
+        };
+        console.log('[PowerMonitor] Interruption record created:', currentInterruption);
+    });
+
+    powerMonitor.on('unlock-screen', () => {
+        console.log('[PowerMonitor] unlock-screen event fired. sessionState.isActive:', sessionState.isActive, 'currentInterruption:', currentInterruption);
+
+        if (!sessionState.isActive || !currentInterruption) {
+            console.log('[PowerMonitor] No active session or no interruption, ignoring unlock-screen');
+            return;
+        }
+
+        console.log('[PowerMonitor] Screen unlocked, showing reflection UI');
+
+        // Record resume time
+        const now = Date.now();
+        currentInterruption.resumeTime = now;
+        currentInterruption.durationMs = now - currentInterruption.suspendTime;
+        console.log('[PowerMonitor] Interruption duration (ms):', currentInterruption.durationMs);
+
+        // Show panel with reflection UI
+        console.log('[PowerMonitor] Calling showPanel()');
+        showPanel();
+        console.log('[PowerMonitor] Sending session:show-interruption-reflection event, panelWin exists:', !!panelWin);
+        panelWin?.webContents.send('session:show-interruption-reflection');
+        console.log('[PowerMonitor] Event sent');
+    });
+
+    // Listen for shutdown/on-ac/on-battery as well for debugging
+    powerMonitor.on('shutdown', () => {
+        console.log('[PowerMonitor] shutdown event fired');
+    });
+
+    powerMonitor.on('on-ac', () => {
+        console.log('[PowerMonitor] on-ac event fired');
+    });
+
+    powerMonitor.on('on-battery', () => {
+        console.log('[PowerMonitor] on-battery event fired');
+    });
+
+    console.log('[PowerMonitor] All listeners registered');
+}
+
 // app life cycle events
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    createWindow();
+    setupPowerMonitoring();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

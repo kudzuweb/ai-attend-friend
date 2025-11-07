@@ -129,6 +129,12 @@ const api = Object.freeze({
         ipcRenderer.on('panel:show-session-setup', () => callback()),
     requestSessionSetup: () =>
         ipcRenderer.invoke('ui:request-session-setup'),
+    onInterruptionReflectionRequested: (callback) =>
+        ipcRenderer.on('session:show-interruption-reflection', () => callback()),
+    sessionResumeAfterInterruption: (reflection) =>
+        ipcRenderer.invoke('session:resume-after-interruption', reflection),
+    sessionEndAfterInterruption: (reflection) =>
+        ipcRenderer.invoke('session:end-after-interruption', reflection),
 })
 
 contextBridge.exposeInMainWorld('api', api)

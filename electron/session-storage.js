@@ -55,6 +55,7 @@ export async function createSession(startTime, lengthMs, focusGoal = '') {
         endTime: startTime + lengthMs,
         lengthMs,
         focusGoal,
+        interruptions: [],
         summaries: [],
         finalSummary: null,
     };
@@ -92,6 +93,30 @@ export async function addSummaryToSession(sessionId, dateFolder, summary) {
         return true;
     } catch (e) {
         console.error('Error adding summary to session:', e);
+        return false;
+    }
+}
+
+/**
+ * Add an interruption to an existing session
+ */
+export async function addInterruptionToSession(sessionId, dateFolder, interruption) {
+    try {
+        const session = await loadSession(sessionId, dateFolder);
+        if (!session) return false;
+
+        // Ensure interruptions array exists (for backwards compatibility)
+        if (!session.interruptions) {
+            session.interruptions = [];
+        }
+
+        session.interruptions.push(interruption);
+
+        const sessionPath = path.join(getBaseSessionsDir(), dateFolder, `${sessionId}.json`);
+        await fs.writeFile(sessionPath, JSON.stringify(session, null, 2), 'utf-8');
+        return true;
+    } catch (e) {
+        console.error('Error adding interruption to session:', e);
         return false;
     }
 }

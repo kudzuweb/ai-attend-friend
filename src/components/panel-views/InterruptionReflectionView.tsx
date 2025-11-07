@@ -10,7 +10,7 @@ export default function InterruptionReflectionView({ onResume, onEnd }: Interrup
 
     async function handleResumeAfterInterruption() {
         console.log('[InterruptionReflectionView] handleResumeAfterInterruption called, reflection:', interruptionReflection);
-        const res = await window.api.sessionResumeAfterInterruption(interruptionReflection);
+        const res = await window.api.handleInterruption('resume', interruptionReflection);
         console.log('[InterruptionReflectionView] Resume result:', res);
         if (res.ok) {
             setInterruptionReflection('');
@@ -22,7 +22,7 @@ export default function InterruptionReflectionView({ onResume, onEnd }: Interrup
 
     async function handleEndAfterInterruption() {
         console.log('[InterruptionReflectionView] handleEndAfterInterruption called, reflection:', interruptionReflection);
-        const res = await window.api.sessionEndAfterInterruption(interruptionReflection);
+        const res = await window.api.handleInterruption('end', interruptionReflection);
         console.log('[InterruptionReflectionView] End result:', res);
         if (res.ok) {
             setInterruptionReflection('');

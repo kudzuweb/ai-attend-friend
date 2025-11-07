@@ -16,7 +16,7 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
     async function handleResumeSession() {
         setIsSubmitting(true);
 
-        const res = await window.api.saveReflectionAndResume(reflection);
+        const res = await window.api.handleReflection('resume', reflection);
 
         if (res.ok) {
             setReflection('');
@@ -32,7 +32,7 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
     async function handleSaveAndEndSession() {
         setIsSubmitting(true);
 
-        const res = await window.api.saveReflectionAndEndSession(reflection);
+        const res = await window.api.handleReflection('end', reflection);
 
         if (res.ok) {
             setReflection('');

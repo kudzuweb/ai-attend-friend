@@ -114,9 +114,22 @@ export function registerIPCHandlers(
         windowManager.requestSessionSetup();
     });
 
+    ipcMain.handle('ui:request-settings', () => {
+        console.log('[IPCHandlers] ui:request-settings received');
+        windowManager.requestSettings();
+    });
+
     // ========== Session Handlers ==========
 
     ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => {
+        const result = await sessionManager.startSession(lengthMs, focusGoal, tasks);
+
+        // If session started successfully and tasks are provided, show tasks view
+        if (result.ok && tasks && tasks.some(t => t.trim())) {
+            windowManager.showTasksView();
+        }
+
+        return result;
         return await sessionManager.startSession(lengthMs, focusGoal, tasks);
     });
 

@@ -129,6 +129,12 @@ const api = Object.freeze({
         ipcRenderer.on('panel:show-session-setup', () => callback()),
     requestSessionSetup: () =>
         ipcRenderer.invoke('ui:request-session-setup'),
+    onSettingsRequested: (callback) =>
+        ipcRenderer.on('panel:show-settings', () => callback()),
+    requestSettings: () =>
+        ipcRenderer.invoke('ui:request-settings'),
+    onTasksViewRequested: (callback) =>
+        ipcRenderer.on('panel:show-tasks', () => callback()),
     onInterruptionReflectionRequested: (callback) =>
         ipcRenderer.on('session:show-interruption-reflection', () => callback()),
     sessionResumeAfterInterruption: (reflection) =>

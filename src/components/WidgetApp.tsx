@@ -127,6 +127,14 @@ export default function WidgetApp() {
         await window.api.quitApp();
     }
 
+    // handler to open settings panel
+    async function handleOpenSettings() {
+        console.log('handleOpenSettings called');
+        await window.api.requestSettings();
+        console.log('requestSettings completed');
+        await window.api.showPanel();
+    }
+
     // render react UI, conditionally render img if available
     return (
         <>
@@ -147,6 +155,14 @@ export default function WidgetApp() {
                 {/* analyze button for dev/debugging */}
                 <button style={noDragBtnStyle} onClick={() => window.api.showPanel()}>
                     open panel
+                </button>
+                {/* settings button */}
+                <button
+                    style={{...noDragBtnStyle, background: '#666', color: 'white', padding: '6px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 12}}
+                    onClick={handleOpenSettings}
+                    title="Open settings"
+                >
+                    settings
                 </button>
                 {/* quit button */}
                 <button

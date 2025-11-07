@@ -84,6 +84,9 @@ declare global {
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             onSessionSetupRequested: (callback: () => void) => void;
             requestSessionSetup: () => Promise<void>;
+            onSettingsRequested: (callback: () => void) => void;
+            requestSettings: () => Promise<void>;
+            onTasksViewRequested: (callback: () => void) => void;
             onInterruptionReflectionRequested: (callback: () => void) => void;
             sessionResumeAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionEndAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;

@@ -15,6 +15,7 @@ export class WindowManager {
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
     private shouldShowSessionSetup = false;
+    private shouldShowSettings = false;
 
     constructor() {
         // absolute path to built preload
@@ -110,6 +111,10 @@ export class WindowManager {
                     console.log('Panel loaded, sending session setup message');
                     this.panelWindow?.webContents.send('panel:show-session-setup');
                     this.shouldShowSessionSetup = false;
+                } else if (this.shouldShowSettings) {
+                    console.log('Panel loaded, sending settings message');
+                    this.panelWindow?.webContents.send('panel:show-settings');
+                    this.shouldShowSettings = false;
                 }
             });
 
@@ -125,6 +130,11 @@ export class WindowManager {
             console.log('Panel already loaded, sending session setup message immediately');
             this.panelWindow.webContents.send('panel:show-session-setup');
             this.shouldShowSessionSetup = false;
+        } else if (this.shouldShowSettings) {
+            // Panel already exists and is loaded, send immediately
+            console.log('Panel already loaded, sending settings message immediately');
+            this.panelWindow.webContents.send('panel:show-settings');
+            this.shouldShowSettings = false;
         }
 
         this.positionPanelBelowWidget();
@@ -165,6 +175,23 @@ export class WindowManager {
     requestSessionSetup(): void {
         console.log('requestSessionSetup called, setting flag');
         this.shouldShowSessionSetup = true;
+    }
+
+    /**
+     * Request settings UI to be shown when panel opens
+     */
+    requestSettings(): void {
+        console.log('requestSettings called, setting flag');
+        this.shouldShowSettings = true;
+    }
+
+    /**
+     * Show tasks view in the panel
+     */
+    showTasksView(): void {
+        console.log('showTasksView called, showing panel and sending tasks view message');
+        this.showPanel();
+        this.panelWindow?.webContents.send('panel:show-tasks');
     }
 
     /**

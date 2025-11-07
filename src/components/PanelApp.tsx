@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import AnalysisView from "./panel-views/AnalysisView";
 import SessionSetupView from "./panel-views/SessionSetupView";
 import InterruptionReflectionView from "./panel-views/InterruptionReflectionView";
+import SettingsView from "./panel-views/SettingsView";
+import TasksView from "./panel-views/TasksView";
+
+type PanelView = 'analysis' | 'session-setup' | 'interruption-reflection' | 'settings' | 'tasks';
 import DistractedReasonView from "./panel-views/DistractedReasonView";
 import DeeperReflectionView from "./panel-views/DeeperReflectionView";
 import TasksView from "./panel-views/TasksView";
@@ -16,6 +20,16 @@ export default function PanelApp() {
     useEffect(() => {
         window.api.onSessionSetupRequested(() => {
             setCurrentView('session-setup');
+        });
+
+        window.api.onSettingsRequested(() => {
+            console.log('[PanelApp] onSettingsRequested fired!');
+            setCurrentView('settings');
+        });
+
+        window.api.onTasksViewRequested(() => {
+            console.log('[PanelApp] onTasksViewRequested fired!');
+            setCurrentView('tasks');
         });
 
         window.api.onInterruptionReflectionRequested(() => {
@@ -46,6 +60,14 @@ export default function PanelApp() {
                         onCancel={() => setCurrentView('analysis')}
                     />
                 );
+            case 'settings':
+                return (
+                    <SettingsView
+                        onClose={() => setCurrentView('analysis')}
+                    />
+                );
+            case 'tasks':
+                return <TasksView />;
             case 'distracted-reason':
                 return (
                     <DistractedReasonView

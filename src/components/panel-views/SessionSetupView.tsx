@@ -9,9 +9,21 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
     const [selectedDuration, setSelectedDuration] = useState<number>(25 * 60 * 1000); // 25 mins default
     const [focusGoal, setFocusGoal] = useState<string>('');
     const [tasks, setTasks] = useState<[string, string, string]>(['', '', '']);
+    const [showTasks, setShowTasks] = useState<boolean>(() => {
+        const saved = localStorage.getItem('tasksEnabled');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
     // TODO: Replace with actual condition when ready
     const [showTasks, setShowTasks] = useState<boolean>(true); // Placeholder state
     const dialRef = useRef<HTMLDivElement>(null);
+
+    // Sync showTasks with localStorage whenever component is rendered
+    useEffect(() => {
+        const saved = localStorage.getItem('tasksEnabled');
+        if (saved !== null) {
+            setShowTasks(JSON.parse(saved));
+        }
+    }, []);
 
     // Convert selectedDuration (in ms) to minutes for display
     const durationMinutes = selectedDuration / (60 * 1000);
@@ -21,10 +33,19 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
     };
 
     async function handleStartSession() {
+        const tasksToSend = showTasks ? tasks : undefined;
+        const hasTasks = tasksToSend && tasksToSend.some(t => t.trim());
+
+        const res = await window.api.sessionStart(selectedDuration, focusGoal, tasksToSend);
         const res = await window.api.sessionStart(selectedDuration, focusGoal, tasks);
         if (res.ok) {
-            onComplete();
-            await window.api.hidePanel();
+            // Only call onComplete and hide panel if no tasks
+            // When tasks are present, the backend will handle showing the tasks view
+            if (!hasTasks) {
+                onComplete();
+                await window.api.hidePanel();
+            }
+            // When tasks are present, don't call onComplete() - let the IPC event handler manage the view change
         } else {
             console.error('Failed to start session:', res.error);
         }

@@ -10,6 +10,7 @@ export class StorageService {
      * Create a new session file
      */
     async createSession(startTime: number, lengthMs: number, focusGoal: string = '', tasks?: [string, string, string]): Promise<string> {
+        return await (sessionStorage as any).createSession(startTime, lengthMs, focusGoal, tasks);
         return await sessionStorage.createSession(startTime, lengthMs, focusGoal, tasks);
     }
 

@@ -408,7 +408,7 @@ export class SessionManager {
 
         // Show panel with reflection UI
         this.windowManager.showPanel();
-        this.windowManager.sendToPanel('session:show-interruption-reflection');
+        this.windowManager.changeView({ view: 'interruption-reflection' });
     }
 
     /**

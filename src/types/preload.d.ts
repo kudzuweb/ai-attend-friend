@@ -24,6 +24,12 @@ declare global {
         content: string;
     };
 
+    // panel view change payload
+    type ViewChangePayload = {
+        view: 'session-setup' | 'settings' | 'tasks' | 'interruption-reflection' | 'distracted-reason' | 'analysis';
+        data?: any;
+    };
+
     // session state type
     type SessionState = {
         isActive: boolean;
@@ -82,16 +88,12 @@ declare global {
             sessionListAll: () => Promise<{ ok: true; sessions: Record<string, StoredSession[]> } | { ok: false; error: string }>;
             sessionGet: (sessionId: string, date: string) => Promise<{ ok: true; session: StoredSession } | { ok: false; error: string }>;
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
-            onSessionSetupRequested: (callback: () => void) => void;
             requestSessionSetup: () => Promise<void>;
-            onSettingsRequested: (callback: () => void) => void;
             requestSettings: () => Promise<void>;
-            onTasksViewRequested: (callback: () => void) => void;
-            onInterruptionReflectionRequested: (callback: () => void) => void;
             sessionResumeAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionEndAfterInterruption: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-            onDistractionReasonRequested: (callback: (analysisText: string) => void) => void;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+            onViewChangeRequested: (callback: (payload: ViewChangePayload) => void) => void;
             pauseSession: () => Promise<void>;
             saveReflectionAndResume: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveReflectionAndEndSession: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;

@@ -5,9 +5,12 @@ interface SettingsViewProps {
     onClose: () => void;
 }
 
+type WindowPosition = 'top-left' | 'top-center' | 'top-right';
+
 export default function SettingsView({ onClose }: SettingsViewProps) {
     const [tasksEnabled, setTasksEnabled] = useState<boolean>(true);
     const [demoMode, setDemoMode] = useState<boolean>(true);
+    const [windowPosition, setWindowPosition] = useState<WindowPosition>('top-right');
     const { theme, setTheme } = useTheme();
 
     // Load settings from localStorage
@@ -20,6 +23,11 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         const savedDemo = localStorage.getItem('demoMode');
         if (savedDemo !== null) {
             setDemoMode(JSON.parse(savedDemo));
+        }
+
+        const savedPosition = localStorage.getItem('windowPosition') as WindowPosition;
+        if (savedPosition && ['top-left', 'top-center', 'top-right'].includes(savedPosition)) {
+            setWindowPosition(savedPosition);
         }
     }, []);
 
@@ -38,6 +46,15 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
     const handleThemeChange = (newTheme: Theme) => {
         setTheme(newTheme);
+    };
+
+    const handlePositionChange = async (newPosition: WindowPosition) => {
+        setWindowPosition(newPosition);
+        localStorage.setItem('windowPosition', newPosition);
+        // Call IPC to reposition window
+        if (window.api?.setWindowPosition) {
+            await window.api.setWindowPosition(newPosition);
+        }
     };
 
     return (
@@ -67,6 +84,30 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                         onClick={() => handleThemeChange('system')}
                     >
                         System
+                    </button>
+                </div>
+            </div>
+
+            <div className="form-section mb-16">
+                <label>Window Position</label>
+                <div className="button-row-equal">
+                    <button
+                        className={windowPosition === 'top-left' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handlePositionChange('top-left')}
+                    >
+                        Top Left
+                    </button>
+                    <button
+                        className={windowPosition === 'top-center' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handlePositionChange('top-center')}
+                    >
+                        Top Center
+                    </button>
+                    <button
+                        className={windowPosition === 'top-right' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handlePositionChange('top-right')}
+                    >
+                        Top Right
                     </button>
                 </div>
             </div>

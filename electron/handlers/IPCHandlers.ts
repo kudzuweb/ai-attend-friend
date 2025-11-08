@@ -74,6 +74,11 @@ export function registerIPCHandlers(
         windowManager.hidePanel();
     });
 
+    ipcMain.handle('window:set-position', (_evt, position: 'top-left' | 'top-center' | 'top-right') => {
+        console.log('[IPCHandlers] window:set-position received:', position);
+        windowManager.setWindowPosition(position);
+    });
+
     ipcMain.handle('ui:request-session-setup', () => {
         console.log('[IPCHandlers] ui:request-session-setup received');
         windowManager.requestSessionSetup();

@@ -60,6 +60,14 @@ export default function WidgetApp() {
         window.api.sessionGetState().then(setSessionState).catch(console.error);
     }, []);
 
+    // apply saved window position on mount
+    useEffect(() => {
+        const savedPosition = localStorage.getItem('windowPosition') as 'top-left' | 'top-center' | 'top-right' | null;
+        if (savedPosition && ['top-left', 'top-center', 'top-right'].includes(savedPosition)) {
+            window.api.setWindowPosition(savedPosition);
+        }
+    }, []);
+
     // screenshot capture loop - only runs during active session
     useEffect(() => {
         if (!sessionState?.isActive) {

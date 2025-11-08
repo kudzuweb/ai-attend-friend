@@ -81,6 +81,7 @@ declare global {
             } | { ok: false; error: string }>;
             showPanel: (options?: { setupSession?: boolean }) => Promise<void>;
             hidePanel: () => Promise<void>;
+            setWindowPosition: (position: 'top-left' | 'top-center' | 'top-right') => Promise<void>;
             sessionStart: (lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;

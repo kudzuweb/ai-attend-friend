@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SessionState } from '../types/session.types.js';
@@ -75,6 +75,10 @@ export class WindowManager {
             x: this.widgetWindow.getBounds().x,
             y: this.widgetWindow.getBounds().y
         });
+
+        // Apply default position (top-right)
+        // This will be overridden by user preference via IPC if they've set one
+        this.setWindowPosition('top-right');
 
         this.widgetWindow.show();
 
@@ -238,6 +242,45 @@ export class WindowManager {
      */
     getPanelWindow(): BrowserWindow | null {
         return this.panelWindow;
+    }
+
+    /**
+     * Set widget window position based on preference
+     */
+    setWindowPosition(position: 'top-left' | 'top-center' | 'top-right'): void {
+        if (!this.widgetWindow) return;
+
+        const display = screen.getPrimaryDisplay();
+        const { width: screenWidth, height: screenHeight } = display.workAreaSize;
+        const { x: screenX, y: screenY } = display.workArea;
+
+        const margin = 20; // Margin from screen edges
+        let x: number;
+        const y = screenY + margin;
+
+        switch (position) {
+            case 'top-left':
+                x = screenX + margin;
+                break;
+            case 'top-center':
+                x = screenX + Math.round((screenWidth - CIRCLE_SIZE) / 2);
+                break;
+            case 'top-right':
+                x = screenX + screenWidth - CIRCLE_SIZE - margin;
+                break;
+        }
+
+        this.widgetWindow.setBounds({
+            x,
+            y,
+            width: CIRCLE_SIZE,
+            height: CIRCLE_SIZE
+        });
+
+        // Reposition panel if it's visible
+        if (this.panelWindow && this.panelWindow.isVisible()) {
+            this.positionPanelBelowWidget();
+        }
     }
 
     /**

@@ -36,7 +36,7 @@ export default function InterruptionReflectionView({ onResume, onEnd }: Interrup
     return (
         <>
             <h2 className="panel-title">Session Paused</h2>
-            <p style={{ fontSize: 14, color: '#666', marginTop: 8, marginBottom: 12 }}>
+            <p style={{ fontSize: 14, marginTop: 8, marginBottom: 12 }}>
                 What pulled you away?
             </p>
             <textarea

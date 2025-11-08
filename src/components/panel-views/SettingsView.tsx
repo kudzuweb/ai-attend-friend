@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTheme, type Theme } from "../../contexts/ThemeContext";
 
 interface SettingsViewProps {
     onClose: () => void;
@@ -6,6 +7,7 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
     const [tasksEnabled, setTasksEnabled] = useState<boolean>(true);
+    const { theme, setTheme } = useTheme();
 
     // Load settings from localStorage
     useEffect(() => {
@@ -19,6 +21,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     const handleToggleTasks = (enabled: boolean) => {
         setTasksEnabled(enabled);
         localStorage.setItem('tasksEnabled', JSON.stringify(enabled));
+    };
+
+    const handleThemeChange = (newTheme: Theme) => {
+        setTheme(newTheme);
     };
 
     return (
@@ -36,6 +42,30 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                         onClick={() => handleToggleTasks(!tasksEnabled)}
                     >
                         <div className="toggle-thumb" />
+                    </div>
+                </div>
+
+                <div className="form-section">
+                    <label>Theme</label>
+                    <div className="button-row-equal">
+                        <button
+                            className={theme === 'light' ? 'button-primary' : 'button-secondary'}
+                            onClick={() => handleThemeChange('light')}
+                        >
+                            Light
+                        </button>
+                        <button
+                            className={theme === 'dark' ? 'button-primary' : 'button-secondary'}
+                            onClick={() => handleThemeChange('dark')}
+                        >
+                            Dark
+                        </button>
+                        <button
+                            className={theme === 'system' ? 'button-primary' : 'button-secondary'}
+                            onClick={() => handleThemeChange('system')}
+                        >
+                            System
+                        </button>
                     </div>
                 </div>
             </div>

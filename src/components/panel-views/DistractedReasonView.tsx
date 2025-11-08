@@ -73,101 +73,46 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
 
     return (
         <>
-            <h2 className={'panel'} style={{ fontWeight: 600 }}>Attention drifting?</h2>
+            <h2 className="panel-title">Attention Drifting?</h2>
 
-            <div
-                style={{
-                    background: 'rgba(0,0,0,0.25)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 8,
-                    padding: 10,
-                    fontSize: 13,
-                    opacity: 0.9,
-                    marginTop: 8,
-                    marginBottom: 12,
-                }}
-            >
+            <div className="content-box" style={{ marginTop: 8, marginBottom: 12 }}>
                 {analysisText}
             </div>
 
-            <p style={{ fontSize: 14, opacity: 0.8, marginBottom: 8 }}>
-                What pulled you off-task? <span style={{ fontSize: 12, opacity: 0.6 }}>(required)</span>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+                What pulled you off-task? <span className="helper-text">(required)</span>
             </p>
 
             <textarea
+                className="panel-textarea"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="I got distracted by..."
-                style={{
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 6,
-                    padding: '10px 12px',
-                    color: 'inherit',
-                    fontSize: 14,
-                    lineHeight: 1.5,
-                    width: '100%',
-                    minHeight: 60,
-                    maxHeight: 85,
-                    boxSizing: 'border-box',
-                    resize: 'none',
-                    fontFamily: 'inherit',
-                    overflowY: 'auto',
-                }}
+                style={{ minHeight: 60, maxHeight: 85, resize: 'none' }}
             />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+            <div className="button-group">
                 <button
-                    className={'panel'}
+                    className={reason.trim() ? 'button-primary' : 'button-secondary'}
                     onClick={handleSaveAndEndSession}
                     disabled={isSubmitting || !reason.trim()}
-                    style={{
-                        background: reason.trim() ? '#8B7355' : 'rgba(0,0,0,0.3)',
-                        border: 'none',
-                        padding: '10px 16px',
-                        borderRadius: 6,
-                        color: 'white',
-                        fontWeight: 600,
-                        cursor: reason.trim() ? 'pointer' : 'not-allowed',
-                        opacity: reason.trim() ? 1 : 0.5,
-                    }}
                 >
-                    {isSubmitting ? 'saving...' : 'save and end session'}
+                    {isSubmitting ? 'Saving...' : 'Save and end session'}
                 </button>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="button-row-equal">
                     <button
-                        className={'panel'}
+                        className="button-secondary"
                         onClick={handleResumeSession}
                         disabled={isSubmitting || !reason.trim()}
-                        style={{
-                            flex: 1,
-                            background: reason.trim() ? 'rgba(139, 115, 85, 0.4)' : 'rgba(0,0,0,0.3)',
-                            border: '1px solid rgba(139, 115, 85, 0.6)',
-                            padding: '8px 12px',
-                            borderRadius: 6,
-                            cursor: reason.trim() ? 'pointer' : 'not-allowed',
-                            opacity: reason.trim() ? 1 : 0.5,
-                            fontSize: 13,
-                        }}
                     >
-                        {isSubmitting ? 'saving...' : 'resume session'}
+                        {isSubmitting ? 'Saving...' : 'Resume session'}
                     </button>
                     <button
-                        className={'panel'}
+                        className="button-secondary"
                         onClick={handleReflectDeeper}
                         disabled={isSubmitting || !reason.trim()}
-                        style={{
-                            flex: 1,
-                            background: reason.trim() ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.3)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            padding: '8px 12px',
-                            borderRadius: 6,
-                            cursor: reason.trim() ? 'pointer' : 'not-allowed',
-                            opacity: reason.trim() ? 1 : 0.5,
-                            fontSize: 13,
-                        }}
                     >
-                        {isSubmitting ? 'saving...' : 'reflect deeper'}
+                        {isSubmitting ? 'Saving...' : 'Reflect deeper'}
                     </button>
                 </div>
             </div>

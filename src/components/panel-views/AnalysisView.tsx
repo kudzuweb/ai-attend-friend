@@ -23,40 +23,21 @@ export default function AnalysisView() {
 
     return (
         <>
-            <h2 className={'panel'} style={{ fontWeight: 600 }}>analysis</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className={'panel'} onClick={askTheLlm}>analyze last 5 mins</button>
-                    <button className={'panel'} onClick={() => window.api.hidePanel()}>close</button>
-                </div>
+            <h2 className="panel-title">Analysis</h2>
+            <div className="flex-row-center gap-8 mb-16">
+                <button className="button-secondary" onClick={askTheLlm}>Analyze last 5 mins</button>
+                <button className="button-secondary" onClick={() => window.api.hidePanel()}>Close</button>
             </div>
 
-            <div
-                style={{
-                    background: 'rgba(0,0,0,0.25)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 8,
-                    minHeight: 80,
-                    maxHeight: 110,
-                    overflowY: 'auto',
-                    padding: 6,
-                    whiteSpace: 'pre-wrap',
-                }}
-            >
-                {loading && 'ready to analyze'}
+            <div className="content-box" style={{ minHeight: 80, maxHeight: 110, overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+                {loading && 'Ready to analyze'}
                 {!loading && llmText}
             </div>
 
             <textarea
-                style={{
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8,
-                    minHeight: 60,
-                    color: '#322820',
-                    padding: 6,
-                }}
-                placeholder="what pulled you off-task?"
+                className="panel-textarea"
+                style={{ minHeight: 60 }}
+                placeholder="What pulled you off-task?"
             />
         </>
     );

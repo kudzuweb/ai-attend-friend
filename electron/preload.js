@@ -110,6 +110,7 @@ const api = Object.freeze({
         ipcRenderer.invoke('llm:send-recent', limit),
     showPanel: (options) => ipcRenderer.invoke('panel:show', options),
     hidePanel: () => ipcRenderer.invoke('panel:hide'),
+    setWindowPosition: (position) => ipcRenderer.invoke('window:set-position', position),
     // session APIs
     sessionStart: (lengthMs, focusGoal, tasks) =>
         ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),

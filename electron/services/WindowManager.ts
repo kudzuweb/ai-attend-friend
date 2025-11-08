@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SessionState } from '../types/session.types.js';
+import type { ConfigService } from './ConfigService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,8 +21,11 @@ export class WindowManager {
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
     private pendingViewChange: ViewChangePayload | null = null;
+    private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
+    private configService: ConfigService;
 
-    constructor() {
+    constructor(configService: ConfigService) {
+        this.configService = configService;
         // absolute path to built preload
         this.preloadPath = path.resolve(__dirname, '../../electron/preload.js');
     }
@@ -32,7 +36,33 @@ export class WindowManager {
     async createWidgetWindow(): Promise<BrowserWindow> {
         console.log("createWidgetWindow() called at", new Date());
 
+        // Calculate initial position based on saved preference
+        const savedPosition = this.configService.getWindowPosition();
+        this.currentPosition = savedPosition;
+
+        const display = screen.getPrimaryDisplay();
+        const { width: screenWidth } = display.workAreaSize;
+        const { x: screenX, y: screenY } = display.workArea;
+        const margin = 20;
+
+        let x: number;
+        const y = screenY + margin;
+
+        switch (savedPosition) {
+            case 'top-left':
+                x = screenX + margin;
+                break;
+            case 'top-center':
+                x = screenX + Math.round((screenWidth - CIRCLE_SIZE) / 2);
+                break;
+            case 'top-right':
+                x = screenX + screenWidth - CIRCLE_SIZE - margin;
+                break;
+        }
+
         this.widgetWindow = new BrowserWindow({
+            x,
+            y,
             width: CIRCLE_SIZE,
             height: CIRCLE_SIZE,
             show: false,
@@ -68,13 +98,6 @@ export class WindowManager {
         } else {
             await this.widgetWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
         }
-
-        this.widgetWindow.setBounds({
-            width: CIRCLE_SIZE,
-            height: CIRCLE_SIZE,
-            x: this.widgetWindow.getBounds().x,
-            y: this.widgetWindow.getBounds().y
-        });
 
         this.widgetWindow.show();
 
@@ -148,16 +171,31 @@ export class WindowManager {
     }
 
     /**
-     * Position panel centered below widget
+     * Position panel below widget with smart alignment
      */
     private positionPanelBelowWidget(): void {
         if (!this.widgetWindow || !this.panelWindow) return;
 
         const parentBounds = this.widgetWindow.getBounds();
-        const centeredX = parentBounds.x + (parentBounds.width - PANEL_WIDTH) / 2;
+        let panelX: number;
+
+        switch (this.currentPosition) {
+            case 'top-left':
+                // Align panel's left edge with widget's left edge
+                panelX = parentBounds.x;
+                break;
+            case 'top-center':
+                // Center panel under widget
+                panelX = parentBounds.x + (parentBounds.width - PANEL_WIDTH) / 2;
+                break;
+            case 'top-right':
+                // Align panel's right edge with widget's right edge
+                panelX = parentBounds.x + parentBounds.width - PANEL_WIDTH;
+                break;
+        }
 
         this.panelWindow.setBounds({
-            x: Math.round(centeredX),
+            x: Math.round(panelX),
             y: parentBounds.y + parentBounds.height,
             width: PANEL_WIDTH,
             height: PANEL_HEIGHT,
@@ -238,6 +276,49 @@ export class WindowManager {
      */
     getPanelWindow(): BrowserWindow | null {
         return this.panelWindow;
+    }
+
+    /**
+     * Set widget window position based on preference
+     */
+    setWindowPosition(position: 'top-left' | 'top-center' | 'top-right', saveToConfig: boolean = true): void {
+        if (!this.widgetWindow) return;
+
+        // Store the current position for panel alignment
+        this.currentPosition = position;
+
+        // Save to config file for persistence across restarts
+        if (saveToConfig) {
+            this.configService.setWindowPosition(position);
+        }
+
+        const display = screen.getPrimaryDisplay();
+        const { width: screenWidth } = display.workAreaSize;
+        const { x: screenX, y: screenY } = display.workArea;
+
+        const margin = 20; // Margin from screen edges
+        let x: number;
+        const y = screenY + margin;
+
+        switch (position) {
+            case 'top-left':
+                x = screenX + margin;
+                break;
+            case 'top-center':
+                x = screenX + Math.round((screenWidth - CIRCLE_SIZE) / 2);
+                break;
+            case 'top-right':
+                x = screenX + screenWidth - CIRCLE_SIZE - margin;
+                break;
+        }
+
+        // Use setPosition instead of setBounds to avoid locking the window
+        this.widgetWindow.setPosition(x, y);
+
+        // Reposition panel if it's visible
+        if (this.panelWindow && this.panelWindow.isVisible()) {
+            this.positionPanelBelowWidget();
+        }
     }
 
     /**

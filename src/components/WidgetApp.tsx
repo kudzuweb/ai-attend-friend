@@ -100,10 +100,6 @@ export default function WidgetApp() {
         await window.api.relaunchApp();
     }
 
-    // create clickable areas inside the draggable area
-    type DragStyle = React.CSSProperties & { WebkitAppRegion?: 'drag' | 'no-drag' }
-    const noDragBtnStyle: DragStyle = { WebkitAppRegion: 'no-drag' };
-
     // handler to open panel for session setup
     async function openSessionPanel() {
         console.log('openSessionPanel called');

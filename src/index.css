@@ -214,6 +214,20 @@ body,
   -webkit-app-region: no-drag;
 }
 
+/* Drag handle in the center circle */
+.drag-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  -webkit-app-region: drag;
+  cursor: move;
+  z-index: 10;
+}
+
 .wedge-button:hover {
   background: var(--widget-button-hover);
 }
@@ -713,7 +727,7 @@ p {
 .toggle-track {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: 48px;
   height: 28px;
   background: var(--toggle-inactive);
@@ -733,6 +747,10 @@ p {
   background: white;
   border-radius: 12px;
   transition: transform 0.2s;
+}
+
+.toggle-track.active .toggle-thumb {
+  transform: translateX(20px);
 }
 
 /* Helper text */

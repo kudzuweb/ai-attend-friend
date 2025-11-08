@@ -131,19 +131,466 @@ body,
 .panel-root {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0;
   padding: 20px;
   height: 100%;
   width: 100%;
   box-sizing: border-box;
+  background: rgba(250, 250, 250, 0.98);
+  backdrop-filter: blur(10px);
+  overflow-y: auto;
 }
 
 .panel {
   background: #F6F4EE;
   opacity: 1;
   color: #322820;
+}
+
+/* macOS-style buttons */
+.panel button {
+  background: linear-gradient(to bottom, #F5F5F5, #ECECEC);
+  border: 1px solid #D0D0D0;
+  color: #333;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+}
+
+.panel button:hover {
+  background: linear-gradient(to bottom, #FFFFFF, #F5F5F5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.panel button:active {
+  background: linear-gradient(to bottom, #ECECEC, #E5E5E5);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* macOS-style inputs */
+.panel input,
+.panel textarea {
+  background: #FFFFFF;
+  border: 1px solid #D5D5D5;
+  color: #333;
+  padding: 8px 11px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  line-height: 1.5;
+}
+
+.panel input::placeholder,
+.panel textarea::placeholder {
+  color: #999;
+}
+
+.panel input:focus,
+.panel textarea:focus {
+  outline: none;
+  border-color: #0078D4;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
+  background: #FAFAFA;
+}
+
+/* macOS-style headings */
+.panel h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.3px;
+}
+
+/* macOS-style labels */
+.panel label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+/* macOS-style paragraphs */
+.panel p {
+  color: #666;
+  margin: 12px 0;
+  line-height: 1.5;
+}
+
+/* macOS-style lists */
+.panel ul,
+.panel ol {
+  color: #333;
+  list-style-position: inside;
+}
+
+.panel li {
+  color: #333;
+  margin: 6px 0;
+}
+
+/* Layout classes */
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-row-end {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-4 {
+  gap: 4px;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.gap-12 {
+  gap: 12px;
+}
+
+.gap-16 {
+  gap: 16px;
+}
+
+.mt-0 {
+  margin-top: 0;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+.mb-4 {
+  margin-bottom: 4px;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-12 {
+  margin-bottom: 12px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+/* Section titles */
+.panel-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.3px;
+}
+
+/* Button groups */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.button-row-equal {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.button-row-equal button {
+  flex: 1;
+}
+
+/* Primary action button */
+.button-primary {
+  background: #8B7355;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.button-primary:hover {
+  background: #9a7f68;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.button-primary:active {
+  background: #7d664b;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.button-primary:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Secondary action button */
+.button-secondary {
+  background: linear-gradient(to bottom, #F5F5F5, #ECECEC);
+  border: 1px solid #D0D0D0;
+  color: #333;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+}
+
+.button-secondary:hover {
+  background: linear-gradient(to bottom, #FFFFFF, #F5F5F5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.button-secondary:active {
+  background: linear-gradient(to bottom, #ECECEC, #E5E5E5);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.button-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Content container */
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Form section */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-section-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Text area styling */
+.panel-textarea {
+  background: #FFFFFF;
+  border: 1px solid #D5D5D5;
+  color: #333;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.panel-textarea:focus {
+  outline: none;
+  border-color: #0078D4;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
+  background: #FAFAFA;
+}
+
+.panel-textarea::placeholder {
+  color: #999;
+}
+
+/* Text input styling */
+.panel-input {
+  background: #FFFFFF;
+  border: 1px solid #D5D5D5;
+  color: #333;
+  padding: 8px 11px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.panel-input:focus {
+  outline: none;
+  border-color: #0078D4;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
+  background: #FAFAFA;
+}
+
+.panel-input::placeholder {
+  color: #999;
+}
+
+/* Content box */
+.content-box {
+  background: #F9F9F9;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Task list styling */
+.task-list {
+  background: #F9F9F9;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 12px 20px;
+  margin: 12px 0;
+  line-height: 1.8;
+  color: #333;
+}
+
+/* Duration controls */
+.duration-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.duration-button {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  background: rgba(0,0,0,0.1);
+  border: 1px solid #D5D5D5;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.duration-button:hover {
+  background: rgba(0,0,0,0.15);
+  border-color: #0078D4;
+}
+
+.duration-display {
+  min-width: 80px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 600;
+  cursor: ns-resize;
+  user-select: none;
+}
+
+.duration-label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-track {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 48px;
+  height: 28px;
+  background: #D0D0D0;
+  border-radius: 14px;
+  padding: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toggle-track.active {
+  background: #8B7355;
+}
+
+.toggle-thumb {
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+/* Helper text */
+.helper-text {
+  font-size: 12px;
+  color: #999;
+}
+
+.label-with-helper {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
 }
 
 /* a {

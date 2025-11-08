@@ -47,66 +47,34 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
 
     return (
         <>
-            <h2 className={'panel'} style={{ fontWeight: 600 }}>take a moment</h2>
+            <h2 className="panel-title">Take a Moment</h2>
 
-            <p style={{ fontSize: 14, opacity: 0.8, marginTop: 8, marginBottom: 12 }}>
+            <p style={{ fontSize: 14, color: '#666', marginTop: 8, marginBottom: 12 }}>
                 How are you feeling right now? What do you think pulled your attention away?
             </p>
 
             <textarea
+                className="panel-textarea"
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
                 placeholder="I'm feeling..."
-                style={{
-                    background: 'rgba(0,0,0,0.2)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 6,
-                    padding: '10px 12px',
-                    color: 'inherit',
-                    fontSize: 14,
-                    lineHeight: 1.5,
-                    width: '100%',
-                    minHeight: 100,
-                    maxHeight: 150,
-                    boxSizing: 'border-box',
-                    resize: 'none',
-                    fontFamily: 'inherit',
-                    overflowY: 'auto',
-                }}
+                style={{ minHeight: 100, maxHeight: 150, resize: 'none' }}
             />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+            <div className="button-group">
                 <button
-                    className={'panel'}
+                    className="button-primary"
                     onClick={handleResumeSession}
                     disabled={isSubmitting}
-                    style={{
-                        background: '#8B7355',
-                        border: 'none',
-                        padding: '10px 16px',
-                        borderRadius: 6,
-                        color: 'white',
-                        fontWeight: 600,
-                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                        opacity: isSubmitting ? 0.5 : 1,
-                    }}
                 >
-                    {isSubmitting ? 'saving...' : 'resume session'}
+                    {isSubmitting ? 'Saving...' : 'Resume session'}
                 </button>
                 <button
-                    className={'panel'}
+                    className="button-secondary"
                     onClick={handleSaveAndEndSession}
                     disabled={isSubmitting}
-                    style={{
-                        background: 'rgba(0,0,0,0.2)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        padding: '8px 16px',
-                        borderRadius: 6,
-                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                        opacity: isSubmitting ? 0.5 : 1,
-                    }}
                 >
-                    {isSubmitting ? 'saving...' : 'save and end session'}
+                    {isSubmitting ? 'Saving...' : 'Save and end session'}
                 </button>
             </div>
         </>

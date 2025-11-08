@@ -1,3 +1,145 @@
+/* CSS Variables for Light and Dark Themes */
+:root {
+  /* Panel Colors */
+  --panel-bg: #F6F4EE;
+  --panel-root-bg: rgba(250, 250, 250, 0.98);
+  --content-box-bg: #F9F9F9;
+  --input-bg: #FFFFFF;
+  --input-bg-focus: #FAFAFA;
+
+  /* Text Colors */
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-tertiary: #999;
+  --text-heading: #000;
+  --text-panel: #322820;
+  --text-content: #555;
+
+  /* Button Colors */
+  --button-primary: #8B7355;
+  --button-primary-hover: #9a7f68;
+  --button-primary-active: #7d664b;
+  --button-bg-start: #F5F5F5;
+  --button-bg-end: #ECECEC;
+  --button-bg-hover-start: #FFFFFF;
+  --button-bg-hover-end: #F5F5F5;
+  --button-bg-active-start: #ECECEC;
+  --button-bg-active-end: #E5E5E5;
+
+  /* Border Colors */
+  --border-primary: #D0D0D0;
+  --border-secondary: #D5D5D5;
+  --border-tertiary: #E0E0E0;
+
+  /* Focus Colors */
+  --focus-border: #0078D4;
+  --focus-shadow: rgba(0, 120, 212, 0.12);
+
+  /* Toggle Colors */
+  --toggle-inactive: #D0D0D0;
+  --toggle-active: #8B7355;
+
+  /* Widget Shell Colors - Light Theme */
+  --widget-text: white;
+  --widget-text-shadow: rgba(0, 0, 0, 0.3);
+  --widget-gradient-1: rgba(255, 255, 255, 0.8);
+  --widget-gradient-2: rgba(255, 182, 193, 0.4);
+  --widget-gradient-3-1: rgba(255, 182, 193, 0.6);
+  --widget-gradient-3-2: rgba(186, 85, 211, 0.5);
+  --widget-gradient-3-3: rgba(135, 206, 250, 0.5);
+  --widget-gradient-3-4: rgba(152, 251, 152, 0.4);
+  --widget-gradient-3-5: rgba(255, 218, 185, 0.5);
+  --widget-shadow-1: rgba(255, 255, 255, 0.5);
+  --widget-shadow-2: rgba(186, 85, 211, 0.3);
+  --widget-shadow-3: rgba(0, 0, 0, 0.1);
+  --widget-border: rgba(255, 255, 255, 0.3);
+  --widget-button-hover: rgba(255, 255, 255, 0.15);
+  --widget-button-active: rgba(255, 255, 255, 0.25);
+
+  /* Duration Controls */
+  --duration-button-bg: rgba(0, 0, 0, 0.1);
+  --duration-button-bg-hover: rgba(0, 0, 0, 0.15);
+
+  /* Shadow Colors */
+  --shadow-sm: rgba(0, 0, 0, 0.05);
+  --shadow-md: rgba(0, 0, 0, 0.08);
+  --shadow-lg: rgba(0, 0, 0, 0.1);
+  --shadow-inset: rgba(0, 0, 0, 0.1);
+  --shadow-primary: rgba(0, 0, 0, 0.15);
+  --shadow-primary-active: rgba(0, 0, 0, 0.2);
+}
+
+/* Dark Theme Variables */
+body.dark {
+  /* Panel Colors */
+  --panel-bg: #1E1E1E;
+  --panel-root-bg: rgba(30, 30, 30, 0.98);
+  --content-box-bg: #2A2A2A;
+  --input-bg: #2A2A2A;
+  --input-bg-focus: #323232;
+
+  /* Text Colors */
+  --text-primary: #E0E0E0;
+  --text-secondary: #B0B0B0;
+  --text-tertiary: #808080;
+  --text-heading: #FFFFFF;
+  --text-panel: #E8E8E8;
+  --text-content: #C0C0C0;
+
+  /* Button Colors */
+  --button-primary: #A08570;
+  --button-primary-hover: #B59680;
+  --button-primary-active: #8A7360;
+  --button-bg-start: #3A3A3A;
+  --button-bg-end: #2E2E2E;
+  --button-bg-hover-start: #454545;
+  --button-bg-hover-end: #3A3A3A;
+  --button-bg-active-start: #2A2A2A;
+  --button-bg-active-end: #252525;
+
+  /* Border Colors */
+  --border-primary: #404040;
+  --border-secondary: #454545;
+  --border-tertiary: #3A3A3A;
+
+  /* Focus Colors */
+  --focus-border: #0078D4;
+  --focus-shadow: rgba(0, 120, 212, 0.25);
+
+  /* Toggle Colors */
+  --toggle-inactive: #404040;
+  --toggle-active: #A08570;
+
+  /* Widget Shell Colors - Dark Theme */
+  --widget-text: #E8E8E8;
+  --widget-text-shadow: rgba(0, 0, 0, 0.6);
+  --widget-gradient-1: rgba(100, 100, 100, 0.6);
+  --widget-gradient-2: rgba(180, 100, 120, 0.5);
+  --widget-gradient-3-1: rgba(180, 100, 120, 0.7);
+  --widget-gradient-3-2: rgba(130, 60, 150, 0.6);
+  --widget-gradient-3-3: rgba(80, 140, 200, 0.6);
+  --widget-gradient-3-4: rgba(100, 180, 100, 0.5);
+  --widget-gradient-3-5: rgba(200, 140, 100, 0.6);
+  --widget-shadow-1: rgba(80, 80, 80, 0.4);
+  --widget-shadow-2: rgba(130, 60, 150, 0.4);
+  --widget-shadow-3: rgba(0, 0, 0, 0.3);
+  --widget-border: rgba(100, 100, 100, 0.4);
+  --widget-button-hover: rgba(255, 255, 255, 0.1);
+  --widget-button-active: rgba(255, 255, 255, 0.2);
+
+  /* Duration Controls */
+  --duration-button-bg: rgba(255, 255, 255, 0.1);
+  --duration-button-bg-hover: rgba(255, 255, 255, 0.15);
+
+  /* Shadow Colors */
+  --shadow-sm: rgba(0, 0, 0, 0.2);
+  --shadow-md: rgba(0, 0, 0, 0.3);
+  --shadow-lg: rgba(0, 0, 0, 0.4);
+  --shadow-inset: rgba(0, 0, 0, 0.3);
+  --shadow-primary: rgba(0, 0, 0, 0.4);
+  --shadow-primary-active: rgba(0, 0, 0, 0.5);
+}
+
 html,
 body,
 #root {
@@ -26,26 +168,26 @@ body,
   /* aspect-ratio: 1 / 1; */
   border-radius: 50%;
   background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(255, 182, 193, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 30% 30%, var(--widget-gradient-1) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, var(--widget-gradient-2) 0%, transparent 50%),
     linear-gradient(135deg,
-      rgba(255, 182, 193, 0.6) 0%,
-      rgba(186, 85, 211, 0.5) 25%,
-      rgba(135, 206, 250, 0.5) 50%,
-      rgba(152, 251, 152, 0.4) 75%,
-      rgba(255, 218, 185, 0.5) 100%
+      var(--widget-gradient-3-1) 0%,
+      var(--widget-gradient-3-2) 25%,
+      var(--widget-gradient-3-3) 50%,
+      var(--widget-gradient-3-4) 75%,
+      var(--widget-gradient-3-5) 100%
     );
   box-shadow:
-    inset 0 0 20px rgba(255, 255, 255, 0.5),
-    inset -5px -5px 15px rgba(186, 85, 211, 0.3),
-    0 8px 16px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+    inset 0 0 20px var(--widget-shadow-1),
+    inset -5px -5px 15px var(--widget-shadow-2),
+    0 8px 16px var(--widget-shadow-3);
+  border: 1px solid var(--widget-border);
   overflow: visible;
   backdrop-filter: blur(2px);
   display: block;
   position: relative;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: var(--widget-text);
+  text-shadow: 0 1px 2px var(--widget-text-shadow);
   -webkit-app-region: drag;
   /* outline: 2px solid blue; */
 }
@@ -66,18 +208,18 @@ body,
   font-weight: 400;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
   letter-spacing: 0.3px;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color: var(--widget-text);
+  text-shadow: 0 1px 2px var(--widget-text-shadow);
   transition: background 0.2s;
   -webkit-app-region: no-drag;
 }
 
 .wedge-button:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--widget-button-hover);
 }
 
 .wedge-button:active {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--widget-button-active);
 }
 
 /* Top wedge - Session */
@@ -138,40 +280,40 @@ body,
   height: 100%;
   width: 100%;
   box-sizing: border-box;
-  background: rgba(250, 250, 250, 0.98);
+  background: var(--panel-root-bg);
   backdrop-filter: blur(10px);
   overflow-y: auto;
 }
 
 .panel {
-  background: #F6F4EE;
+  background: var(--panel-bg);
   opacity: 1;
-  color: #322820;
+  color: var(--text-panel);
 }
 
 /* macOS-style buttons */
 .panel button {
-  background: linear-gradient(to bottom, #F5F5F5, #ECECEC);
-  border: 1px solid #D0D0D0;
-  color: #333;
+  background: linear-gradient(to bottom, var(--button-bg-start), var(--button-bg-end));
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   padding: 8px 14px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px var(--shadow-sm);
   font-family: inherit;
 }
 
 .panel button:hover {
-  background: linear-gradient(to bottom, #FFFFFF, #F5F5F5);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(to bottom, var(--button-bg-hover-start), var(--button-bg-hover-end));
+  box-shadow: 0 1px 3px var(--shadow-md);
 }
 
 .panel button:active {
-  background: linear-gradient(to bottom, #ECECEC, #E5E5E5);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(to bottom, var(--button-bg-active-start), var(--button-bg-active-end));
+  box-shadow: inset 0 1px 2px var(--shadow-inset);
 }
 
 .panel button:disabled {
@@ -182,9 +324,9 @@ body,
 /* macOS-style inputs */
 .panel input,
 .panel textarea {
-  background: #FFFFFF;
-  border: 1px solid #D5D5D5;
-  color: #333;
+  background: var(--input-bg);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-primary);
   padding: 8px 11px;
   border-radius: 6px;
   font-size: 13px;
@@ -195,37 +337,40 @@ body,
 
 .panel input::placeholder,
 .panel textarea::placeholder {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .panel input:focus,
 .panel textarea:focus {
   outline: none;
-  border-color: #0078D4;
-  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
-  background: #FAFAFA;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 3px var(--focus-shadow);
+  background: var(--input-bg-focus);
 }
 
 /* macOS-style headings */
-.panel h2 {
+.panel h2,
+h2 {
   font-size: 17px;
   font-weight: 600;
-  color: #000;
+  color: var(--text-heading);
   margin: 0 0 16px 0;
   letter-spacing: -0.3px;
 }
 
 /* macOS-style labels */
-.panel label {
+.panel label,
+label {
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
   margin-bottom: 4px;
 }
 
 /* macOS-style paragraphs */
-.panel p {
-  color: #666;
+.panel p,
+p {
+  color: var(--text-secondary);
   margin: 12px 0;
   line-height: 1.5;
 }
@@ -233,12 +378,12 @@ body,
 /* macOS-style lists */
 .panel ul,
 .panel ol {
-  color: #333;
+  color: var(--text-primary);
   list-style-position: inside;
 }
 
 .panel li {
-  color: #333;
+  color: var(--text-primary);
   margin: 6px 0;
 }
 
@@ -327,7 +472,7 @@ body,
 .panel-title {
   font-size: 17px;
   font-weight: 600;
-  color: #000;
+  color: var(--text-heading);
   margin: 0 0 16px 0;
   letter-spacing: -0.3px;
   text-align: center;
@@ -360,27 +505,27 @@ body,
 
 /* Primary action button */
 .button-primary {
-  background: #8B7355;
+  background: var(--button-primary);
   border: none;
   padding: 10px 16px;
   border-radius: 6px;
   color: white;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--shadow-lg);
   font-family: inherit;
   font-size: 13px;
   transition: all 0.15s ease;
 }
 
 .button-primary:hover {
-  background: #9a7f68;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  background: var(--button-primary-hover);
+  box-shadow: 0 1px 4px var(--shadow-primary);
 }
 
 .button-primary:active {
-  background: #7d664b;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: var(--button-primary-active);
+  box-shadow: inset 0 1px 2px var(--shadow-primary-active);
 }
 
 .button-primary:disabled {
@@ -391,27 +536,27 @@ body,
 
 /* Secondary action button */
 .button-secondary {
-  background: linear-gradient(to bottom, #F5F5F5, #ECECEC);
-  border: 1px solid #D0D0D0;
-  color: #333;
+  background: linear-gradient(to bottom, var(--button-bg-start), var(--button-bg-end));
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
   padding: 10px 16px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px var(--shadow-sm);
   font-family: inherit;
 }
 
 .button-secondary:hover {
-  background: linear-gradient(to bottom, #FFFFFF, #F5F5F5);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(to bottom, var(--button-bg-hover-start), var(--button-bg-hover-end));
+  box-shadow: 0 1px 3px var(--shadow-md);
 }
 
 .button-secondary:active {
-  background: linear-gradient(to bottom, #ECECEC, #E5E5E5);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(to bottom, var(--button-bg-active-start), var(--button-bg-active-end));
+  box-shadow: inset 0 1px 2px var(--shadow-inset);
 }
 
 .button-secondary:disabled {
@@ -442,9 +587,9 @@ body,
 
 /* Text area styling */
 .panel-textarea {
-  background: #FFFFFF;
-  border: 1px solid #D5D5D5;
-  color: #333;
+  background: var(--input-bg);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-primary);
   padding: 10px 12px;
   border-radius: 6px;
   font-size: 13px;
@@ -458,20 +603,20 @@ body,
 
 .panel-textarea:focus {
   outline: none;
-  border-color: #0078D4;
-  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
-  background: #FAFAFA;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 3px var(--focus-shadow);
+  background: var(--input-bg-focus);
 }
 
 .panel-textarea::placeholder {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 /* Text input styling */
 .panel-input {
-  background: #FFFFFF;
-  border: 1px solid #D5D5D5;
-  color: #333;
+  background: var(--input-bg);
+  border: 1px solid var(--border-secondary);
+  color: var(--text-primary);
   padding: 8px 11px;
   border-radius: 6px;
   font-size: 13px;
@@ -484,35 +629,35 @@ body,
 
 .panel-input:focus {
   outline: none;
-  border-color: #0078D4;
-  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.12);
-  background: #FAFAFA;
+  border-color: var(--focus-border);
+  box-shadow: 0 0 0 3px var(--focus-shadow);
+  background: var(--input-bg-focus);
 }
 
 .panel-input::placeholder {
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 /* Content box */
 .content-box {
-  background: #F9F9F9;
-  border: 1px solid #E0E0E0;
+  background: var(--content-box-bg);
+  border: 1px solid var(--border-tertiary);
   border-radius: 8px;
   padding: 12px;
   font-size: 13px;
-  color: #555;
+  color: var(--text-content);
   line-height: 1.6;
 }
 
 /* Task list styling */
 .task-list {
-  background: #F9F9F9;
-  border: 1px solid #E0E0E0;
+  background: var(--content-box-bg);
+  border: 1px solid var(--border-tertiary);
   border-radius: 8px;
   padding: 12px 20px;
   margin: 12px 0;
   line-height: 1.8;
-  color: #333;
+  color: var(--text-primary);
 }
 
 /* Duration controls */
@@ -526,11 +671,11 @@ body,
   width: 40px;
   height: 40px;
   font-size: 20px;
-  background: rgba(0,0,0,0.1);
-  border: 1px solid #D5D5D5;
+  background: var(--duration-button-bg);
+  border: 1px solid var(--border-secondary);
   border-radius: 6px;
   cursor: pointer;
-  color: #333;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -539,8 +684,8 @@ body,
 }
 
 .duration-button:hover {
-  background: rgba(0,0,0,0.15);
-  border-color: #0078D4;
+  background: var(--duration-button-bg-hover);
+  border-color: var(--focus-border);
 }
 
 .duration-display {
@@ -550,11 +695,12 @@ body,
   font-weight: 600;
   cursor: ns-resize;
   user-select: none;
+  color: var(--text-heading);
 }
 
 .duration-label {
   font-size: 12px;
-  opacity: 0.7;
+  color: var(--text-secondary);
 }
 
 /* Toggle switch */
@@ -570,7 +716,7 @@ body,
   justify-content: flex-end;
   width: 48px;
   height: 28px;
-  background: #D0D0D0;
+  background: var(--toggle-inactive);
   border-radius: 14px;
   padding: 2px;
   cursor: pointer;
@@ -578,7 +724,7 @@ body,
 }
 
 .toggle-track.active {
-  background: #8B7355;
+  background: var(--toggle-active);
 }
 
 .toggle-thumb {
@@ -592,7 +738,7 @@ body,
 /* Helper text */
 .helper-text {
   font-size: 12px;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .label-with-helper {

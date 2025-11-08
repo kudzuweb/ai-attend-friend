@@ -49,7 +49,7 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
         <>
             <h2 className="panel-title">Take a Moment</h2>
 
-            <p style={{ fontSize: 14, color: '#666', marginTop: 8, marginBottom: 12 }}>
+            <p style={{ fontSize: 14, marginTop: 8, marginBottom: 12 }}>
                 How are you feeling right now? What do you think pulled your attention away?
             </p>
 

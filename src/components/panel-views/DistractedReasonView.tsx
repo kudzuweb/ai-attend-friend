@@ -79,7 +79,7 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
                 {analysisText}
             </div>
 
-            <p style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+            <p style={{ fontSize: 13, marginBottom: 8 }}>
                 What pulled you off-task? <span className="helper-text">(required)</span>
             </p>
 

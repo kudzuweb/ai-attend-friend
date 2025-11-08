@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTheme, type Theme } from "../../contexts/ThemeContext";
 
 interface SettingsViewProps {
     onClose: () => void;
@@ -6,6 +7,7 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
     const [tasksEnabled, setTasksEnabled] = useState<boolean>(true);
+    const { theme, setTheme } = useTheme();
 
     // Load settings from localStorage
     useEffect(() => {
@@ -21,12 +23,41 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         localStorage.setItem('tasksEnabled', JSON.stringify(enabled));
     };
 
+    const handleThemeChange = (newTheme: Theme) => {
+        setTheme(newTheme);
+    };
+
     return (
         <>
             <div className="flex-row-end mb-16">
                 <button className="button-secondary" onClick={onClose}>Close</button>
             </div>
             <h2 className="panel-title">Settings</h2>
+
+            <div className="form-section mb-16">
+                <label>Theme</label>
+                <div className="button-row-equal">
+                    <button
+                        className={theme === 'light' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handleThemeChange('light')}
+                    >
+                        Light
+                    </button>
+                    <button
+                        className={theme === 'dark' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handleThemeChange('dark')}
+                    >
+                        Dark
+                    </button>
+                    <button
+                        className={theme === 'system' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handleThemeChange('system')}
+                    >
+                        System
+                    </button>
+                </div>
+            </div>
+
 
             <div className="panel-content">
                 <div className="toggle-switch">

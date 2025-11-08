@@ -90,6 +90,7 @@ declare global {
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             requestSessionSetup: () => Promise<void>;
             requestSettings: () => Promise<void>;
+            requestAnalysis: () => Promise<void>;
             handleInterruption: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;

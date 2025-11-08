@@ -67,7 +67,6 @@ export function registerIPCHandlers(
     // ========== Panel Handlers ==========
 
     ipcMain.handle('panel:show', () => {
-        windowManager.changeView({ view: 'analysis' });
         windowManager.showPanel();
     });
 
@@ -83,6 +82,11 @@ export function registerIPCHandlers(
     ipcMain.handle('ui:request-settings', () => {
         console.log('[IPCHandlers] ui:request-settings received');
         windowManager.requestSettings();
+    });
+
+    ipcMain.handle('ui:request-analysis', () => {
+        console.log('[IPCHandlers] ui:request-analysis received');
+        windowManager.requestAnalysis();
     });
 
     // ========== Session Handlers ==========

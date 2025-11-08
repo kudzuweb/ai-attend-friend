@@ -195,6 +195,14 @@ export class WindowManager {
     }
 
     /**
+     * Request analysis view to be shown when panel opens
+     */
+    requestAnalysis(): void {
+        console.log('requestAnalysis called');
+        this.pendingViewChange = { view: 'analysis' };
+    }
+
+    /**
      * Show tasks view in the panel
      */
     showTasksView(): void {

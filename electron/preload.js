@@ -129,6 +129,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('ui:request-session-setup'),
     requestSettings: () =>
         ipcRenderer.invoke('ui:request-settings'),
+    requestAnalysis: () =>
+        ipcRenderer.invoke('ui:request-analysis'),
     handleInterruption: (action, reflection) =>
         ipcRenderer.invoke('session:handle-interruption', { action, reflection }),
     handleReflection: (action, reflection) =>

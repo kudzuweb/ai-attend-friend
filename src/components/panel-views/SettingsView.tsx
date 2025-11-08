@@ -7,13 +7,19 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
     const [tasksEnabled, setTasksEnabled] = useState<boolean>(true);
+    const [demoMode, setDemoMode] = useState<boolean>(true);
     const { theme, setTheme } = useTheme();
 
     // Load settings from localStorage
     useEffect(() => {
-        const saved = localStorage.getItem('tasksEnabled');
-        if (saved !== null) {
-            setTasksEnabled(JSON.parse(saved));
+        const savedTasks = localStorage.getItem('tasksEnabled');
+        if (savedTasks !== null) {
+            setTasksEnabled(JSON.parse(savedTasks));
+        }
+
+        const savedDemo = localStorage.getItem('demoMode');
+        if (savedDemo !== null) {
+            setDemoMode(JSON.parse(savedDemo));
         }
     }, []);
 
@@ -21,6 +27,13 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     const handleToggleTasks = (enabled: boolean) => {
         setTasksEnabled(enabled);
         localStorage.setItem('tasksEnabled', JSON.stringify(enabled));
+    };
+
+    const handleToggleDemoMode = (enabled: boolean) => {
+        setDemoMode(enabled);
+        localStorage.setItem('demoMode', JSON.stringify(enabled));
+        // Dispatch storage event so other components can react
+        window.dispatchEvent(new Event('storage'));
     };
 
     const handleThemeChange = (newTheme: Theme) => {
@@ -65,6 +78,16 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                     <div
                         className={`toggle-track ${tasksEnabled ? 'active' : ''}`}
                         onClick={() => handleToggleTasks(!tasksEnabled)}
+                    >
+                        <div className="toggle-thumb" />
+                    </div>
+                </div>
+
+                <div className="toggle-switch">
+                    <label>Demo mode</label>
+                    <div
+                        className={`toggle-track ${demoMode ? 'active' : ''}`}
+                        onClick={() => handleToggleDemoMode(!demoMode)}
                     >
                         <div className="toggle-thumb" />
                     </div>

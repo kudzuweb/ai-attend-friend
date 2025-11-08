@@ -121,7 +121,7 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
                 />
                 {showTasks && (
                     <div className="form-section">
-                        <label className="mb-4">Priority Tasks (optional)</label>
+                        <label className="mb-4">Priority Tasks</label>
                         {[0, 1, 2].map((index) => (
                             <input
                                 key={index}

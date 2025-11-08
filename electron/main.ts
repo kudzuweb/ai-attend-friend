@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import 'dotenv/config';
 
 // Import services
+import { ConfigService } from './services/ConfigService.js';
 import { WindowManager } from './services/WindowManager.js';
 import { SessionManager } from './services/SessionManager.js';
 import { ScreenshotService } from './services/ScreenshotService.js';
@@ -12,7 +13,8 @@ import { StorageService } from './services/StorageService.js';
 import { registerIPCHandlers } from './handlers/IPCHandlers.js';
 
 // Initialize services
-const windowManager = new WindowManager();
+const configService = new ConfigService();
+const windowManager = new WindowManager(configService);
 const screenshotService = new ScreenshotService();
 const aiService = new AIAnalysisService();
 const storageService = new StorageService();

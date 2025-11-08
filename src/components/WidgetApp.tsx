@@ -60,14 +60,6 @@ export default function WidgetApp() {
         window.api.sessionGetState().then(setSessionState).catch(console.error);
     }, []);
 
-    // apply saved window position on mount
-    useEffect(() => {
-        const savedPosition = localStorage.getItem('windowPosition') as 'top-left' | 'top-center' | 'top-right' | null;
-        if (savedPosition && ['top-left', 'top-center', 'top-right'].includes(savedPosition)) {
-            window.api.setWindowPosition(savedPosition);
-        }
-    }, []);
-
     // screenshot capture loop - only runs during active session
     useEffect(() => {
         if (!sessionState?.isActive) {
@@ -107,10 +99,6 @@ export default function WidgetApp() {
     async function relaunch() {
         await window.api.relaunchApp();
     }
-
-    // create clickable areas inside the draggable area
-    type DragStyle = React.CSSProperties & { WebkitAppRegion?: 'drag' | 'no-drag' }
-    const noDragBtnStyle: DragStyle = { WebkitAppRegion: 'no-drag' };
 
     // handler to open panel for session setup
     async function openSessionPanel() {

@@ -2,6 +2,7 @@ import { app, BrowserWindow, screen } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SessionState } from '../types/session.types.js';
+import type { ConfigService } from './ConfigService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +22,10 @@ export class WindowManager {
     private preloadPath: string;
     private pendingViewChange: ViewChangePayload | null = null;
     private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
+    private configService: ConfigService;
 
-    constructor() {
+    constructor(configService: ConfigService) {
+        this.configService = configService;
         // absolute path to built preload
         this.preloadPath = path.resolve(__dirname, '../../electron/preload.js');
     }
@@ -33,7 +36,33 @@ export class WindowManager {
     async createWidgetWindow(): Promise<BrowserWindow> {
         console.log("createWidgetWindow() called at", new Date());
 
+        // Calculate initial position based on saved preference
+        const savedPosition = this.configService.getWindowPosition();
+        this.currentPosition = savedPosition;
+
+        const display = screen.getPrimaryDisplay();
+        const { width: screenWidth } = display.workAreaSize;
+        const { x: screenX, y: screenY } = display.workArea;
+        const margin = 20;
+
+        let x: number;
+        const y = screenY + margin;
+
+        switch (savedPosition) {
+            case 'top-left':
+                x = screenX + margin;
+                break;
+            case 'top-center':
+                x = screenX + Math.round((screenWidth - CIRCLE_SIZE) / 2);
+                break;
+            case 'top-right':
+                x = screenX + screenWidth - CIRCLE_SIZE - margin;
+                break;
+        }
+
         this.widgetWindow = new BrowserWindow({
+            x,
+            y,
             width: CIRCLE_SIZE,
             height: CIRCLE_SIZE,
             show: false,
@@ -69,17 +98,6 @@ export class WindowManager {
         } else {
             await this.widgetWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
         }
-
-        this.widgetWindow.setBounds({
-            width: CIRCLE_SIZE,
-            height: CIRCLE_SIZE,
-            x: this.widgetWindow.getBounds().x,
-            y: this.widgetWindow.getBounds().y
-        });
-
-        // Apply default position (top-right)
-        // This will be overridden by user preference via IPC if they've set one
-        this.setWindowPosition('top-right');
 
         this.widgetWindow.show();
 
@@ -263,14 +281,19 @@ export class WindowManager {
     /**
      * Set widget window position based on preference
      */
-    setWindowPosition(position: 'top-left' | 'top-center' | 'top-right'): void {
+    setWindowPosition(position: 'top-left' | 'top-center' | 'top-right', saveToConfig: boolean = true): void {
         if (!this.widgetWindow) return;
 
         // Store the current position for panel alignment
         this.currentPosition = position;
 
+        // Save to config file for persistence across restarts
+        if (saveToConfig) {
+            this.configService.setWindowPosition(position);
+        }
+
         const display = screen.getPrimaryDisplay();
-        const { width: screenWidth, height: screenHeight } = display.workAreaSize;
+        const { width: screenWidth } = display.workAreaSize;
         const { x: screenX, y: screenY } = display.workArea;
 
         const margin = 20; // Margin from screen edges
@@ -289,12 +312,8 @@ export class WindowManager {
                 break;
         }
 
-        this.widgetWindow.setBounds({
-            x,
-            y,
-            width: CIRCLE_SIZE,
-            height: CIRCLE_SIZE
-        });
+        // Use setPosition instead of setBounds to avoid locking the window
+        this.widgetWindow.setPosition(x, y);
 
         // Reposition panel if it's visible
         if (this.panelWindow && this.panelWindow.isVisible()) {

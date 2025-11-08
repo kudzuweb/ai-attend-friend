@@ -24,7 +24,7 @@ export default function AnalysisView() {
     return (
         <>
             <h2 className="panel-title">Analysis</h2>
-            <div className="flex-row gap-8 mb-16">
+            <div className="flex-row-center gap-8 mb-16">
                 <button className="button-secondary" onClick={askTheLlm}>Analyze last 5 mins</button>
                 <button className="button-secondary" onClick={() => window.api.hidePanel()}>Close</button>
             </div>

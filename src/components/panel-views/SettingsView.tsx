@@ -23,10 +23,10 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
     return (
         <>
-            <h2 className="panel-title">Settings</h2>
             <div className="flex-row-end mb-16">
                 <button className="button-secondary" onClick={onClose}>Close</button>
             </div>
+            <h2 className="panel-title">Settings</h2>
 
             <div className="panel-content">
                 <div className="toggle-switch">

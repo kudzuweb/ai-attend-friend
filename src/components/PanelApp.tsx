@@ -26,6 +26,10 @@ export default function PanelApp() {
                 setDistractedAnalysisText(payload.data);
             }
         });
+
+        // Signal to main process that panel is ready to receive messages
+        console.log('[PanelApp] Signaling panel ready');
+        window.api.panelReady();
     }, []);
 
     // Listen for session state changes and navigate away from tasks view if session ends

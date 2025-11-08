@@ -20,10 +20,32 @@ export class WindowManager {
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
     private pendingViewChange: ViewChangePayload | null = null;
+    private isPanelReady: boolean = false;
 
     constructor() {
         // absolute path to built preload
         this.preloadPath = path.resolve(__dirname, '../../electron/preload.js');
+    }
+
+    /**
+     * Called by IPC handler when panel signals it's ready
+     */
+    onPanelReady(): void {
+        console.log('[WindowManager] Panel is ready');
+        this.isPanelReady = true;
+
+        // Send pending view change if we have one
+        if (this.pendingViewChange && this.panelWindow) {
+            console.log('[WindowManager] Sending pending view change:', this.pendingViewChange);
+            this.panelWindow.webContents.send('panel:change-view', this.pendingViewChange);
+            this.pendingViewChange = null;
+        }
+
+        // Show panel
+        if (this.panelWindow) {
+            this.positionPanelBelowWidget();
+            this.panelWindow.show();
+        }
     }
 
     /**
@@ -94,6 +116,8 @@ export class WindowManager {
         if (!this.widgetWindow) return;
 
         if (!this.panelWindow) {
+            // Create panel window for the first time
+            this.isPanelReady = false;
             this.panelWindow = new BrowserWindow({
                 parent: this.widgetWindow,
                 width: PANEL_WIDTH,
@@ -109,31 +133,27 @@ export class WindowManager {
                 },
             });
 
-            // Listen for when the panel finishes loading
-            this.panelWindow.webContents.on('did-finish-load', () => {
-                if (this.pendingViewChange) {
-                    console.log('Panel loaded, sending view change:', this.pendingViewChange);
-                    this.panelWindow?.webContents.send('panel:change-view', this.pendingViewChange);
-                    this.pendingViewChange = null;
-                }
-            });
-
-            // load renderer
+            // load renderer - panel will signal when ready
             if (process.env.NODE_ENV !== 'production') {
                 this.panelWindow.loadURL('http://localhost:5173/#/panel');
                 this.panelWindow.webContents.openDevTools({ mode: 'detach' });
             } else {
                 this.panelWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}#/panel`);
             }
-        } else if (this.pendingViewChange) {
-            // Panel already exists and is loaded, send immediately
-            console.log('Panel already loaded, sending view change immediately:', this.pendingViewChange);
-            this.panelWindow.webContents.send('panel:change-view', this.pendingViewChange);
-            this.pendingViewChange = null;
+            // Note: Panel will be shown when it sends 'panel:ready' signal
+        } else if (this.isPanelReady) {
+            // Panel already exists and is ready
+            if (this.pendingViewChange) {
+                // Send view change immediately
+                console.log('Panel already loaded, sending view change immediately:', this.pendingViewChange);
+                this.panelWindow.webContents.send('panel:change-view', this.pendingViewChange);
+                this.pendingViewChange = null;
+            }
+            // Show panel
+            this.positionPanelBelowWidget();
+            this.panelWindow.show();
         }
-
-        this.positionPanelBelowWidget();
-        this.panelWindow.show();
+        // else: Panel exists but not ready yet - will show when ready signal arrives
     }
 
     /**

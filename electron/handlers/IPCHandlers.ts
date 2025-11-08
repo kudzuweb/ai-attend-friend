@@ -67,12 +67,16 @@ export function registerIPCHandlers(
     // ========== Panel Handlers ==========
 
     ipcMain.handle('panel:show', () => {
-        windowManager.changeView({ view: 'analysis' });
         windowManager.showPanel();
     });
 
     ipcMain.handle('panel:hide', () => {
         windowManager.hidePanel();
+    });
+
+    ipcMain.handle('panel:ready', () => {
+        console.log('[IPCHandlers] panel:ready received');
+        windowManager.onPanelReady();
     });
 
     ipcMain.handle('ui:request-session-setup', () => {

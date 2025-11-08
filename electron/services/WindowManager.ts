@@ -6,7 +6,7 @@ import type { SessionState } from '../types/session.types.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CIRCLE_SIZE = 200;
+const CIRCLE_SIZE = 160;
 const PANEL_WIDTH = 440;
 const PANEL_HEIGHT = 380;
 

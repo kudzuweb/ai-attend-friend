@@ -139,38 +139,50 @@ export default function WidgetApp() {
     return (
         <>
             <WidgetShell>
-                {/* session button - toggles between "new session" and "end session" */}
+                {/* Top wedge - Session */}
                 {sessionState?.isActive ? (
                     <button
-                        style={{...noDragBtnStyle, background: '#c85a54', color: 'white', padding: '6px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 14}}
+                        className="wedge-button wedge-top"
                         onClick={handleEndSession}
+                        title="End session"
                     >
-                        end session
+                        <span className="wedge-label">end</span>
                     </button>
                 ) : (
-                    <button style={noDragBtnStyle} onClick={openSessionPanel}>
-                        new session
+                    <button
+                        className="wedge-button wedge-top"
+                        onClick={openSessionPanel}
+                        title="New session"
+                    >
+                        <span className="wedge-label">New Session</span>
                     </button>
                 )}
-                {/* analyze button for dev/debugging */}
-                <button style={noDragBtnStyle} onClick={() => window.api.showPanel()}>
-                    open panel
-                </button>
-                {/* settings button */}
+
+                {/* Right wedge - Settings */}
                 <button
-                    style={{...noDragBtnStyle, background: '#666', color: 'white', padding: '6px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 12}}
+                    className="wedge-button wedge-right"
                     onClick={handleOpenSettings}
-                    title="Open settings"
+                    title="Settings"
                 >
-                    settings
+                    <span className="wedge-label">Settings</span>
                 </button>
-                {/* quit button */}
+
+                {/* Bottom wedge - Quit */}
                 <button
-                    style={{...noDragBtnStyle, background: '#666', color: 'white', padding: '6px 12px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 12}}
+                    className="wedge-button wedge-bottom"
                     onClick={handleQuitApp}
-                    title="Quit application"
+                    title="Quit"
                 >
-                    quit
+                    <span className="wedge-label">Quit</span>
+                </button>
+
+                {/* Left wedge - Open Panel */}
+                <button
+                    className="wedge-button wedge-left"
+                    onClick={() => window.api.showPanel()}
+                    title="Open panel"
+                >
+                    <span className="wedge-label">Panel</span>
                 </button>
             </WidgetShell>
 

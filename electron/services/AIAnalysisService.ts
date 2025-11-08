@@ -65,10 +65,7 @@ export class AIAnalysisService {
      * Initialize prompts - must be called before using the service
      */
     async initialize(): Promise<void> {
-        const promptPath = process.env.PROMPT_FILE;
-        if (!promptPath) throw new Error('PROMPT_FILE not set');
-
-        this.systemPromptText = await this.loadPrompt(promptPath);
+        this.systemPromptText = await this.loadPrompt('src/prompts/screenshot-analysis.md');
         this.sessionFinalizePromptText = await this.loadPrompt('src/prompts/session-finalize.md');
     }
 

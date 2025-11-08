@@ -135,6 +135,14 @@ export default function WidgetApp() {
         await window.api.showPanel();
     }
 
+    // handler to open analysis panel
+    async function handleOpenPanel() {
+        console.log('handleOpenPanel called');
+        await window.api.requestAnalysis();
+        console.log('requestAnalysis completed');
+        await window.api.showPanel();
+    }
+
     // render react UI, conditionally render img if available
     return (
         <>
@@ -179,7 +187,7 @@ export default function WidgetApp() {
                 {/* Left wedge - Open Panel */}
                 <button
                     className="wedge-button wedge-left"
-                    onClick={() => window.api.showPanel()}
+                    onClick={handleOpenPanel}
                     title="Open panel"
                 >
                     <span className="wedge-label">Panel</span>

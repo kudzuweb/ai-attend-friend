@@ -110,7 +110,6 @@ const api = Object.freeze({
         ipcRenderer.invoke('llm:send-recent', limit),
     showPanel: (options) => ipcRenderer.invoke('panel:show', options),
     hidePanel: () => ipcRenderer.invoke('panel:hide'),
-    panelReady: () => ipcRenderer.invoke('panel:ready'),
     // session APIs
     sessionStart: (lengthMs, focusGoal, tasks) =>
         ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),
@@ -130,6 +129,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('ui:request-session-setup'),
     requestSettings: () =>
         ipcRenderer.invoke('ui:request-settings'),
+    requestAnalysis: () =>
+        ipcRenderer.invoke('ui:request-analysis'),
     handleInterruption: (action, reflection) =>
         ipcRenderer.invoke('session:handle-interruption', { action, reflection }),
     handleReflection: (action, reflection) =>

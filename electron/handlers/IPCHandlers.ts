@@ -74,11 +74,6 @@ export function registerIPCHandlers(
         windowManager.hidePanel();
     });
 
-    ipcMain.handle('panel:ready', () => {
-        console.log('[IPCHandlers] panel:ready received');
-        windowManager.onPanelReady();
-    });
-
     ipcMain.handle('ui:request-session-setup', () => {
         console.log('[IPCHandlers] ui:request-session-setup received');
         windowManager.requestSessionSetup();
@@ -87,6 +82,11 @@ export function registerIPCHandlers(
     ipcMain.handle('ui:request-settings', () => {
         console.log('[IPCHandlers] ui:request-settings received');
         windowManager.requestSettings();
+    });
+
+    ipcMain.handle('ui:request-analysis', () => {
+        console.log('[IPCHandlers] ui:request-analysis received');
+        windowManager.requestAnalysis();
     });
 
     // ========== Session Handlers ==========

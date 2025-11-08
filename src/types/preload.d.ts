@@ -81,7 +81,6 @@ declare global {
             } | { ok: false; error: string }>;
             showPanel: (options?: { setupSession?: boolean }) => Promise<void>;
             hidePanel: () => Promise<void>;
-            panelReady: () => Promise<void>;
             sessionStart: (lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -91,6 +90,7 @@ declare global {
             onSessionUpdated: (callback: (state: SessionState) => void) => void;
             requestSessionSetup: () => Promise<void>;
             requestSettings: () => Promise<void>;
+            requestAnalysis: () => Promise<void>;
             handleInterruption: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;

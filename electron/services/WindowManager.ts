@@ -20,6 +20,7 @@ export class WindowManager {
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
     private pendingViewChange: ViewChangePayload | null = null;
+    private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
 
     constructor() {
         // absolute path to built preload
@@ -152,16 +153,31 @@ export class WindowManager {
     }
 
     /**
-     * Position panel centered below widget
+     * Position panel below widget with smart alignment
      */
     private positionPanelBelowWidget(): void {
         if (!this.widgetWindow || !this.panelWindow) return;
 
         const parentBounds = this.widgetWindow.getBounds();
-        const centeredX = parentBounds.x + (parentBounds.width - PANEL_WIDTH) / 2;
+        let panelX: number;
+
+        switch (this.currentPosition) {
+            case 'top-left':
+                // Align panel's left edge with widget's left edge
+                panelX = parentBounds.x;
+                break;
+            case 'top-center':
+                // Center panel under widget
+                panelX = parentBounds.x + (parentBounds.width - PANEL_WIDTH) / 2;
+                break;
+            case 'top-right':
+                // Align panel's right edge with widget's right edge
+                panelX = parentBounds.x + parentBounds.width - PANEL_WIDTH;
+                break;
+        }
 
         this.panelWindow.setBounds({
-            x: Math.round(centeredX),
+            x: Math.round(panelX),
             y: parentBounds.y + parentBounds.height,
             width: PANEL_WIDTH,
             height: PANEL_HEIGHT,
@@ -249,6 +265,9 @@ export class WindowManager {
      */
     setWindowPosition(position: 'top-left' | 'top-center' | 'top-right'): void {
         if (!this.widgetWindow) return;
+
+        // Store the current position for panel alignment
+        this.currentPosition = position;
 
         const display = screen.getPrimaryDisplay();
         const { width: screenWidth, height: screenHeight } = display.workAreaSize;

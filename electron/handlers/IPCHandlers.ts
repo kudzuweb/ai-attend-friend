@@ -67,6 +67,7 @@ export function registerIPCHandlers(
     // ========== Panel Handlers ==========
 
     ipcMain.handle('panel:show', () => {
+        windowManager.changeView({ view: 'analysis' });
         windowManager.showPanel();
     });
 

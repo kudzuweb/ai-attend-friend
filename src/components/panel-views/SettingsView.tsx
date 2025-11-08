@@ -34,6 +34,31 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             </div>
             <h2 className="panel-title">Settings</h2>
 
+            <div className="form-section mb-16">
+                <label>Theme</label>
+                <div className="button-row-equal">
+                    <button
+                        className={theme === 'light' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handleThemeChange('light')}
+                    >
+                        Light
+                    </button>
+                    <button
+                        className={theme === 'dark' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handleThemeChange('dark')}
+                    >
+                        Dark
+                    </button>
+                    <button
+                        className={theme === 'system' ? 'button-primary' : 'button-secondary'}
+                        onClick={() => handleThemeChange('system')}
+                    >
+                        System
+                    </button>
+                </div>
+            </div>
+
+
             <div className="panel-content">
                 <div className="toggle-switch">
                     <label>Enable priority task view</label>
@@ -42,30 +67,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                         onClick={() => handleToggleTasks(!tasksEnabled)}
                     >
                         <div className="toggle-thumb" />
-                    </div>
-                </div>
-
-                <div className="form-section">
-                    <label>Theme</label>
-                    <div className="button-row-equal">
-                        <button
-                            className={theme === 'light' ? 'button-primary' : 'button-secondary'}
-                            onClick={() => handleThemeChange('light')}
-                        >
-                            Light
-                        </button>
-                        <button
-                            className={theme === 'dark' ? 'button-primary' : 'button-secondary'}
-                            onClick={() => handleThemeChange('dark')}
-                        >
-                            Dark
-                        </button>
-                        <button
-                            className={theme === 'system' ? 'button-primary' : 'button-secondary'}
-                            onClick={() => handleThemeChange('system')}
-                        >
-                            System
-                        </button>
                     </div>
                 </div>
             </div>

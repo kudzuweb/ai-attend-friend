@@ -8,7 +8,7 @@ interface SettingsViewProps {
 type WindowPosition = 'top-left' | 'top-center' | 'top-right';
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-    const { settings, isLoading, updateSettings } = useSettings();
+    const { settings, isLoading, updateSettings, refreshSettings } = useSettings();
     const { theme, setTheme } = useTheme();
 
     const tasksEnabled = settings?.tasksEnabled ?? true;
@@ -30,6 +30,8 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     const handlePositionChange = async (newPosition: WindowPosition) => {
         // Call IPC to reposition window - this will also update ConfigService
         await window.api.setWindowPosition(newPosition);
+        // Refresh settings from backend to sync UI state
+        await refreshSettings();
     };
 
     if (isLoading) {

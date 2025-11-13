@@ -18,7 +18,7 @@ const windowManager = new WindowManager(configService);
 const screenshotService = new ScreenshotService();
 const aiService = new AIAnalysisService();
 const storageService = new StorageService();
-const sessionManager = new SessionManager(windowManager, storageService, screenshotService, aiService);
+const sessionManager = new SessionManager(windowManager, storageService, screenshotService, aiService, configService);
 
 /**
  * Initialize the application

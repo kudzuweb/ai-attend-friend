@@ -103,7 +103,10 @@ export function registerIPCHandlers(
     });
 
     ipcMain.handle('settings:update', (_evt, partial: { demoMode?: boolean; tasksEnabled?: boolean }) => {
-        return configService.updateSettings(partial);
+        const result = configService.updateSettings(partial);
+        // Notify SessionManager that settings changed so it can re-evaluate timers
+        sessionManager.handleSettingsChange();
+        return result;
     });
 
     // ========== Session Handlers ==========

@@ -302,6 +302,17 @@ export class SessionManager {
     }
 
     /**
+     * Handle settings change - re-evaluate analysis timer state
+     * Called when settings like demoMode are updated during an active session
+     */
+    handleSettingsChange(): void {
+        console.log('[SessionManager] Settings changed, re-evaluating analysis timer');
+        // Re-evaluate whether analysis timer should be running
+        // This will stop the timer if demoMode is now ON, or start it if demoMode is now OFF
+        this.startAnalysisTimer();
+    }
+
+    /**
      * Pause session (called when system sleeps)
      */
     pauseSession(): void {

@@ -1,55 +1,17 @@
 import { useState, useEffect, useRef } from "react";
+import { useSettings } from "../../contexts/SettingsContext";
+import { useSession } from "../../contexts/SessionContext";
 
 export default function AnalysisView() {
     const [llmText, setLlmText] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [demoMode, setDemoMode] = useState<boolean>(true);
-    const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
     const intervalRef = useRef<number | null>(null);
 
-    // Load demo mode from localStorage
-    useEffect(() => {
-        const savedDemo = localStorage.getItem('demoMode');
-        if (savedDemo !== null) {
-            const mode = JSON.parse(savedDemo);
-            console.log('[AnalysisView] Initial demo mode:', mode);
-            setDemoMode(mode);
-        }
+    const { settings } = useSettings();
+    const { sessionState } = useSession();
 
-        // Listen for storage changes
-        const handleStorageChange = () => {
-            const savedDemo = localStorage.getItem('demoMode');
-            if (savedDemo !== null) {
-                const mode = JSON.parse(savedDemo);
-                console.log('[AnalysisView] Demo mode changed to:', mode);
-                setDemoMode(mode);
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
-
-    // Track session state
-    useEffect(() => {
-        async function loadSessionState() {
-            try {
-                const sessionState = await window.api.sessionGetState();
-                console.log('[AnalysisView] Initial session state:', sessionState);
-                setIsSessionActive(sessionState.isActive || false);
-            } catch (error) {
-                console.error('[AnalysisView] Error loading session state:', error);
-            }
-        }
-
-        loadSessionState();
-
-        // Listen for session updates
-        window.api.onSessionUpdated((state) => {
-            console.log('[AnalysisView] Session updated:', { isActive: state.isActive });
-            setIsSessionActive(state.isActive || false);
-        });
-    }, []);
+    const demoMode = settings?.demoMode ?? true;
+    const isSessionActive = Boolean(sessionState?.isActive);
 
     async function askTheLlm() {
         setLoading(true);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSettings } from "../../contexts/SettingsContext";
 
 interface SessionSetupViewProps {
     onComplete: () => void;
@@ -9,19 +10,10 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
     const [selectedDuration, setSelectedDuration] = useState<number>(25 * 60 * 1000); // 25 mins default
     const [focusGoal, setFocusGoal] = useState<string>('');
     const [tasks, setTasks] = useState<[string, string, string]>(['', '', '']);
-    const [showTasks, setShowTasks] = useState<boolean>(() => {
-        const saved = localStorage.getItem('tasksEnabled');
-        return saved !== null ? JSON.parse(saved) : true;
-    });
     const dialRef = useRef<HTMLDivElement>(null);
 
-    // Sync showTasks with localStorage whenever component is rendered
-    useEffect(() => {
-        const saved = localStorage.getItem('tasksEnabled');
-        if (saved !== null) {
-            setShowTasks(JSON.parse(saved));
-        }
-    }, []);
+    const { settings } = useSettings();
+    const showTasks = settings?.tasksEnabled ?? true;
 
     // Convert selectedDuration (in ms) to minutes for display
     const durationMinutes = selectedDuration / (60 * 1000);

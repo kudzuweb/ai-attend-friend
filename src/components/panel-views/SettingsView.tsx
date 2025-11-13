@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { useTheme, type Theme } from "../../contexts/ThemeContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 interface SettingsViewProps {
     onClose: () => void;
@@ -8,40 +8,19 @@ interface SettingsViewProps {
 type WindowPosition = 'top-left' | 'top-center' | 'top-right';
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-    const [tasksEnabled, setTasksEnabled] = useState<boolean>(true);
-    const [demoMode, setDemoMode] = useState<boolean>(true);
-    const [windowPosition, setWindowPosition] = useState<WindowPosition>('top-right');
+    const { settings, isLoading, updateSettings } = useSettings();
     const { theme, setTheme } = useTheme();
 
-    // Load settings from localStorage
-    useEffect(() => {
-        const savedTasks = localStorage.getItem('tasksEnabled');
-        if (savedTasks !== null) {
-            setTasksEnabled(JSON.parse(savedTasks));
-        }
+    const tasksEnabled = settings?.tasksEnabled ?? true;
+    const demoMode = settings?.demoMode ?? true;
+    const windowPosition = settings?.windowPosition ?? 'top-right';
 
-        const savedDemo = localStorage.getItem('demoMode');
-        if (savedDemo !== null) {
-            setDemoMode(JSON.parse(savedDemo));
-        }
-
-        const savedPosition = localStorage.getItem('windowPosition') as WindowPosition;
-        if (savedPosition && ['top-left', 'top-center', 'top-right'].includes(savedPosition)) {
-            setWindowPosition(savedPosition);
-        }
-    }, []);
-
-    // Save to localStorage when toggled
     const handleToggleTasks = (enabled: boolean) => {
-        setTasksEnabled(enabled);
-        localStorage.setItem('tasksEnabled', JSON.stringify(enabled));
+        void updateSettings({ tasksEnabled: enabled });
     };
 
     const handleToggleDemoMode = (enabled: boolean) => {
-        setDemoMode(enabled);
-        localStorage.setItem('demoMode', JSON.stringify(enabled));
-        // Dispatch storage event so other components can react
-        window.dispatchEvent(new Event('storage'));
+        void updateSettings({ demoMode: enabled });
     };
 
     const handleThemeChange = (newTheme: Theme) => {
@@ -49,13 +28,20 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     };
 
     const handlePositionChange = async (newPosition: WindowPosition) => {
-        setWindowPosition(newPosition);
-        localStorage.setItem('windowPosition', newPosition);
-        // Call IPC to reposition window
-        if (window.api?.setWindowPosition) {
-            await window.api.setWindowPosition(newPosition);
-        }
+        // Call IPC to reposition window - this will also update ConfigService
+        await window.api.setWindowPosition(newPosition);
     };
+
+    if (isLoading) {
+        return (
+            <>
+                <div className="flex-row-end mb-16">
+                    <button className="button-secondary" onClick={onClose}>Close</button>
+                </div>
+                <p>Loading settings...</p>
+            </>
+        );
+    }
 
     return (
         <>

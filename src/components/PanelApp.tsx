@@ -15,7 +15,7 @@ export default function PanelApp() {
 
     // Listen to unified view change events
     useEffect(() => {
-        window.api.onViewChangeRequested((payload) => {
+        const unsubscribe = window.api.onViewChangeRequested((payload) => {
             console.log('[PanelApp] onViewChangeRequested fired:', payload);
 
             // Handle view changes
@@ -26,16 +26,22 @@ export default function PanelApp() {
                 setDistractedAnalysisText(payload.data);
             }
         });
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     // Listen for session state changes and navigate away from tasks view if session ends
     useEffect(() => {
-        window.api.onSessionUpdated((state) => {
+        const unsubscribe = window.api.onSessionUpdated((state) => {
             // If session becomes inactive, go back to analysis view
             if (!state.isActive && currentView === 'tasks') {
                 setCurrentView('analysis');
             }
         });
+        return () => {
+            unsubscribe();
+        };
     }, [currentView]);
 
     function renderView() {

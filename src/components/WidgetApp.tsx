@@ -52,12 +52,16 @@ export default function WidgetApp() {
     // useEffects
     // listen to session state updates
     useEffect(() => {
-        window.api.onSessionUpdated((state) => {
+        const unsubscribe = window.api.onSessionUpdated((state) => {
             setSessionState(state);
         });
 
         // get initial session state
         window.api.sessionGetState().then(setSessionState).catch(console.error);
+
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     // screenshot capture loop - only runs during active session

@@ -49,7 +49,8 @@ async function initialize() {
         sessionManager,
         screenshotService,
         aiService,
-        storageService
+        storageService,
+        configService
     );
     console.log('[Main] IPC handlers registered');
 }

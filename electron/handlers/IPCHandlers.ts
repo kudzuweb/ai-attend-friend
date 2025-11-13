@@ -4,13 +4,15 @@ import type { SessionManager } from '../services/SessionManager.js';
 import type { ScreenshotService } from '../services/ScreenshotService.js';
 import type { AIAnalysisService } from '../services/AIAnalysisService.js';
 import type { StorageService } from '../services/StorageService.js';
+import type { ConfigService } from '../services/ConfigService.js';
 
 export function registerIPCHandlers(
     windowManager: WindowManager,
     sessionManager: SessionManager,
     screenshotService: ScreenshotService,
     aiService: AIAnalysisService,
-    storageService: StorageService
+    storageService: StorageService,
+    configService: ConfigService
 ) {
     console.log('[IPCHandlers] Registering IPC handlers');
 
@@ -92,6 +94,16 @@ export function registerIPCHandlers(
     ipcMain.handle('ui:request-analysis', () => {
         console.log('[IPCHandlers] ui:request-analysis received');
         windowManager.requestAnalysis();
+    });
+
+    // ========== Settings Handlers ==========
+
+    ipcMain.handle('settings:get', () => {
+        return configService.getAllSettings();
+    });
+
+    ipcMain.handle('settings:update', (_evt, partial: { demoMode?: boolean; tasksEnabled?: boolean }) => {
+        return configService.updateSettings(partial);
     });
 
     // ========== Session Handlers ==========

@@ -228,7 +228,13 @@ export class SessionManager {
     async stopSession(): Promise<void> {
         console.log('[SessionManager] stopSession called');
 
-        // Generate final summary before clearing session
+        // CRITICAL: Stop all timers FIRST to prevent race conditions
+        // Must happen before any async operations that modify session data
+        this.stopSessionTimer();
+        this.stopScreenshotTimer();
+        this.stopAnalysisTimer();
+
+        // Generate final summary after stopping timers
         await this.generateFinalSummary();
 
         this.sessionState.isActive = false;
@@ -236,10 +242,6 @@ export class SessionManager {
         this.sessionState.startTime = 0;
         this.sessionState.endTime = 0;
         this.sessionState.focusGoal = '';
-
-        this.stopSessionTimer();
-        this.stopScreenshotTimer();
-        this.stopAnalysisTimer();
 
         // Clear current session tracking
         this.currentSessionId = null;

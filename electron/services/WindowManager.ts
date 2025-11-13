@@ -94,7 +94,8 @@ export class WindowManager {
         // load renderer
         if (process.env.NODE_ENV !== 'production') {
             await this.widgetWindow.loadURL('http://localhost:5173');
-            this.widgetWindow.webContents.openDevTools({ mode: 'detach' });
+            // DISABLED FOR DEMO
+            // this.widgetWindow.webContents.openDevTools({ mode: 'detach' });
         } else {
             await this.widgetWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
         }
@@ -144,7 +145,8 @@ export class WindowManager {
             // load renderer
             if (process.env.NODE_ENV !== 'production') {
                 this.panelWindow.loadURL('http://localhost:5173/#/panel');
-                this.panelWindow.webContents.openDevTools({ mode: 'detach' });
+                // DISABLED FOR DEMO
+                // this.panelWindow.webContents.openDevTools({ mode: 'detach' });
             } else {
                 this.panelWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}#/panel`);
             }

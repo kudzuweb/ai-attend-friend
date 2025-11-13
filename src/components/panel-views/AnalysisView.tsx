@@ -81,15 +81,15 @@ export default function AnalysisView() {
 
         // Only start auto-analysis if demo mode is OFF and session is active
         if (!demoMode && isSessionActive) {
-            console.log('[AnalysisView] Starting auto-analysis timer (5 minutes)');
-            // Set up interval for every 5 minutes (no immediate analysis)
+            console.log('🎬 [DEMO MODE] Starting auto-analysis timer (1 MINUTE INTERVAL)');
+            // Set up interval for every 1 minute (no immediate analysis)
             // For testing: change to 30 * 1000 (30 seconds) or 10 * 1000 (10 seconds)
-            const intervalMs = 5 * 60 * 1000; // 5 minutes
+            const intervalMs = 1 * 60 * 1000; // 1 minute
             intervalRef.current = setInterval(() => {
-                console.log('[AnalysisView] Auto-analysis triggered!');
+                console.log('🎬 [DEMO MODE] Auto-analysis triggered at 1-minute mark!');
                 askTheLlm();
             }, intervalMs);
-            console.log('[AnalysisView] Next auto-analysis in', intervalMs / 1000, 'seconds');
+            console.log('🎬 [DEMO MODE] Next auto-analysis in', intervalMs / 1000, 'seconds (60s)');
         } else {
             console.log('[AnalysisView] Auto-analysis NOT started - conditions not met');
         }
@@ -119,7 +119,7 @@ export default function AnalysisView() {
                     demoMode
                         ? 'Ready to analyze'
                         : isSessionActive
-                            ? 'Auto-analysis will run every 5 minutes during active session'
+                            ? 'Auto-analysis will run every 1 minute during active session'
                             : 'Start a session to enable auto-analysis'
                 )}
                 {!loading && llmText}

@@ -21,12 +21,12 @@ export default function WidgetApp() {
 
         try {
             console.log('capturing screenshot...');
-            // check perms
-            const permsStatus = await window.api.getScreenPermissionStatus();
-            if (permsStatus !== 'granted') {
-                setShowPermModal(true);
-                return;
-            }
+            // check perms - DISABLED FOR DEMO
+            // const permsStatus = await window.api.getScreenPermissionStatus();
+            // if (permsStatus !== 'granted') {
+            //     setShowPermModal(true);
+            //     return;
+            // }
             // capture one frame
             const shot: Screenshot = await window.api.captureFrames();
             setImg(shot.dataUrl);

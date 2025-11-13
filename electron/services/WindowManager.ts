@@ -20,7 +20,8 @@ export class WindowManager {
     private widgetWindow: BrowserWindow | null = null;
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
-    private pendingViewChange: ViewChangePayload | null = null;
+    private pendingViewChanges: ViewChangePayload[] = [];
+    private readonly MAX_PENDING_CHANGES = 5;
     private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
     private configService: ConfigService;
 
@@ -134,10 +135,13 @@ export class WindowManager {
 
             // Listen for when the panel finishes loading
             this.panelWindow.webContents.on('did-finish-load', () => {
-                if (this.pendingViewChange) {
-                    console.log('Panel loaded, sending view change:', this.pendingViewChange);
-                    this.panelWindow?.webContents.send('panel:change-view', this.pendingViewChange);
-                    this.pendingViewChange = null;
+                if (this.pendingViewChanges.length > 0) {
+                    console.log('Panel loaded, sending', this.pendingViewChanges.length, 'queued view changes');
+                    // Send all queued changes in order
+                    for (const change of this.pendingViewChanges) {
+                        this.panelWindow?.webContents.send('panel:change-view', change);
+                    }
+                    this.pendingViewChanges = [];
                 }
             });
 
@@ -148,11 +152,13 @@ export class WindowManager {
             } else {
                 this.panelWindow.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}#/panel`);
             }
-        } else if (this.pendingViewChange) {
-            // Panel already exists and is loaded, send immediately
-            console.log('Panel already loaded, sending view change immediately:', this.pendingViewChange);
-            this.panelWindow.webContents.send('panel:change-view', this.pendingViewChange);
-            this.pendingViewChange = null;
+        } else if (this.pendingViewChanges.length > 0) {
+            // Panel already exists and is loaded, send all queued changes immediately
+            console.log('Panel already loaded, sending', this.pendingViewChanges.length, 'queued changes immediately');
+            for (const change of this.pendingViewChanges) {
+                this.panelWindow.webContents.send('panel:change-view', change);
+            }
+            this.pendingViewChanges = [];
         }
 
         this.positionPanelBelowWidget();
@@ -165,8 +171,8 @@ export class WindowManager {
     hidePanel(): void {
         if (this.panelWindow) {
             this.panelWindow.hide();
-            // Reset pending view change if panel is hidden
-            this.pendingViewChange = null;
+            // Clear pending view changes queue if panel is hidden
+            this.pendingViewChanges = [];
         }
     }
 
@@ -211,8 +217,15 @@ export class WindowManager {
             // Panel already visible, send immediately
             this.panelWindow.webContents.send('panel:change-view', payload);
         } else {
-            // Panel not visible, store for when it opens
-            this.pendingViewChange = payload;
+            // Panel not visible, queue it
+            if (this.pendingViewChanges.length < this.MAX_PENDING_CHANGES) {
+                this.pendingViewChanges.push(payload);
+                console.log('[WindowManager] Queued view change. Queue length:', this.pendingViewChanges.length);
+            } else {
+                console.warn('[WindowManager] View change queue full, dropping oldest');
+                this.pendingViewChanges.shift(); // Remove oldest
+                this.pendingViewChanges.push(payload);
+            }
         }
     }
 
@@ -221,7 +234,7 @@ export class WindowManager {
      */
     requestSessionSetup(): void {
         console.log('requestSessionSetup called');
-        this.pendingViewChange = { view: 'session-setup' };
+        this.changeView({ view: 'session-setup' });
     }
 
     /**
@@ -229,7 +242,7 @@ export class WindowManager {
      */
     requestSettings(): void {
         console.log('requestSettings called');
-        this.pendingViewChange = { view: 'settings' };
+        this.changeView({ view: 'settings' });
     }
 
     /**
@@ -237,7 +250,7 @@ export class WindowManager {
      */
     requestAnalysis(): void {
         console.log('requestAnalysis called');
-        this.pendingViewChange = { view: 'analysis' };
+        this.changeView({ view: 'analysis' });
     }
 
     /**

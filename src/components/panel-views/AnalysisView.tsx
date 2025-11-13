@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useSettings } from "../../contexts/SettingsContext";
 import { useSession } from "../../contexts/SessionContext";
 
 export default function AnalysisView() {
     const [llmText, setLlmText] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const intervalRef = useRef<number | null>(null);
 
     const { settings } = useSettings();
     const { sessionState } = useSession();
@@ -30,41 +29,7 @@ export default function AnalysisView() {
         setLoading(false);
     }
 
-    // Auto-analysis timer when demo mode is OFF and session is active
-    useEffect(() => {
-        console.log('[AnalysisView] Auto-analysis check:', { demoMode, isSessionActive });
-
-        // Clear any existing interval
-        if (intervalRef.current) {
-            console.log('[AnalysisView] Clearing existing interval');
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-
-        // Only start auto-analysis if demo mode is OFF and session is active
-        if (!demoMode && isSessionActive) {
-            console.log('[AnalysisView] Starting auto-analysis timer (5 minutes)');
-            // Set up interval for every 5 minutes (no immediate analysis)
-            // For testing: change to 30 * 1000 (30 seconds) or 10 * 1000 (10 seconds)
-            const intervalMs = 5 * 60 * 1000; // 5 minutes
-            intervalRef.current = setInterval(() => {
-                console.log('[AnalysisView] Auto-analysis triggered!');
-                askTheLlm();
-            }, intervalMs);
-            console.log('[AnalysisView] Next auto-analysis in', intervalMs / 1000, 'seconds');
-        } else {
-            console.log('[AnalysisView] Auto-analysis NOT started - conditions not met');
-        }
-
-        // Cleanup on unmount or when dependencies change
-        return () => {
-            if (intervalRef.current) {
-                console.log('[AnalysisView] Cleanup: clearing interval');
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
-        };
-    }, [demoMode, isSessionActive]);
+    // Note: Auto-analysis timer is now handled by SessionManager in the main process
 
     return (
         <>

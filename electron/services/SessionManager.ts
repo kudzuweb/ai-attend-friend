@@ -4,11 +4,13 @@ import type { WindowManager } from './WindowManager.js';
 import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
 import type { AIAnalysisService } from './AIAnalysisService.js';
+import type { ConfigService } from './ConfigService.js';
 
 export class SessionManager {
     private sessionState: SessionState;
     private sessionTimer: NodeJS.Timeout | null = null;
     private screenshotTimer: NodeJS.Timeout | null = null;
+    private analysisTimer: NodeJS.Timeout | null = null;
     private currentSessionId: string | null = null;
     private currentSessionDate: string | null = null;
     private currentInterruption: SessionInterruption | null = null;
@@ -18,17 +20,20 @@ export class SessionManager {
     private storageService: StorageService;
     private screenshotService: ScreenshotService;
     private aiService: AIAnalysisService;
+    private configService: ConfigService;
 
     constructor(
         windowManager: WindowManager,
         storageService: StorageService,
         screenshotService: ScreenshotService,
-        aiService: AIAnalysisService
+        aiService: AIAnalysisService,
+        configService: ConfigService
     ) {
         this.windowManager = windowManager;
         this.storageService = storageService;
         this.screenshotService = screenshotService;
         this.aiService = aiService;
+        this.configService = configService;
 
         this.sessionState = {
             isActive: false,
@@ -167,6 +172,9 @@ export class SessionManager {
             }, 30_000);
         }, 30_000);
 
+        // Start the analysis timer (5 minutes if demo mode is OFF)
+        this.startAnalysisTimer();
+
         // Schedule session end
         this.sessionTimer = setTimeout(async () => {
             await this.stopSession();
@@ -220,7 +228,13 @@ export class SessionManager {
     async stopSession(): Promise<void> {
         console.log('[SessionManager] stopSession called');
 
-        // Generate final summary before clearing session
+        // CRITICAL: Stop all timers FIRST to prevent race conditions
+        // Must happen before any async operations that modify session data
+        this.stopSessionTimer();
+        this.stopScreenshotTimer();
+        this.stopAnalysisTimer();
+
+        // Generate final summary after stopping timers
         await this.generateFinalSummary();
 
         this.sessionState.isActive = false;
@@ -228,9 +242,6 @@ export class SessionManager {
         this.sessionState.startTime = 0;
         this.sessionState.endTime = 0;
         this.sessionState.focusGoal = '';
-
-        this.stopSessionTimer();
-        this.stopScreenshotTimer();
 
         // Clear current session tracking
         this.currentSessionId = null;
@@ -261,6 +272,49 @@ export class SessionManager {
     }
 
     /**
+     * Start the analysis timer (5 minutes) if demo mode is OFF
+     */
+    private startAnalysisTimer(): void {
+        this.stopAnalysisTimer();
+
+        // Only start if demo mode is OFF and session is active
+        const demoMode = this.configService.getDemoMode();
+        if (demoMode || !this.sessionState.isActive) {
+            console.log('[SessionManager] Analysis timer NOT started - demoMode:', demoMode, 'isActive:', this.sessionState.isActive);
+            return;
+        }
+
+        console.log('[SessionManager] Starting auto-analysis timer (5 minutes)');
+        const intervalMs = 5 * 60 * 1000; // 5 minutes
+
+        this.analysisTimer = setInterval(async () => {
+            console.log('[SessionManager] Auto-analysis triggered');
+            await this.handleDistractionAnalysis(10);
+        }, intervalMs);
+    }
+
+    /**
+     * Stop the analysis timer
+     */
+    private stopAnalysisTimer(): void {
+        if (this.analysisTimer) {
+            clearInterval(this.analysisTimer);
+            this.analysisTimer = null;
+        }
+    }
+
+    /**
+     * Handle settings change - re-evaluate analysis timer state
+     * Called when settings like demoMode are updated during an active session
+     */
+    handleSettingsChange(): void {
+        console.log('[SessionManager] Settings changed, re-evaluating analysis timer');
+        // Re-evaluate whether analysis timer should be running
+        // This will stop the timer if demoMode is now ON, or start it if demoMode is now OFF
+        this.startAnalysisTimer();
+    }
+
+    /**
      * Pause session (called when system sleeps)
      */
     pauseSession(): void {
@@ -271,6 +325,7 @@ export class SessionManager {
 
         this.stopSessionTimer();
         this.stopScreenshotTimer();
+        this.stopAnalysisTimer();
 
         // Create interruption record
         this.currentInterruption = {
@@ -346,6 +401,9 @@ export class SessionManager {
                 this.stopScreenshotTimer();
             }
         }, 30_000);
+
+        // Resume analysis timer
+        this.startAnalysisTimer();
     }
 
     /**

@@ -111,6 +111,9 @@ const api = Object.freeze({
     showPanel: (options) => ipcRenderer.invoke('panel:show', options),
     hidePanel: () => ipcRenderer.invoke('panel:hide'),
     setWindowPosition: (position) => ipcRenderer.invoke('window:set-position', position),
+    // settings APIs
+    getSettings: () => ipcRenderer.invoke('settings:get'),
+    updateSettings: (partial) => ipcRenderer.invoke('settings:update', partial),
     // session APIs
     sessionStart: (lengthMs, focusGoal, tasks) =>
         ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),
@@ -124,8 +127,11 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:list-all'),
     sessionGet: (sessionId, dateString) =>
         ipcRenderer.invoke('session:get', sessionId, dateString),
-    onSessionUpdated: (callback) =>
-        ipcRenderer.on('session:updated', (_event, state) => callback(state)),
+    onSessionUpdated: (callback) => {
+        const handler = (_event, state) => callback(state);
+        ipcRenderer.on('session:updated', handler);
+        return () => ipcRenderer.removeListener('session:updated', handler);
+    },
     requestSessionSetup: () =>
         ipcRenderer.invoke('ui:request-session-setup'),
     requestSettings: () =>
@@ -139,8 +145,11 @@ const api = Object.freeze({
     saveDistractionReason: (reason) =>
         ipcRenderer.invoke('session:save-distraction-reason', reason),
     // unified view change listener
-    onViewChangeRequested: (callback) =>
-        ipcRenderer.on('panel:change-view', (_event, payload) => callback(payload)),
+    onViewChangeRequested: (callback) => {
+        const handler = (_event, payload) => callback(payload);
+        ipcRenderer.on('panel:change-view', handler);
+        return () => ipcRenderer.removeListener('panel:change-view', handler);
+    },
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
 })

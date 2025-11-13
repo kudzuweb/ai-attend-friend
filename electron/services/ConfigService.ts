@@ -4,6 +4,8 @@ import path from 'path';
 
 interface AppConfig {
     windowPosition?: 'top-left' | 'top-center' | 'top-right';
+    demoMode?: boolean;
+    tasksEnabled?: boolean;
 }
 
 export class ConfigService {
@@ -43,5 +45,42 @@ export class ConfigService {
     setWindowPosition(position: 'top-left' | 'top-center' | 'top-right'): void {
         this.config.windowPosition = position;
         this.saveConfig();
+    }
+
+    getDemoMode(): boolean {
+        return this.config.demoMode ?? true;
+    }
+
+    setDemoMode(enabled: boolean): void {
+        this.config.demoMode = enabled;
+        this.saveConfig();
+    }
+
+    getTasksEnabled(): boolean {
+        return this.config.tasksEnabled ?? true;
+    }
+
+    setTasksEnabled(enabled: boolean): void {
+        this.config.tasksEnabled = enabled;
+        this.saveConfig();
+    }
+
+    getAllSettings(): { windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean } {
+        return {
+            windowPosition: this.getWindowPosition(),
+            demoMode: this.getDemoMode(),
+            tasksEnabled: this.getTasksEnabled(),
+        };
+    }
+
+    updateSettings(partial: { demoMode?: boolean; tasksEnabled?: boolean }): { windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean } {
+        if (partial.demoMode !== undefined) {
+            this.config.demoMode = partial.demoMode;
+        }
+        if (partial.tasksEnabled !== undefined) {
+            this.config.tasksEnabled = partial.tasksEnabled;
+        }
+        this.saveConfig();
+        return this.getAllSettings();
     }
 }

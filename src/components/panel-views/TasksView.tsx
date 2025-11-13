@@ -22,11 +22,15 @@ export default function TasksView() {
         loadTasks();
 
         // Listen for session updates
-        window.api.onSessionUpdated((state) => {
+        const unsubscribe = window.api.onSessionUpdated((state) => {
             if (state.tasks) {
                 setTasks(state.tasks);
             }
         });
+
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     return (

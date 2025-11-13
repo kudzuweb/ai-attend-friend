@@ -21,7 +21,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const refreshSettings = useCallback(async () => {
         try {
+            console.log('[SettingsContext] Loading settings from backend...');
             const data = await window.api.getSettings();
+            console.log('[SettingsContext] Settings loaded:', data);
             setSettings(data);
         } catch (error) {
             console.error('[SettingsContext] Failed to load settings', error);
@@ -32,7 +34,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const updateSettings = useCallback(async (partial: Partial<AppSettings>) => {
         try {
+            console.log('[SettingsContext] Updating settings:', partial);
             const updated = await window.api.updateSettings(partial);
+            console.log('[SettingsContext] Settings updated:', updated);
             setSettings(updated);
             return updated;
         } catch (error) {

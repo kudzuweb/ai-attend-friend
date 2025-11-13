@@ -31,14 +31,23 @@ export default function TasksView() {
 
     return (
         <>
-            <h2 className="panel-title">Tasks</h2>
+            <h2 className={'panel'} style={{ fontWeight: 600 }}>tasks</h2>
 
             {loading ? (
                 <div style={{ padding: '16px 0', opacity: 0.7 }}>
                     Loading tasks...
                 </div>
             ) : tasks && tasks.some(task => task.trim()) ? (
-                <ul className="task-list">
+                <ul
+                    style={{
+                        background: 'rgba(0,0,0,0.15)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 8,
+                        padding: '12px 24px',
+                        margin: '8px 0',
+                        lineHeight: 1.8,
+                    }}
+                >
                     {tasks.map((task, index) => (
                         task.trim() && (
                             <li key={index} style={{ marginBottom: index < tasks.length - 1 ? 8 : 0 }}>
@@ -49,7 +58,7 @@ export default function TasksView() {
                 </ul>
             ) : (
                 <div style={{ padding: '16px 0', opacity: 0.6, fontStyle: 'italic' }}>
-                    no tasks set for this session
+                    No tasks set for this session
                 </div>
             )}
         </>

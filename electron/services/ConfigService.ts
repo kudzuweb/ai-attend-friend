@@ -15,6 +15,7 @@ export class ConfigService {
     constructor() {
         const userDataPath = app.getPath('userData');
         this.configPath = path.join(userDataPath, 'config.json');
+        console.log('[ConfigService] Config path:', this.configPath);
         this.loadConfig();
     }
 
@@ -23,9 +24,13 @@ export class ConfigService {
             if (fs.existsSync(this.configPath)) {
                 const data = fs.readFileSync(this.configPath, 'utf-8');
                 this.config = JSON.parse(data);
+                console.log('[ConfigService] Config loaded:', this.config);
+            } else {
+                console.log('[ConfigService] No existing config file, using defaults');
+                this.config = {};
             }
         } catch (error) {
-            console.error('Failed to load config:', error);
+            console.error('[ConfigService] Failed to load config:', error);
             this.config = {};
         }
     }
@@ -33,8 +38,9 @@ export class ConfigService {
     private saveConfig(): void {
         try {
             fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2), 'utf-8');
+            console.log('[ConfigService] Config saved:', this.config);
         } catch (error) {
-            console.error('Failed to save config:', error);
+            console.error('[ConfigService] Failed to save config:', error);
         }
     }
 

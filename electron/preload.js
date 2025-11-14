@@ -132,6 +132,11 @@ const api = Object.freeze({
         ipcRenderer.on('session:updated', handler);
         return () => ipcRenderer.removeListener('session:updated', handler);
     },
+    onScreenshotCapture: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on('screenshot:capture', handler);
+        return () => ipcRenderer.removeListener('screenshot:capture', handler);
+    },
     requestSessionSetup: () =>
         ipcRenderer.invoke('ui:request-session-setup'),
     requestSettings: () =>

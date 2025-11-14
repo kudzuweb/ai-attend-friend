@@ -271,6 +271,13 @@ export class WindowManager {
     }
 
     /**
+     * Trigger screenshot capture in widget window
+     */
+    triggerScreenshotCapture(): void {
+        this.widgetWindow?.webContents.send('screenshot:capture');
+    }
+
+    /**
      * Send message to panel
      */
     sendToPanel(channel: string, ...args: any[]): void {

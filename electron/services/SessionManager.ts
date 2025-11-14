@@ -159,16 +159,20 @@ export class SessionManager {
 
         this.broadcastSessionState();
 
-        // Start the screenshot timer (note: actual capture happens in renderer)
-        // The timer just tracks when captures should happen
+        // Start the screenshot timer (30s initial delay, then every 30s)
         this.screenshotTimer = setTimeout(() => {
             if (!this.sessionState.isActive) return;
+
+            // Trigger first capture
+            this.windowManager.triggerScreenshotCapture();
 
             // Continue with regular interval
             this.screenshotTimer = setInterval(() => {
                 if (!this.sessionState.isActive) {
                     this.stopScreenshotTimer();
+                    return;
                 }
+                this.windowManager.triggerScreenshotCapture();
             }, 30_000);
         }, 30_000);
 
@@ -395,11 +399,14 @@ export class SessionManager {
             this.windowManager.showPanel();
         }, this.remainingSessionTime);
 
-        // Resume screenshot timer
+        // Resume screenshot timer - trigger immediately then every 30s
+        this.windowManager.triggerScreenshotCapture();
         this.screenshotTimer = setInterval(() => {
             if (!this.sessionState.isActive) {
                 this.stopScreenshotTimer();
+                return;
             }
+            this.windowManager.triggerScreenshotCapture();
         }, 30_000);
 
         // Resume analysis timer

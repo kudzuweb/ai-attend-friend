@@ -13,12 +13,19 @@ import { StorageService } from './services/StorageService.js';
 import { registerIPCHandlers } from './handlers/IPCHandlers.js';
 
 // Initialize services
+console.log('[Main] Initializing services...');
 const configService = new ConfigService();
+console.log('[Main] ConfigService initialized');
 const windowManager = new WindowManager(configService);
+console.log('[Main] WindowManager initialized');
 const screenshotService = new ScreenshotService();
+console.log('[Main] ScreenshotService initialized');
 const aiService = new AIAnalysisService();
+console.log('[Main] AIAnalysisService initialized');
 const storageService = new StorageService();
+console.log('[Main] StorageService initialized');
 const sessionManager = new SessionManager(windowManager, storageService, screenshotService, aiService, configService);
+console.log('[Main] SessionManager initialized');
 
 /**
  * Initialize the application
@@ -53,10 +60,12 @@ async function initialize() {
         configService
     );
     console.log('[Main] IPC handlers registered');
+    console.log('[Main] ✓ Application initialization complete');
 }
 
 // App lifecycle events
 app.whenReady().then(() => {
+    console.log('[Main] Electron app ready, starting initialization...');
     initialize().catch((error) => {
         console.error('[Main] Initialization failed:', error);
         app.quit();

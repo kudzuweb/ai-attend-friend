@@ -22,11 +22,10 @@ export default function InterruptionReflectionView({ onResume, onEnd }: Interrup
     async function handleResumeAfterInterruption() {
         async function handleOk() {
             setInterruptionReflection('');
-            await window.api.hidePanel();
             onResume();
         }
 
-        handleSaveAndAction(handleOk, 'resume');
+        await handleSaveAndAction(handleOk, 'resume');
     }
 
     async function handleEndAfterInterruption() {
@@ -36,7 +35,7 @@ export default function InterruptionReflectionView({ onResume, onEnd }: Interrup
             onEnd();
         }
 
-        handleSaveAndAction(handleOk, 'end')
+        await handleSaveAndAction(handleOk, 'end')
     }
 
     return (

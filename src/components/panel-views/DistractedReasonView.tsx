@@ -33,7 +33,7 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
             await window.api.hidePanel();
             onComplete();
         }
-        handleSessionCompletion(handleOk);
+        await handleSessionCompletion(handleOk);
     }
 
     async function handleResumeSession() {
@@ -47,7 +47,7 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
             return; // Don't allow deeper reflection without a reason
         }
 
-        handleSessionCompletion(handleOk)
+        await handleSessionCompletion(handleOk)
     }
 
     async function handleReflectDeeper() {
@@ -62,7 +62,7 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
             return; // Don't allow deeper reflection without a reason
         }
 
-        handleSessionCompletion(handleOk)
+        await handleSessionCompletion(handleOk)
     }
 
     return (

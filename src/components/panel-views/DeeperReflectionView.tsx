@@ -15,11 +15,11 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
     }, []);
 
     async function handleResumeSession() {
-        handleEndDeeperReflection('resume');
+        await handleEndDeeperReflection('resume');
     }
 
     async function handleSaveAndEndSession() {
-        handleEndDeeperReflection('end');
+        await handleEndDeeperReflection('end');
     }
 
     async function handleEndDeeperReflection(action: "resume" | "end") {

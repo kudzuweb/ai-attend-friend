@@ -10,65 +10,59 @@ export default function DistractedReasonView({ analysisText, onComplete, onRefle
     const [reason, setReason] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    async function handleSaveAndEndSession() {
+    async function handleSessionCompletion(handleOk: () => void) {
         setIsSubmitting(true);
 
         const res = await window.api.saveDistractionReason(reason);
 
         if (res.ok) {
-            // End the session
-            await window.api.sessionStop();
-            setReason('');
-            await window.api.hidePanel();
-            onComplete();
+            handleOk()
         } else {
             console.error('Failed to save distraction reason:', res.error);
         }
 
         setIsSubmitting(false);
+    }
+
+
+    async function handleSaveAndEndSession() {
+        async function handleOk() {
+            // Save and end the session
+            setReason('');
+            await window.api.sessionStop();
+            await window.api.hidePanel();
+            onComplete();
+        }
+        handleSessionCompletion(handleOk);
     }
 
     async function handleResumeSession() {
-        if (!reason.trim()) {
-            return; // Don't allow resume without a reason
-        }
-
-        setIsSubmitting(true);
-
-        // Save the reason first
-        const res = await window.api.saveDistractionReason(reason);
-
-        if (res.ok) {
+        async function handleOk() {
             setReason('');
             await window.api.hidePanel();
             onComplete();
-        } else {
-            console.error('Failed to save distraction reason:', res.error);
         }
 
-        setIsSubmitting(false);
-    }
-
-    async function handleReflectDeeper() {
         if (!reason.trim()) {
             return; // Don't allow deeper reflection without a reason
         }
 
-        setIsSubmitting(true);
+        handleSessionCompletion(handleOk)
+    }
 
-        // Save the reason first
-        const res = await window.api.saveDistractionReason(reason);
-
-        if (res.ok) {
+    async function handleReflectDeeper() {
+        async function handleOk() {
             setReason('');
             // Pause the session before opening reflection view
             await window.api.pauseSession();
             onReflectDeeper();
-        } else {
-            console.error('Failed to save distraction reason:', res.error);
         }
 
-        setIsSubmitting(false);
+        if (!reason.trim()) {
+            return; // Don't allow deeper reflection without a reason
+        }
+
+        handleSessionCompletion(handleOk)
     }
 
     return (

@@ -4,6 +4,7 @@ interface DeeperReflectionViewProps {
     onComplete: () => void;
 }
 
+
 export default function DeeperReflectionView({ onComplete }: DeeperReflectionViewProps) {
     const [reflection, setReflection] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,32 +15,24 @@ export default function DeeperReflectionView({ onComplete }: DeeperReflectionVie
     }, []);
 
     async function handleResumeSession() {
-        setIsSubmitting(true);
-
-        const res = await window.api.handleReflection('resume', reflection);
-
-        if (res.ok) {
-            setReflection('');
-            await window.api.hidePanel();
-            onComplete();
-        } else {
-            console.error('Failed to save reflection and resume:', res.error);
-        }
-
-        setIsSubmitting(false);
+        handleEndDeeperReflection('resume');
     }
 
     async function handleSaveAndEndSession() {
+        handleEndDeeperReflection('end');
+    }
+
+    async function handleEndDeeperReflection(action: "resume" | "end") {
         setIsSubmitting(true);
 
-        const res = await window.api.handleReflection('end', reflection);
+        const res = await window.api.handleReflection(action, reflection);
 
         if (res.ok) {
             setReflection('');
             await window.api.hidePanel();
             onComplete();
         } else {
-            console.error('Failed to save reflection and end session:', res.error);
+            console.error('Failed to save reflection and', action, 'session:', res.error);
         }
 
         setIsSubmitting(false);

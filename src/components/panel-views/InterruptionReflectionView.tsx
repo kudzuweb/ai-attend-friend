@@ -8,29 +8,35 @@ interface InterruptionReflectionViewProps {
 export default function InterruptionReflectionView({ onResume, onEnd }: InterruptionReflectionViewProps) {
     const [interruptionReflection, setInterruptionReflection] = useState<string>('');
 
-    async function handleResumeAfterInterruption() {
-        console.log('[InterruptionReflectionView] handleResumeAfterInterruption called, reflection:', interruptionReflection);
-        const res = await window.api.handleInterruption('resume', interruptionReflection);
-        console.log('[InterruptionReflectionView] Resume result:', res);
+    async function handleSaveAndAction(handleOk: () => void, action: 'resume' | 'end') {
+        console.log('[InterruptionReflectionView]', action, 'called, reflection:', interruptionReflection);
+        const res = await window.api.handleInterruption(action, interruptionReflection);
+        console.log('[InterruptionReflectionView]', action, 'called, result:', res);
         if (res.ok) {
-            setInterruptionReflection('');
-            onResume();
+            handleOk();
         } else {
-            console.error('Failed to resume session:', res.error);
+            console.error('Failed to', action, 'session:', res.error);
         }
     }
 
+    async function handleResumeAfterInterruption() {
+        async function handleOk() {
+            setInterruptionReflection('');
+            await window.api.hidePanel();
+            onResume();
+        }
+
+        handleSaveAndAction(handleOk, 'resume');
+    }
+
     async function handleEndAfterInterruption() {
-        console.log('[InterruptionReflectionView] handleEndAfterInterruption called, reflection:', interruptionReflection);
-        const res = await window.api.handleInterruption('end', interruptionReflection);
-        console.log('[InterruptionReflectionView] End result:', res);
-        if (res.ok) {
+        async function handleOk() {
             setInterruptionReflection('');
             await window.api.hidePanel();
             onEnd();
-        } else {
-            console.error('Failed to end session:', res.error);
         }
+
+        handleSaveAndAction(handleOk, 'end')
     }
 
     return (

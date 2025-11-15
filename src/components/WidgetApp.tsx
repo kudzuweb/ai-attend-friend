@@ -9,8 +9,7 @@ export default function WidgetApp() {
     const [showPermModal, setShowPermModal] = useState(false);
     // session state
     const [sessionState, setSessionState] = useState<SessionState | null>(null);
-    // capture timer
-    const timerRef = useRef<number | null>(null);
+    // capture lock to prevent overlapping captures
     const capturingRef = useRef(false);
 
     // capture handler
@@ -64,33 +63,16 @@ export default function WidgetApp() {
         };
     }, []);
 
-    // screenshot capture loop - only runs during active session
+    // listen for screenshot capture commands from main process
     useEffect(() => {
-        if (!sessionState?.isActive) {
-            if (timerRef.current) window.clearInterval(timerRef.current);
-            return;
-        }
-
-        // Calculate time until first screenshot (30s into session)
-        const now = Date.now();
-        const elapsed = now - sessionState.startTime;
-        const firstScreenshotDelay = Math.max(0, 30_000 - elapsed);
-
-        // Schedule first screenshot
-        const timeoutId = window.setTimeout(() => {
+        const unsubscribe = window.api.onScreenshotCapture(() => {
             void grab();
-
-            // Then schedule every 30s
-            timerRef.current = window.setInterval(() => {
-                void grab();
-            }, 30_000);
-        }, firstScreenshotDelay);
+        });
 
         return () => {
-            window.clearTimeout(timeoutId);
-            if (timerRef.current) window.clearInterval(timerRef.current);
+            unsubscribe();
         };
-    }, [sessionState?.isActive, sessionState?.startTime]);
+    }, [grab]);
 
     // handler function to open settings
     async function openSettings() {

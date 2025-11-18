@@ -10,8 +10,7 @@ export default function WidgetApp() {
     const [showPermModal, setShowPermModal] = useState(false);
     // session state
     const [sessionState, setSessionState] = useState<SessionState | null>(null);
-    // capture timer
-    const timerRef = useRef<number | null>(null);
+    // capture lock to prevent overlapping captures
     const capturingRef = useRef(false);
 
     // capture handler
@@ -65,7 +64,7 @@ export default function WidgetApp() {
         };
     }, []);
 
-    // screenshot capture loop - only runs during active session
+    // listen for screenshot capture commands from main process
     useEffect(() => {
         if (!sessionState?.isActive) {
             if (timerRef.current) window.clearInterval(timerRef.current);
@@ -88,10 +87,9 @@ export default function WidgetApp() {
         }, firstScreenshotDelay);
 
         return () => {
-            window.clearTimeout(timeoutId);
-            if (timerRef.current) window.clearInterval(timerRef.current);
+            unsubscribe();
         };
-    }, [sessionState?.isActive, sessionState?.startTime]);
+    }, [grab]);
 
     // handler function to open settings
     async function openSettings() {

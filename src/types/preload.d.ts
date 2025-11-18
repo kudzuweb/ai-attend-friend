@@ -91,6 +91,7 @@ declare global {
             sessionListAll: () => Promise<{ ok: true; sessions: Record<string, StoredSession[]> } | { ok: false; error: string }>;
             sessionGet: (sessionId: string, date: string) => Promise<{ ok: true; session: StoredSession } | { ok: false; error: string }>;
             onSessionUpdated: (callback: (state: SessionState) => void) => () => void;
+            onScreenshotCapture: (callback: () => void) => () => void;
             requestSessionSetup: () => Promise<void>;
             requestSettings: () => Promise<void>;
             requestAnalysis: () => Promise<void>;

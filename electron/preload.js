@@ -1,5 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Screenshot constants (defined here due to preload.js CommonJS limitations)
+// Master values are in electron/constants.js
+const SCREENSHOT_MAX_WIDTH = 1440;
+const SCREENSHOT_JPEG_QUALITY = 0.85;
+
 // function to check permissions status
 async function getScreenPermissionStatus() {
     return ipcRenderer.invoke('screen-permission-status');
@@ -13,8 +18,8 @@ async function listScreens() {
 // screenshot function
 async function captureFrames(options) {
     // constraining resolution and quality to minimize cost while ensuring legibility for LLM
-    const maxLongEdge = options?.maxLongEdge ?? 1440;
-    const jpegQuality = options?.jpegQuality ?? 0.85;
+    const maxLongEdge = options?.maxLongEdge ?? SCREENSHOT_MAX_WIDTH;
+    const jpegQuality = options?.jpegQuality ?? SCREENSHOT_JPEG_QUALITY;
 
     // select display as source
     const sources = await listScreens();

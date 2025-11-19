@@ -2,6 +2,7 @@ import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
+import { SCREENSHOT_INTERVAL_MS } from '../constants.js';
 
 export class ScreenshotService {
     private captureTimer: NodeJS.Timeout | null = null;
@@ -183,7 +184,7 @@ export class ScreenshotService {
      */
     startCaptureTimer(intervalMs: number, callback: () => void): void {
         // First capture after initial delay
-        const firstScreenshotTime = 30_000;
+        const firstScreenshotTime = SCREENSHOT_INTERVAL_MS;
 
         this.captureTimer = setTimeout(() => {
             callback();

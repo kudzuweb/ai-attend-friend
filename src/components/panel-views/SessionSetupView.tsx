@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSettings } from "../../contexts/SettingsContext";
+import { DEFAULT_SESSION_DURATION_MS, INPUT_MAX_LENGTH } from "../../constants";
 
 interface SessionSetupViewProps {
     onComplete: () => void;
@@ -7,7 +8,7 @@ interface SessionSetupViewProps {
 }
 
 export default function SessionSetupView({ onComplete, onCancel }: SessionSetupViewProps) {
-    const [selectedDuration, setSelectedDuration] = useState<number>(25 * 60 * 1000); // 25 mins default
+    const [selectedDuration, setSelectedDuration] = useState<number>(DEFAULT_SESSION_DURATION_MS); // 25 mins default
     const [focusGoal, setFocusGoal] = useState<string>('');
     const [tasks, setTasks] = useState<[string, string, string]>(['', '', '']);
     const dialRef = useRef<HTMLDivElement>(null);
@@ -107,8 +108,8 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
                     type="text"
                     className="panel-input"
                     value={focusGoal}
-                    onChange={(e) => setFocusGoal(e.target.value.slice(0, 280))}
-                    maxLength={280}
+                    onChange={(e) => setFocusGoal(e.target.value.slice(0, INPUT_MAX_LENGTH))}
+                    maxLength={INPUT_MAX_LENGTH}
                     placeholder="What would you like to focus on?"
                 />
                 {showTasks && (
@@ -122,10 +123,10 @@ export default function SessionSetupView({ onComplete, onCancel }: SessionSetupV
                                 value={tasks[index]}
                                 onChange={(e) => {
                                     const newTasks: [string, string, string] = [...tasks] as [string, string, string];
-                                    newTasks[index] = e.target.value.slice(0, 280);
+                                    newTasks[index] = e.target.value.slice(0, INPUT_MAX_LENGTH);
                                     setTasks(newTasks);
                                 }}
-                                maxLength={280}
+                                maxLength={INPUT_MAX_LENGTH}
                                 placeholder={`Task ${index + 1}`}
                             />
                         ))}

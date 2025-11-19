@@ -3,13 +3,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SessionState } from '../types/session.types.js';
 import type { ConfigService } from './ConfigService.js';
+import { WIDGET_CIRCLE_SIZE, PANEL_WIDTH, PANEL_HEIGHT } from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const CIRCLE_SIZE = 160;
-const PANEL_WIDTH = 440;
-const PANEL_HEIGHT = 380;
 
 type ViewChangePayload = {
     view: 'session-setup' | 'settings' | 'tasks' | 'interruption-reflection' | 'distracted-reason' | 'analysis';
@@ -54,18 +51,18 @@ export class WindowManager {
                 x = screenX + margin;
                 break;
             case 'top-center':
-                x = screenX + Math.round((screenWidth - CIRCLE_SIZE) / 2);
+                x = screenX + Math.round((screenWidth - WIDGET_CIRCLE_SIZE) / 2);
                 break;
             case 'top-right':
-                x = screenX + screenWidth - CIRCLE_SIZE - margin;
+                x = screenX + screenWidth - WIDGET_CIRCLE_SIZE - margin;
                 break;
         }
 
         this.widgetWindow = new BrowserWindow({
             x,
             y,
-            width: CIRCLE_SIZE,
-            height: CIRCLE_SIZE,
+            width: WIDGET_CIRCLE_SIZE,
+            height: WIDGET_CIRCLE_SIZE,
             show: false,
             frame: false,
             transparent: true,
@@ -88,8 +85,8 @@ export class WindowManager {
         if (process.platform === 'darwin') app.dock?.hide();
 
         // hard-clamp size so mac can't "help" by overriding my resizable: false
-        this.widgetWindow.setMinimumSize(CIRCLE_SIZE, CIRCLE_SIZE);
-        this.widgetWindow.setMaximumSize(CIRCLE_SIZE, CIRCLE_SIZE);
+        this.widgetWindow.setMinimumSize(WIDGET_CIRCLE_SIZE, WIDGET_CIRCLE_SIZE);
+        this.widgetWindow.setMaximumSize(WIDGET_CIRCLE_SIZE, WIDGET_CIRCLE_SIZE);
         this.widgetWindow.setAspectRatio(1);
 
         // load renderer
@@ -325,10 +322,10 @@ export class WindowManager {
                 x = screenX + margin;
                 break;
             case 'top-center':
-                x = screenX + Math.round((screenWidth - CIRCLE_SIZE) / 2);
+                x = screenX + Math.round((screenWidth - WIDGET_CIRCLE_SIZE) / 2);
                 break;
             case 'top-right':
-                x = screenX + screenWidth - CIRCLE_SIZE - margin;
+                x = screenX + screenWidth - WIDGET_CIRCLE_SIZE - margin;
                 break;
         }
 

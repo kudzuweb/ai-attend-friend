@@ -5,6 +5,7 @@ import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
 import type { AIAnalysisService } from './AIAnalysisService.js';
 import type { ConfigService } from './ConfigService.js';
+import { SCREENSHOT_INTERVAL_MS, AUTO_ANALYSIS_INTERVAL_MS } from '../constants.js';
 
 export class SessionManager {
     private sessionState: SessionState;
@@ -172,9 +173,8 @@ export class SessionManager {
                     this.stopScreenshotTimer();
                     return;
                 }
-                this.windowManager.triggerScreenshotCapture();
-            }, 30_000);
-        }, 30_000);
+            }, SCREENSHOT_INTERVAL_MS);
+        }, SCREENSHOT_INTERVAL_MS);
 
         // Start the analysis timer (5 minutes if demo mode is OFF)
         this.startAnalysisTimer();
@@ -289,12 +289,11 @@ export class SessionManager {
         }
 
         console.log('[SessionManager] Starting auto-analysis timer (5 minutes)');
-        const intervalMs = 5 * 60 * 1000; // 5 minutes
 
         this.analysisTimer = setInterval(async () => {
             console.log('[SessionManager] Auto-analysis triggered');
             await this.handleDistractionAnalysis(10);
-        }, intervalMs);
+        }, AUTO_ANALYSIS_INTERVAL_MS);
     }
 
     /**
@@ -406,8 +405,7 @@ export class SessionManager {
                 this.stopScreenshotTimer();
                 return;
             }
-            this.windowManager.triggerScreenshotCapture();
-        }, 30_000);
+        }, SCREENSHOT_INTERVAL_MS);
 
         // Resume analysis timer
         this.startAnalysisTimer();

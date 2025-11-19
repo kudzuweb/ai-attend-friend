@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { WidgetShell } from './widgetshell';
-import { SCREENSHOT_INTERVAL_MS } from '../constants';
 
 export default function WidgetApp() {
     // state to:
@@ -66,25 +65,9 @@ export default function WidgetApp() {
 
     // listen for screenshot capture commands from main process
     useEffect(() => {
-        if (!sessionState?.isActive) {
-            if (timerRef.current) window.clearInterval(timerRef.current);
-            return;
-        }
-
-        // Calculate time until first screenshot (30s into session)
-        const now = Date.now();
-        const elapsed = now - sessionState.startTime;
-        const firstScreenshotDelay = Math.max(0, SCREENSHOT_INTERVAL_MS - elapsed);
-
-        // Schedule first screenshot
-        const timeoutId = window.setTimeout(() => {
+        const unsubscribe = window.api.onScreenshotCapture(() => {
             void grab();
-
-            // Then schedule every 30s
-            timerRef.current = window.setInterval(() => {
-                void grab();
-            }, SCREENSHOT_INTERVAL_MS);
-        }, firstScreenshotDelay);
+        });
 
         return () => {
             unsubscribe();

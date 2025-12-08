@@ -119,6 +119,9 @@ const api = Object.freeze({
     // settings APIs
     getSettings: () => ipcRenderer.invoke('settings:get'),
     updateSettings: (partial) => ipcRenderer.invoke('settings:update', partial),
+    // Feature flags
+    getUseNewArchitecture: () => ipcRenderer.invoke('config:getUseNewArchitecture'),
+    setUseNewArchitecture: (enabled) => ipcRenderer.invoke('config:setUseNewArchitecture', enabled),
     // session APIs
     sessionStart: (lengthMs, focusGoal, tasks) =>
         ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),

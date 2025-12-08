@@ -3,7 +3,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SessionState } from '../types/session.types.js';
 import type { ConfigService } from './ConfigService.js';
-import { WIDGET_CIRCLE_SIZE, PANEL_WIDTH, PANEL_HEIGHT, WINDOW_MARGIN, MAX_PENDING_CHANGES } from '../constants.js';
+import {
+    WIDGET_CIRCLE_SIZE,
+    PANEL_WIDTH,
+    PANEL_HEIGHT,
+    WINDOW_MARGIN,
+    MAX_PENDING_CHANGES,
+    MAIN_WINDOW_MIN_WIDTH,
+    MAIN_WINDOW_MIN_HEIGHT,
+    MAIN_WINDOW_DEFAULT_WIDTH,
+    MAIN_WINDOW_DEFAULT_HEIGHT
+} from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +26,7 @@ type ViewChangePayload = {
 export class WindowManager {
     private widgetWindow: BrowserWindow | null = null;
     private panelWindow: BrowserWindow | null = null;
+    private mainWindow: BrowserWindow | null = null;
     private preloadPath: string;
     private pendingViewChanges: ViewChangePayload[] = [];
     private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
@@ -104,6 +115,46 @@ export class WindowManager {
         });
 
         return this.widgetWindow;
+    }
+
+    /**
+     * Create the main application window
+     */
+    async createMainWindow(): Promise<BrowserWindow> {
+        console.log('[WindowManager] Creating main window');
+
+        this.mainWindow = new BrowserWindow({
+            width: MAIN_WINDOW_DEFAULT_WIDTH,
+            height: MAIN_WINDOW_DEFAULT_HEIGHT,
+            minWidth: MAIN_WINDOW_MIN_WIDTH,
+            minHeight: MAIN_WINDOW_MIN_HEIGHT,
+            show: true,
+            frame: true,
+            webPreferences: {
+                preload: this.preloadPath,
+                contextIsolation: true,
+                nodeIntegration: false
+            }
+        });
+
+        // Show in dock/taskbar
+        if (process.platform === 'darwin') {
+            app.dock?.show();
+        }
+
+        // Load main app
+        if (process.env.NODE_ENV !== 'production') {
+            await this.mainWindow.loadURL('http://localhost:5173');
+            this.mainWindow.webContents.openDevTools({ mode: 'detach' });
+        } else {
+            await this.mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
+        }
+
+        return this.mainWindow;
+    }
+
+    getMainWindow(): BrowserWindow | null {
+        return this.mainWindow;
     }
 
     /**
@@ -341,7 +392,9 @@ export class WindowManager {
     closeAll(): void {
         this.panelWindow?.close();
         this.widgetWindow?.close();
+        this.mainWindow?.close();
         this.panelWindow = null;
         this.widgetWindow = null;
+        this.mainWindow = null;
     }
 }

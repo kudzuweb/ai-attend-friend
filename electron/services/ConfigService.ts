@@ -107,4 +107,13 @@ export class ConfigService {
     getAll(): AppConfig {
         return { ...this.config };
     }
+
+    getUseNewArchitecture(): boolean {
+        return this.config.useNewArchitecture ?? false; // Default: old architecture
+    }
+
+    setUseNewArchitecture(enabled: boolean): void {
+        this.config.useNewArchitecture = enabled;
+        this.saveConfig();
+    }
 }

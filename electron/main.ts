@@ -8,6 +8,10 @@ import { SessionManager } from './services/SessionManager.js';
 import { ScreenshotService } from './services/ScreenshotService.js';
 import { AIAnalysisService } from './services/AIAnalysisService.js';
 import { StorageService } from './services/StorageService.js';
+import { TaskStorage } from './services/TaskStorage.js';
+import { OpenLoopStorage } from './services/OpenLoopStorage.js';
+import { JournalStorage } from './services/JournalStorage.js';
+import { DataMigrationService } from './services/DataMigrationService.js';
 
 // Import IPC handlers
 import { registerIPCHandlers } from './handlers/IPCHandlers.js';
@@ -24,6 +28,15 @@ const aiService = new AIAnalysisService();
 console.log('[Main] AIAnalysisService initialized');
 const storageService = new StorageService();
 console.log('[Main] StorageService initialized');
+
+// NEW: Initialize new storage services
+const taskStorage = new TaskStorage();
+console.log('[Main] TaskStorage initialized');
+const openLoopStorage = new OpenLoopStorage();
+console.log('[Main] OpenLoopStorage initialized');
+const journalStorage = new JournalStorage();
+console.log('[Main] JournalStorage initialized');
+
 const sessionManager = new SessionManager(windowManager, storageService, screenshotService, aiService, configService);
 console.log('[Main] SessionManager initialized');
 
@@ -32,6 +45,24 @@ console.log('[Main] SessionManager initialized');
  */
 async function initialize() {
     console.log('[Main] Initializing application');
+
+    // NEW: Initialize new storage services
+    await taskStorage.init();
+    console.log('[Main] TaskStorage storage initialized');
+    await openLoopStorage.init();
+    console.log('[Main] OpenLoopStorage storage initialized');
+    await journalStorage.init();
+    console.log('[Main] JournalStorage storage initialized');
+
+    // NEW: Run data migration
+    const migrationService = new DataMigrationService(
+        storageService,
+        taskStorage,
+        journalStorage,
+        configService
+    );
+    await migrationService.runMigrations();
+    console.log('[Main] Data migration complete');
 
     // Initialize AI service (load prompts)
     try {

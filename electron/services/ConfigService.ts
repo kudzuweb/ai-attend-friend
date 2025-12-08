@@ -6,6 +6,11 @@ interface AppConfig {
     windowPosition?: 'top-left' | 'top-center' | 'top-right';
     demoMode?: boolean;
     tasksEnabled?: boolean;
+    version?: number;
+    completedTaskVisibility?: 'immediate' | 'end-of-session' | 'end-of-day';
+    endOfDayTime?: string;
+    deletedTaskRetention?: '1day' | '7days' | '30days';
+    useNewArchitecture?: boolean;
 }
 
 export class ConfigService {
@@ -88,5 +93,18 @@ export class ConfigService {
         }
         this.saveConfig();
         return this.getAllSettings();
+    }
+
+    get<K extends keyof AppConfig>(key: K): AppConfig[K] {
+        return this.config[key];
+    }
+
+    set<K extends keyof AppConfig>(key: K, value: AppConfig[K]): void {
+        this.config[key] = value;
+        this.saveConfig();
+    }
+
+    getAll(): AppConfig {
+        return { ...this.config };
     }
 }

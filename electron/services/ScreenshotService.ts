@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
-import { SCREENSHOT_INTERVAL_MS } from '../constants.js';
+import { SCREENSHOT_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT, SHA_HASH_LENGTH, SESSION_CLEANUP_BUFFER_MS } from '../constants.js';
 
 export class ScreenshotService {
     private captureTimer: NodeJS.Timeout | null = null;
@@ -24,7 +24,7 @@ export class ScreenshotService {
     /**
      * Create short SHA for filenames to distinguish images taken close together
      */
-    private shortSha(buffer: Buffer, n = 8): string {
+    private shortSha(buffer: Buffer, n = SHA_HASH_LENGTH): string {
         return crypto.createHash('sha256').update(buffer).digest('hex').slice(0, n);
     }
 
@@ -114,7 +114,7 @@ export class ScreenshotService {
     /**
      * Get the N most recent screenshot file paths
      */
-    async getRecentScreenshots(limit = 10): Promise<string[]> {
+    async getRecentScreenshots(limit = DEFAULT_RECENT_SCREENSHOTS_LIMIT): Promise<string[]> {
         const dir = this.getCapturesDir();
         const entries = await fs.readdir(dir).catch(() => []);
         const files = entries
@@ -160,7 +160,7 @@ export class ScreenshotService {
 
                     const fileTime = stat.mtime.getTime();
                     // Include file if it was created during or just after session (some buffer for last capture)
-                    if (fileTime >= sessionStartTime && fileTime <= sessionEndTime + 5000) {
+                    if (fileTime >= sessionStartTime && fileTime <= sessionEndTime + SESSION_CLEANUP_BUFFER_MS) {
                         return filePath;
                     }
                     return null;

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SessionState } from '../types/session.types.js';
 import type { ConfigService } from './ConfigService.js';
-import { WIDGET_CIRCLE_SIZE, PANEL_WIDTH, PANEL_HEIGHT } from '../constants.js';
+import { WIDGET_CIRCLE_SIZE, PANEL_WIDTH, PANEL_HEIGHT, WINDOW_MARGIN, MAX_PENDING_CHANGES } from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +18,6 @@ export class WindowManager {
     private panelWindow: BrowserWindow | null = null;
     private preloadPath: string;
     private pendingViewChanges: ViewChangePayload[] = [];
-    private readonly MAX_PENDING_CHANGES = 5;
     private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
     private configService: ConfigService;
 
@@ -41,20 +40,19 @@ export class WindowManager {
         const display = screen.getPrimaryDisplay();
         const { width: screenWidth } = display.workAreaSize;
         const { x: screenX, y: screenY } = display.workArea;
-        const margin = 20;
 
         let x: number;
-        const y = screenY + margin;
+        const y = screenY + WINDOW_MARGIN;
 
         switch (savedPosition) {
             case 'top-left':
-                x = screenX + margin;
+                x = screenX + WINDOW_MARGIN;
                 break;
             case 'top-center':
                 x = screenX + Math.round((screenWidth - WIDGET_CIRCLE_SIZE) / 2);
                 break;
             case 'top-right':
-                x = screenX + screenWidth - WIDGET_CIRCLE_SIZE - margin;
+                x = screenX + screenWidth - WIDGET_CIRCLE_SIZE - WINDOW_MARGIN;
                 break;
         }
 
@@ -215,7 +213,7 @@ export class WindowManager {
             this.panelWindow.webContents.send('panel:change-view', payload);
         } else {
             // Panel not visible, queue it
-            if (this.pendingViewChanges.length < this.MAX_PENDING_CHANGES) {
+            if (this.pendingViewChanges.length < MAX_PENDING_CHANGES) {
                 this.pendingViewChanges.push(payload);
                 console.log('[WindowManager] Queued view change. Queue length:', this.pendingViewChanges.length);
             } else {
@@ -313,19 +311,18 @@ export class WindowManager {
         const { width: screenWidth } = display.workAreaSize;
         const { x: screenX, y: screenY } = display.workArea;
 
-        const margin = 20; // Margin from screen edges
         let x: number;
-        const y = screenY + margin;
+        const y = screenY + WINDOW_MARGIN;
 
         switch (position) {
             case 'top-left':
-                x = screenX + margin;
+                x = screenX + WINDOW_MARGIN;
                 break;
             case 'top-center':
                 x = screenX + Math.round((screenWidth - WIDGET_CIRCLE_SIZE) / 2);
                 break;
             case 'top-right':
-                x = screenX + screenWidth - WIDGET_CIRCLE_SIZE - margin;
+                x = screenX + screenWidth - WIDGET_CIRCLE_SIZE - WINDOW_MARGIN;
                 break;
         }
 

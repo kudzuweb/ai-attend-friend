@@ -5,7 +5,7 @@ import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
 import type { AIAnalysisService } from './AIAnalysisService.js';
 import type { ConfigService } from './ConfigService.js';
-import { SCREENSHOT_INTERVAL_MS, AUTO_ANALYSIS_INTERVAL_MS } from '../constants.js';
+import { SCREENSHOT_INTERVAL_MS, AUTO_ANALYSIS_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT } from '../constants.js';
 
 export class SessionManager {
     private sessionState: SessionState;
@@ -83,7 +83,7 @@ export class SessionManager {
         count: number
     } | { ok: false; error: string }> {
         try {
-            const recentFiles = await this.screenshotService.getRecentScreenshots(limit ?? 10);
+            const recentFiles = await this.screenshotService.getRecentScreenshots(limit ?? DEFAULT_RECENT_SCREENSHOTS_LIMIT);
 
             if (recentFiles.length === 0) {
                 return { ok: false as const, error: 'no images' };
@@ -292,7 +292,7 @@ export class SessionManager {
 
         this.analysisTimer = setInterval(async () => {
             console.log('[SessionManager] Auto-analysis triggered');
-            await this.handleDistractionAnalysis(10);
+            await this.handleDistractionAnalysis(DEFAULT_RECENT_SCREENSHOTS_LIMIT);
         }, AUTO_ANALYSIS_INTERVAL_MS);
     }
 

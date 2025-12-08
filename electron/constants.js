@@ -14,3 +14,10 @@ export const PANEL_HEIGHT = 380;
 // Screenshot settings
 export const SCREENSHOT_JPEG_QUALITY = 0.85;
 export const SCREENSHOT_MAX_WIDTH = 1440;
+export const DEFAULT_RECENT_SCREENSHOTS_LIMIT = 10;
+export const SHA_HASH_LENGTH = 8;
+export const SESSION_CLEANUP_BUFFER_MS = 5000; // 5 seconds
+
+// Window settings
+export const WINDOW_MARGIN = 20; // Margin from screen edges in pixels
+export const MAX_PENDING_CHANGES = 5; // Maximum queued view changes

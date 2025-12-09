@@ -139,9 +139,16 @@ export class TaskStorage {
 
         const allComplete = subtasks.length > 0 && subtasks.every(st => st.isCompleted);
 
+        // Auto-complete parent when all subtasks are complete
         if (allComplete && !parent.isCompleted) {
             parent.isCompleted = true;
             parent.completedAt = Date.now();
+            await this.saveTasks(tasks);
+        }
+        // Auto-uncomplete parent when any subtask is incomplete
+        else if (!allComplete && parent.isCompleted) {
+            parent.isCompleted = false;
+            parent.completedAt = null;
             await this.saveTasks(tasks);
         }
     }
@@ -196,6 +203,12 @@ export class TaskStorage {
         }
 
         await this.saveTasks(tasks);
+
+        // If this is a subtask, recalculate parent completion
+        if (task.parentTaskId) {
+            await this.recalculateParentCompletion(task.parentTaskId);
+        }
+
         return { ok: true };
     }
 

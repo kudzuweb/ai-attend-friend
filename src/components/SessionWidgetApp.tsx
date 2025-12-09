@@ -47,12 +47,25 @@ export default function SessionWidgetApp() {
   useEffect(() => {
     if (wasActive && sessionState && !sessionState.isActive) {
       // Session just ended naturally, clean up windows
-      async function cleanup() {
+      let cancelled = false;
+
+      (async () => {
+        // Check if a new session started before we hide the widget
+        if (cancelled) return;
+
         await window.api.hideSessionWidget();
         await window.api.restoreMainWindow();
-        setWasActive(false);
-      }
-      cleanup();
+
+        // Only reset wasActive if we weren't cancelled
+        if (!cancelled) {
+          setWasActive(false);
+        }
+      })();
+
+      // If session becomes active again before cleanup completes, cancel it
+      return () => {
+        cancelled = true;
+      };
     }
   }, [sessionState?.isActive, wasActive]);
 

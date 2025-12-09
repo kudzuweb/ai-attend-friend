@@ -35,6 +35,18 @@ export default function SessionWidgetApp() {
     };
   }, []);
 
+  // Handle session end (natural expiration or external stop)
+  useEffect(() => {
+    if (sessionState && !sessionState.isActive) {
+      // Session ended, clean up windows
+      async function cleanup() {
+        await window.api.hideSessionWidget();
+        await window.api.restoreMainWindow();
+      }
+      cleanup();
+    }
+  }, [sessionState?.isActive]);
+
   async function loadSessionState() {
     const state = await window.api.sessionGetState();
     setSessionState(state);

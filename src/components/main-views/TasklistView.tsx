@@ -107,16 +107,16 @@ export default function TasklistView() {
             return;
         }
 
-        if (selectedTaskIds.length === 0) {
-            alert('Please select at least one task');
-            return;
-        }
-
         // Get selected tasks (up to 3 for old format compatibility)
         const selectedTasks = selectedTaskIds
             .slice(0, 3)
             .map(id => tasks.find(t => t.id === id))
             .filter(Boolean) as Task[];
+
+        if (selectedTasks.length === 0) {
+            alert('Please select at least one task');
+            return;
+        }
 
         const tasksTuple: [string, string, string] = [
             selectedTasks[0]?.content || '',
@@ -129,11 +129,11 @@ export default function TasklistView() {
         const result = await window.api.sessionStart(lengthMs, focusGoal, tasksTuple);
 
         if (result.ok) {
-            // Minimize main window
-            await window.api.minimizeMainWindow();
-
-            // Show session widget
+            // Show session widget first to ensure seamless transition
             await window.api.showSessionWidget();
+
+            // Then minimize main window
+            await window.api.minimizeMainWindow();
 
             // Reset session setup mode
             setSessionSetupMode(false);

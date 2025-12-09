@@ -818,3 +818,677 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+
+/* ========================================
+   Main App Layout (New Architecture)
+   ======================================== */
+
+.main-app {
+  display: flex;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.main-app .sidebar {
+  width: 200px;
+  background: #2C3E50;
+  color: white;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-app .sidebar h2 {
+  padding: 0 20px;
+  margin: 0 0 30px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.main-app .sidebar nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.main-app .sidebar button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.main-app .sidebar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.main-app .sidebar button.active {
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background: #F6F4EE;
+}
+
+/* ========================================
+   Tasklist View Styles
+   ======================================== */
+
+.tasklist-view {
+  max-width: 800px;
+}
+
+.view-header {
+  margin-bottom: 30px;
+}
+
+.view-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0 0 8px 0;
+}
+
+.view-description {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+.add-task-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.task-input-large {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 1px solid #D0D0D0;
+  border-radius: 6px;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.task-input-large:focus {
+  outline: none;
+  border-color: #8B7355;
+}
+
+.task-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #D0D0D0;
+  border-radius: 4px;
+  background: white;
+}
+
+.task-input:focus {
+  outline: none;
+  border-color: #8B7355;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: #8B7355;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #9a7f68;
+}
+
+.btn-primary:active {
+  background: #7d664b;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #555;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: #e5e5e5;
+  border-color: #ccc;
+}
+
+.btn-danger {
+  color: #c0392b;
+}
+
+.btn-danger:hover {
+  background: #fef5f5;
+  border-color: #e74c3c;
+}
+
+.tasks-list {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.task-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.task-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-text {
+  font-size: 14px;
+  color: #333;
+}
+
+.task-text.completed {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.task-timestamp {
+  font-size: 12px;
+  color: #999;
+}
+
+.task-edit {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.task-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.add-subtask {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.subtasks {
+  margin-top: 8px;
+}
+
+/* ========================================
+   Open Loops View Styles
+   ======================================== */
+
+.openloops-view {
+  max-width: 800px;
+}
+
+.add-loop-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.view-controls {
+  margin-bottom: 24px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.loop-section {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0 0 16px 0;
+}
+
+.loops-list {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.loop-item.completed {
+  background: #f5f9f5;
+  border-color: #d4edda;
+}
+
+.loop-item.archived {
+  opacity: 0.6;
+  background: #f8f8f8;
+}
+
+.loop-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loop-text {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.loop-timestamp {
+  font-size: 12px;
+  color: #999;
+}
+
+.loop-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-convert {
+  color: #8B7355;
+  font-weight: 500;
+}
+
+.btn-convert:hover {
+  background: #f5f0eb;
+  border-color: #8B7355;
+}
+
+/* ========================================
+   Journal View Styles
+   ======================================== */
+
+.journal-view {
+  max-width: 800px;
+}
+
+.add-entry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.journal-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  border: 1px solid #D0D0D0;
+  border-radius: 6px;
+  background: white;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.journal-textarea:focus {
+  outline: none;
+  border-color: #8B7355;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #666;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.filter-btn.active {
+  color: white;
+  background: #8B7355;
+  border-color: #8B7355;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.journal-entry {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.entry-date {
+  font-size: 13px;
+  color: #999;
+}
+
+.entry-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.entry-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+  white-space: pre-wrap;
+}
+
+.entry-updated {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.entry-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ========================================
+   Session Widget Styles (Rectangular)
+   ======================================== */
+
+.session-widget {
+  width: 280px;
+  height: 280px;
+  background: #F6F4EE;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.widget-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #999;
+  font-size: 14px;
+}
+
+.widget-header {
+  margin-bottom: 12px;
+}
+
+.focus-goal {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2C3E50;
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.timer-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.timer-progress {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: #E0E0E0;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: #8B7355;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-ring-fill.timer-warning {
+  stroke: #e67e22;
+}
+
+.progress-ring-fill.timer-critical {
+  stroke: #c0392b;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 600;
+  color: #2C3E50;
+  display: flex;
+  align-items: center;
+}
+
+.timer-text.timer-warning {
+  color: #e67e22;
+}
+
+.timer-text.timer-critical {
+  color: #c0392b;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.timer-minutes,
+.timer-seconds {
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-separator {
+  margin: 0 2px;
+}
+
+.widget-task-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.task-list-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.task-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-item {
+  font-size: 13px;
+  color: #333;
+  padding: 8px;
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-content {
+  color: #333;
+}
+
+.task-empty {
+  color: #CCC;
+}
+
+.widget-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.widget-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.widget-btn-pause {
+  color: #333;
+  background: #E0E0E0;
+  border: 1px solid #CCC;
+}
+
+.widget-btn-pause:hover {
+  background: #D0D0D0;
+}
+
+.widget-btn-stop {
+  color: white;
+  background: #c0392b;
+}
+
+.widget-btn-stop:hover {
+  background: #a93226;
+}

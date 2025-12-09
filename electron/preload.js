@@ -119,6 +119,9 @@ const api = Object.freeze({
     // settings APIs
     getSettings: () => ipcRenderer.invoke('settings:get'),
     updateSettings: (partial) => ipcRenderer.invoke('settings:update', partial),
+    // Feature flags
+    getUseNewArchitecture: () => ipcRenderer.invoke('config:getUseNewArchitecture'),
+    setUseNewArchitecture: (enabled) => ipcRenderer.invoke('config:setUseNewArchitecture', enabled),
     // session APIs
     sessionStart: (lengthMs, focusGoal, tasks) =>
         ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),
@@ -162,6 +165,43 @@ const api = Object.freeze({
     },
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
+    // Task APIs
+    getTasks: () =>
+        ipcRenderer.invoke('task:getAll'),
+    getTaskById: (taskId) =>
+        ipcRenderer.invoke('task:getById', taskId),
+    getActiveTasksForSetup: () =>
+        ipcRenderer.invoke('task:getActiveForSetup'),
+    createTask: (payload) =>
+        ipcRenderer.invoke('task:create', payload),
+    toggleTaskComplete: (taskId) =>
+        ipcRenderer.invoke('task:toggleComplete', taskId),
+    deleteTask: (taskId) =>
+        ipcRenderer.invoke('task:delete', taskId),
+    restoreTask: (taskId) =>
+        ipcRenderer.invoke('task:restore', taskId),
+    // Open Loop APIs
+    getOpenLoops: (includeArchived) =>
+        ipcRenderer.invoke('openloop:getAll', includeArchived),
+    getActiveOpenLoops: () =>
+        ipcRenderer.invoke('openloop:getActive'),
+    getOpenLoopById: (loopId) =>
+        ipcRenderer.invoke('openloop:getById', loopId),
+    createOpenLoop: (payload) =>
+        ipcRenderer.invoke('openloop:create', payload),
+    toggleOpenLoopComplete: (loopId) =>
+        ipcRenderer.invoke('openloop:toggleComplete', loopId),
+    archiveOpenLoop: (loopId) =>
+        ipcRenderer.invoke('openloop:archive', loopId),
+    // Journal APIs
+    getJournalEntries: (filterSessionId) =>
+        ipcRenderer.invoke('journal:getAll', filterSessionId),
+    createJournalEntry: (payload) =>
+        ipcRenderer.invoke('journal:create', payload),
+    updateJournalEntry: (entryId, payload) =>
+        ipcRenderer.invoke('journal:update', entryId, payload),
+    deleteJournalEntry: (entryId) =>
+        ipcRenderer.invoke('journal:delete', entryId),
 })
 
 contextBridge.exposeInMainWorld('api', api)

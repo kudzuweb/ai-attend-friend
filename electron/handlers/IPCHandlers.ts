@@ -5,6 +5,9 @@ import type { ScreenshotService } from '../services/ScreenshotService.js';
 import type { AIAnalysisService } from '../services/AIAnalysisService.js';
 import type { StorageService } from '../services/StorageService.js';
 import type { ConfigService } from '../services/ConfigService.js';
+import type { TaskStorage } from '../services/TaskStorage.js';
+import type { OpenLoopStorage } from '../services/OpenLoopStorage.js';
+import type { JournalStorage } from '../services/JournalStorage.js';
 
 export function registerIPCHandlers(
     windowManager: WindowManager,
@@ -12,7 +15,10 @@ export function registerIPCHandlers(
     screenshotService: ScreenshotService,
     aiService: AIAnalysisService,
     storageService: StorageService,
-    configService: ConfigService
+    configService: ConfigService,
+    taskStorage: TaskStorage,
+    openLoopStorage: OpenLoopStorage,
+    journalStorage: JournalStorage
 ) {
     console.log('[IPCHandlers] Registering IPC handlers');
 
@@ -107,6 +113,16 @@ export function registerIPCHandlers(
         // Notify SessionManager that settings changed so it can re-evaluate timers
         sessionManager.handleSettingsChange();
         return result;
+    });
+
+    // Feature flag handlers
+    ipcMain.handle('config:getUseNewArchitecture', () => {
+        return configService.getUseNewArchitecture();
+    });
+
+    ipcMain.handle('config:setUseNewArchitecture', (_evt, enabled: boolean) => {
+        configService.setUseNewArchitecture(enabled);
+        return { ok: true };
     });
 
     // ========== Session Handlers ==========
@@ -218,6 +234,184 @@ export function registerIPCHandlers(
             return { ok: true as const, session };
         } catch (e: any) {
             return { ok: false as const, error: e?.message ?? 'failed to get session' };
+        }
+    });
+
+    // ========== Task Handlers ==========
+
+    ipcMain.handle('task:getAll', async () => {
+        try {
+            const tasks = await taskStorage.getAllTasks();
+            return { ok: true as const, tasks };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get tasks' };
+        }
+    });
+
+    ipcMain.handle('task:getById', async (_evt, taskId: string) => {
+        try {
+            const task = await taskStorage.getTaskById(taskId);
+            if (!task) {
+                return { ok: false as const, error: 'task not found' };
+            }
+            return { ok: true as const, task };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get task' };
+        }
+    });
+
+    ipcMain.handle('task:getActiveForSetup', async () => {
+        try {
+            const tasks = await taskStorage.getActiveTasksForSetup();
+            return { ok: true as const, tasks };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get active tasks' };
+        }
+    });
+
+    ipcMain.handle('task:create', async (_evt, payload: {
+        content: string;
+        parentTaskId: string | null;
+        sourceLoopId?: string;
+    }) => {
+        try {
+            const task = await taskStorage.createTask(payload);
+            return { ok: true as const, task };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to create task' };
+        }
+    });
+
+    ipcMain.handle('task:toggleComplete', async (_evt, taskId: string) => {
+        try {
+            const result = await taskStorage.toggleComplete(taskId);
+            return result;
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to toggle task completion' };
+        }
+    });
+
+    ipcMain.handle('task:delete', async (_evt, taskId: string) => {
+        try {
+            const task = await taskStorage.getTaskById(taskId);
+            if (!task) {
+                return { ok: false as const, error: 'task not found' };
+            }
+
+            const result = await taskStorage.deleteTask(taskId);
+
+            // If task had a parent, recalculate parent completion
+            if (result.ok && task.parentTaskId) {
+                await taskStorage.recalculateParentCompletion(task.parentTaskId);
+            }
+
+            return result;
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to delete task' };
+        }
+    });
+
+    ipcMain.handle('task:restore', async (_evt, taskId: string) => {
+        try {
+            return await taskStorage.restoreTask(taskId);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to restore task' };
+        }
+    });
+
+    // ========== Open Loop Handlers ==========
+
+    ipcMain.handle('openloop:getAll', async (_evt, includeArchived = false) => {
+        try {
+            const loops = await openLoopStorage.getAllLoops(includeArchived);
+            return { ok: true as const, loops };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get open loops' };
+        }
+    });
+
+    ipcMain.handle('openloop:getActive', async () => {
+        try {
+            const loops = await openLoopStorage.getActiveLoops();
+            return { ok: true as const, loops };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get active loops' };
+        }
+    });
+
+    ipcMain.handle('openloop:getById', async (_evt, loopId: string) => {
+        try {
+            const loop = await openLoopStorage.getLoopById(loopId);
+            if (!loop) {
+                return { ok: false as const, error: 'loop not found' };
+            }
+            return { ok: true as const, loop };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get loop' };
+        }
+    });
+
+    ipcMain.handle('openloop:create', async (_evt, payload: { content: string }) => {
+        try {
+            const loop = await openLoopStorage.createLoop(payload);
+            return { ok: true as const, loop };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to create loop' };
+        }
+    });
+
+    ipcMain.handle('openloop:toggleComplete', async (_evt, loopId: string) => {
+        try {
+            return await openLoopStorage.toggleComplete(loopId);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to toggle loop completion' };
+        }
+    });
+
+    ipcMain.handle('openloop:archive', async (_evt, loopId: string) => {
+        try {
+            return await openLoopStorage.archiveLoop(loopId);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to archive loop' };
+        }
+    });
+
+    // ========== Journal Handlers ==========
+
+    ipcMain.handle('journal:getAll', async (_evt, filterSessionId?: string) => {
+        try {
+            const entries = await journalStorage.getAllEntries(filterSessionId);
+            return { ok: true as const, entries };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to get journal entries' };
+        }
+    });
+
+    ipcMain.handle('journal:create', async (_evt, payload: {
+        content: string;
+        sessionId?: string | null;
+    }) => {
+        try {
+            const entry = await journalStorage.createEntry(payload);
+            return { ok: true as const, entry };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to create journal entry' };
+        }
+    });
+
+    ipcMain.handle('journal:update', async (_evt, entryId: string, payload: { content: string }) => {
+        try {
+            return await journalStorage.updateEntry(entryId, payload);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to update journal entry' };
+        }
+    });
+
+    ipcMain.handle('journal:delete', async (_evt, entryId: string) => {
+        try {
+            return await journalStorage.deleteEntry(entryId);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to delete journal entry' };
         }
     });
 

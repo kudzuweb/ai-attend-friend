@@ -88,6 +88,12 @@ export class TaskStorage {
         }
 
         await this.saveTasks(tasks);
+
+        // Recalculate parent completion if this is a subtask
+        if (payload.parentTaskId) {
+            await this.recalculateParentCompletion(payload.parentTaskId);
+        }
+
         return newTask;
     }
 
@@ -207,6 +213,11 @@ export class TaskStorage {
         // If this is a subtask, recalculate parent completion
         if (task.parentTaskId) {
             await this.recalculateParentCompletion(task.parentTaskId);
+        }
+
+        // If this is a parent task, recalculate its own completion based on subtasks
+        if (task.subtaskIds.length > 0) {
+            await this.recalculateParentCompletion(taskId);
         }
 
         return { ok: true };

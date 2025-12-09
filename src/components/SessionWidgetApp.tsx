@@ -36,13 +36,13 @@ export default function SessionWidgetApp() {
   }, []);
 
   async function loadSessionState() {
-    const state = await window.api.getSessionState();
+    const state = await window.api.sessionGetState();
     setSessionState(state);
   }
 
   async function handleStopSession() {
     if (confirm('End this session?')) {
-      await window.api.stopSession();
+      await window.api.sessionStop();
       setSessionState(null);
     }
   }

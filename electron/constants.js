@@ -21,3 +21,19 @@ export const SESSION_CLEANUP_BUFFER_MS = 5000; // 5 seconds
 // Window settings
 export const WINDOW_MARGIN = 20; // Margin from screen edges in pixels
 export const MAX_PENDING_CHANGES = 5; // Maximum queued view changes
+
+// Deletion retention periods (in milliseconds)
+export const DELETED_TASK_RETENTION = {
+  '1day': 24 * 60 * 60 * 1000,
+  '7days': 7 * 24 * 60 * 60 * 1000,
+  '30days': 30 * 24 * 60 * 60 * 1000,
+};
+
+/**
+ * Parse retention period string to milliseconds
+ * @param {string} period - '1day', '7days', or '30days'
+ * @returns {number} retention period in milliseconds
+ */
+export function parseRetentionPeriod(period) {
+  return DELETED_TASK_RETENTION[period] || DELETED_TASK_RETENTION['7days'];
+}

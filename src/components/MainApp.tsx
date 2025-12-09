@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TasklistView from './main-views/TasklistView';
 
 type MainView = 'openloops' | 'tasklist' | 'journal' | 'settings';
 
@@ -39,7 +40,7 @@ export default function MainApp() {
 
             <div className="main-content">
                 {currentView === 'openloops' && <div>Open Loops View (Coming Soon)</div>}
-                {currentView === 'tasklist' && <div>Tasklist View (Coming Soon)</div>}
+                {currentView === 'tasklist' && <TasklistView />}
                 {currentView === 'journal' && <div>Journal View (Coming Soon)</div>}
                 {currentView === 'settings' && <div>Settings View (Coming Soon)</div>}
             </div>

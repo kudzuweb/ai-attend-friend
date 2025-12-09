@@ -88,7 +88,10 @@ async function initialize() {
         screenshotService,
         aiService,
         storageService,
-        configService
+        configService,
+        taskStorage,
+        openLoopStorage,
+        journalStorage
     );
     console.log('[Main] IPC handlers registered');
     console.log('[Main] ✓ Application initialization complete');

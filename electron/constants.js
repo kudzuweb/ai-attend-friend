@@ -10,6 +10,10 @@ export const AUTO_ANALYSIS_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 export const WIDGET_CIRCLE_SIZE = 160;
 export const PANEL_WIDTH = 440;
 export const PANEL_HEIGHT = 380;
+export const MAIN_WINDOW_MIN_WIDTH = 800;
+export const MAIN_WINDOW_MIN_HEIGHT = 600;
+export const MAIN_WINDOW_DEFAULT_WIDTH = 900;
+export const MAIN_WINDOW_DEFAULT_HEIGHT = 700;
 
 // Screenshot settings
 export const SCREENSHOT_JPEG_QUALITY = 0.85;

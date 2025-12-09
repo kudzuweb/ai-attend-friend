@@ -73,9 +73,18 @@ async function initialize() {
         throw error;
     }
 
-    // Create windows
-    await windowManager.createWidgetWindow();
-    console.log('[Main] Widget window created');
+    // Create windows based on feature flag
+    const useNewArchitecture = configService.getUseNewArchitecture();
+
+    if (useNewArchitecture) {
+        // NEW ARCHITECTURE: Create main window
+        await windowManager.createMainWindow();
+        console.log('[Main] Using new architecture - main window created');
+    } else {
+        // OLD ARCHITECTURE: Create widget
+        await windowManager.createWidgetWindow();
+        console.log('[Main] Using old architecture - widget created');
+    }
 
     // Setup power monitoring for session interruptions
     sessionManager.setupPowerMonitoring();

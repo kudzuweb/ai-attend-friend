@@ -818,3 +818,61 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+
+/* ========================================
+   Main App Layout (New Architecture)
+   ======================================== */
+
+.main-app {
+  display: flex;
+  height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.main-app .sidebar {
+  width: 200px;
+  background: #2C3E50;
+  color: white;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-app .sidebar h2 {
+  padding: 0 20px;
+  margin: 0 0 30px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.main-app .sidebar nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.main-app .sidebar button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.main-app .sidebar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.main-app .sidebar button.active {
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+}
+
+.main-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background: #F6F4EE;
+}

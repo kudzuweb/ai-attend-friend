@@ -115,6 +115,16 @@ export function registerIPCHandlers(
         return result;
     });
 
+    // Feature flag handlers
+    ipcMain.handle('config:getUseNewArchitecture', () => {
+        return configService.getUseNewArchitecture();
+    });
+
+    ipcMain.handle('config:setUseNewArchitecture', (_evt, enabled: boolean) => {
+        configService.setUseNewArchitecture(enabled);
+        return { ok: true };
+    });
+
     // ========== Session Handlers ==========
 
     ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => {

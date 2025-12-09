@@ -120,6 +120,8 @@ declare global {
             setWindowPosition: (position: 'top-left' | 'top-center' | 'top-right') => Promise<void>;
             getSettings: () => Promise<{ windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean }>;
             updateSettings: (partial: { demoMode?: boolean; tasksEnabled?: boolean }) => Promise<{ windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean }>;
+            getUseNewArchitecture: () => Promise<boolean>;
+            setUseNewArchitecture: (enabled: boolean) => Promise<{ ok: boolean }>;
             sessionStart: (lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;

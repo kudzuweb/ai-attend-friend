@@ -109,7 +109,7 @@ export class ConfigService {
     }
 
     getUseNewArchitecture(): boolean {
-        return this.config.useNewArchitecture ?? false; // Default: old architecture
+        return this.config.useNewArchitecture ?? true; // Default: new architecture
     }
 
     setUseNewArchitecture(enabled: boolean): void {

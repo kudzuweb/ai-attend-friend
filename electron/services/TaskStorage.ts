@@ -112,6 +112,20 @@ export class TaskStorage {
         return { ok: true };
     }
 
+    async updateTask(taskId: string, payload: { content: string }): Promise<{ ok: boolean }> {
+        const tasks = await this.loadTasks();
+        const task = tasks.find(t => t.id === taskId);
+
+        if (!task) {
+            return { ok: false };
+        }
+
+        task.content = payload.content;
+
+        await this.saveTasks(tasks);
+        return { ok: true };
+    }
+
     async recalculateParentCompletion(parentId: string): Promise<void> {
         const tasks = await this.loadTasks();
         const parent = tasks.find(t => t.id === parentId);

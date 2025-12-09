@@ -320,6 +320,14 @@ export function registerIPCHandlers(
         }
     });
 
+    ipcMain.handle('task:update', async (_evt, taskId: string, payload: { content: string }) => {
+        try {
+            return await taskStorage.updateTask(taskId, payload);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to update task' };
+        }
+    });
+
     ipcMain.handle('task:delete', async (_evt, taskId: string) => {
         try {
             const task = await taskStorage.getTaskById(taskId);

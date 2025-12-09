@@ -7,6 +7,10 @@ export default function TasklistView() {
     const [editingContent, setEditingContent] = useState('');
     const [addingSubtaskToId, setAddingSubtaskToId] = useState<string | null>(null);
     const [newSubtaskContent, setNewSubtaskContent] = useState('');
+    const [sessionSetupMode, setSessionSetupMode] = useState(false);
+    const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+    const [focusGoal, setFocusGoal] = useState('');
+    const [sessionLength, setSessionLength] = useState(25); // minutes
 
     useEffect(() => {
         loadTasks();
@@ -89,20 +93,89 @@ export default function TasklistView() {
         }
     }
 
+    function handleToggleTaskSelection(taskId: string) {
+        setSelectedTaskIds(prev =>
+            prev.includes(taskId)
+                ? prev.filter(id => id !== taskId)
+                : [...prev, taskId]
+        );
+    }
+
+    async function handleStartSession() {
+        if (!focusGoal.trim()) {
+            alert('Please enter a focus goal');
+            return;
+        }
+
+        // Get selected tasks (up to 3 for old format compatibility)
+        const selectedTasks = selectedTaskIds
+            .slice(0, 3)
+            .map(id => tasks.find(t => t.id === id))
+            .filter(Boolean) as Task[];
+
+        if (selectedTasks.length === 0) {
+            alert('Please select at least one task');
+            return;
+        }
+
+        const tasksTuple: [string, string, string] = [
+            selectedTasks[0]?.content || '',
+            selectedTasks[1]?.content || '',
+            selectedTasks[2]?.content || '',
+        ];
+
+        const lengthMs = sessionLength * 60 * 1000;
+
+        const result = await window.api.sessionStart(lengthMs, focusGoal, tasksTuple);
+
+        if (result.ok) {
+            // Show session widget first to ensure seamless transition
+            await window.api.showSessionWidget();
+
+            // Then minimize main window
+            await window.api.minimizeMainWindow();
+
+            // Reset session setup mode
+            setSessionSetupMode(false);
+            setSelectedTaskIds([]);
+            setFocusGoal('');
+        } else {
+            alert('Failed to start session');
+        }
+    }
+
+    function handleCancelSessionSetup() {
+        setSessionSetupMode(false);
+        setSelectedTaskIds([]);
+        setFocusGoal('');
+        setSessionLength(25);
+    }
+
     function renderTask(task: Task, depth = 0) {
         const isEditing = editingTaskId === task.id;
         const isAddingSubtask = addingSubtaskToId === task.id;
         const subtasks = tasks.filter(t => t.parentTaskId === task.id);
+        const isSelected = selectedTaskIds.includes(task.id);
 
         return (
             <div key={task.id} className="task-item" style={{ marginLeft: `${depth * 20}px` }}>
                 <div className="task-row">
-                    <input
-                        type="checkbox"
-                        checked={task.isCompleted}
-                        onChange={() => handleToggleComplete(task.id)}
-                        className="task-checkbox"
-                    />
+                    {sessionSetupMode ? (
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleTaskSelection(task.id)}
+                            className="task-checkbox"
+                            disabled={!isSelected && selectedTaskIds.length >= 3}
+                        />
+                    ) : (
+                        <input
+                            type="checkbox"
+                            checked={task.isCompleted}
+                            onChange={() => handleToggleComplete(task.id)}
+                            className="task-checkbox"
+                        />
+                    )}
 
                     {isEditing ? (
                         <div className="task-edit">
@@ -181,6 +254,69 @@ export default function TasklistView() {
     // Get only top-level tasks (no parent)
     const topLevelTasks = tasks.filter(t => !t.parentTaskId && !t.isDeleted);
 
+    if (sessionSetupMode) {
+        return (
+            <div className="tasklist-view">
+                <div className="view-header">
+                    <h1>Start a Session</h1>
+                    <p className="view-description">Select tasks and set your focus goal</p>
+                </div>
+
+                <div className="session-setup-form">
+                    <div className="form-section">
+                        <label>Focus Goal</label>
+                        <input
+                            type="text"
+                            value={focusGoal}
+                            onChange={(e) => setFocusGoal(e.target.value)}
+                            placeholder="What will you focus on?"
+                            className="task-input-large"
+                        />
+                    </div>
+
+                    <div className="form-section">
+                        <label>Session Length (minutes)</label>
+                        <input
+                            type="number"
+                            value={sessionLength}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                setSessionLength(isNaN(value) || value < 1 ? 25 : Math.min(value, 180));
+                            }}
+                            min="1"
+                            max="180"
+                            className="task-input-large"
+                        />
+                    </div>
+
+                    <div className="form-section">
+                        <label>Select Tasks (up to 3)</label>
+                        <p className="view-description">Selected: {selectedTaskIds.length}/3</p>
+                    </div>
+                </div>
+
+                <div className="tasks-list">
+                    {topLevelTasks.length === 0 ? (
+                        <div className="empty-state">
+                            <p>No tasks available. Create some tasks first!</p>
+                        </div>
+                    ) : (
+                        topLevelTasks.map(task => renderTask(task))
+                    )}
+                </div>
+
+                <div className="session-setup-actions" style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                    <button onClick={handleStartSession} className="btn-primary">
+                        Start Session
+                    </button>
+                    <button onClick={handleCancelSessionSetup} className="btn-small">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="tasklist-view">
             <div className="view-header">
@@ -200,6 +336,9 @@ export default function TasklistView() {
                     className="task-input-large"
                 />
                 <button onClick={handleAddTask} className="btn-primary">Add Task</button>
+                <button onClick={() => setSessionSetupMode(true)} className="btn-primary" style={{ marginLeft: '12px' }}>
+                    Start Session
+                </button>
             </div>
 
             <div className="tasks-list">

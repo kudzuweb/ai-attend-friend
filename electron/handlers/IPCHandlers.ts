@@ -102,6 +102,35 @@ export function registerIPCHandlers(
         windowManager.requestAnalysis();
     });
 
+    // ========== Window Control Handlers (New Architecture) ==========
+
+    ipcMain.handle('window:show-session-widget', async () => {
+        console.log('[IPCHandlers] window:show-session-widget received');
+        await windowManager.showSessionWidget();
+    });
+
+    ipcMain.handle('window:hide-session-widget', () => {
+        console.log('[IPCHandlers] window:hide-session-widget received');
+        windowManager.hideSessionWidget();
+    });
+
+    ipcMain.handle('window:minimize-main', () => {
+        console.log('[IPCHandlers] window:minimize-main received');
+        const mainWindow = windowManager.getMainWindow();
+        if (mainWindow) {
+            mainWindow.minimize();
+        }
+    });
+
+    ipcMain.handle('window:restore-main', () => {
+        console.log('[IPCHandlers] window:restore-main received');
+        const mainWindow = windowManager.getMainWindow();
+        if (mainWindow) {
+            mainWindow.restore();
+            mainWindow.focus();
+        }
+    });
+
     // ========== Settings Handlers ==========
 
     ipcMain.handle('settings:get', () => {

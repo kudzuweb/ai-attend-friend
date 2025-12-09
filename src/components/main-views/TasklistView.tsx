@@ -98,16 +98,16 @@ export default function TasklistView() {
             return;
         }
 
-        if (selectedTaskIds.length === 0) {
-            alert('Please select at least one task');
-            return;
-        }
-
         // Get selected tasks (up to 3 for old format compatibility)
         const selectedTasks = selectedTaskIds
             .slice(0, 3)
             .map(id => tasks.find(t => t.id === id))
             .filter(Boolean) as Task[];
+
+        if (selectedTasks.length === 0) {
+            alert('Please select at least one task');
+            return;
+        }
 
         const tasksTuple: [string, string, string] = [
             selectedTasks[0]?.content || '',
@@ -120,11 +120,11 @@ export default function TasklistView() {
         const result = await window.api.sessionStart(lengthMs, focusGoal, tasksTuple);
 
         if (result.ok) {
-            // Minimize main window
-            await window.api.minimizeMainWindow();
-
-            // Show session widget
+            // Show session widget first to ensure seamless transition
             await window.api.showSessionWidget();
+
+            // Then minimize main window
+            await window.api.minimizeMainWindow();
 
             // Reset session setup mode
             setSessionSetupMode(false);
@@ -139,6 +139,7 @@ export default function TasklistView() {
         setSessionSetupMode(false);
         setSelectedTaskIds([]);
         setFocusGoal('');
+        setSessionLength(25);
     }
 
     function renderTask(task: Task, depth = 0) {
@@ -271,7 +272,10 @@ export default function TasklistView() {
                         <input
                             type="number"
                             value={sessionLength}
-                            onChange={(e) => setSessionLength(parseInt(e.target.value) || 25)}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                setSessionLength(isNaN(value) || value < 1 ? 25 : Math.min(value, 180));
+                            }}
                             min="1"
                             max="180"
                             className="task-input-large"

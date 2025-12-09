@@ -14,6 +14,7 @@ interface SessionState {
 export default function SessionWidgetApp() {
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [wasActive, setWasActive] = useState(false);
 
   useEffect(() => {
     // Load initial session state
@@ -35,6 +36,39 @@ export default function SessionWidgetApp() {
     };
   }, []);
 
+  // Track when session becomes active
+  useEffect(() => {
+    if (sessionState?.isActive) {
+      setWasActive(true);
+    }
+  }, [sessionState?.isActive]);
+
+  // Handle session end (natural expiration only)
+  useEffect(() => {
+    if (wasActive && sessionState && !sessionState.isActive) {
+      // Session just ended naturally, clean up windows
+      let cancelled = false;
+
+      (async () => {
+        // Check if a new session started before we hide the widget
+        if (cancelled) return;
+
+        await window.api.hideSessionWidget();
+        await window.api.restoreMainWindow();
+
+        // Only reset wasActive if we weren't cancelled
+        if (!cancelled) {
+          setWasActive(false);
+        }
+      })();
+
+      // If session becomes active again before cleanup completes, cancel it
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [sessionState?.isActive, wasActive]);
+
   async function loadSessionState() {
     const state = await window.api.sessionGetState();
     setSessionState(state);
@@ -43,14 +77,7 @@ export default function SessionWidgetApp() {
   async function handleStopSession() {
     if (confirm('End this session?')) {
       await window.api.sessionStop();
-
-      // Hide session widget
-      await window.api.hideSessionWidget();
-
-      // Restore main window
-      await window.api.restoreMainWindow();
-
-      setSessionState(null);
+      // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
     }
   }
 

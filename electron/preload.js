@@ -202,6 +202,15 @@ const api = Object.freeze({
         ipcRenderer.invoke('journal:update', entryId, payload),
     deleteJournalEntry: (entryId) =>
         ipcRenderer.invoke('journal:delete', entryId),
+    // Window control APIs (New Architecture)
+    showSessionWidget: () =>
+        ipcRenderer.invoke('window:show-session-widget'),
+    hideSessionWidget: () =>
+        ipcRenderer.invoke('window:hide-session-widget'),
+    minimizeMainWindow: () =>
+        ipcRenderer.invoke('window:minimize-main'),
+    restoreMainWindow: () =>
+        ipcRenderer.invoke('window:restore-main'),
 })
 
 contextBridge.exposeInMainWorld('api', api)

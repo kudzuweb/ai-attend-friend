@@ -42,7 +42,14 @@ export default function SessionWidgetApp() {
 
   async function handleStopSession() {
     if (confirm('End this session?')) {
-      await window.api.stopSession();
+      await window.api.sessionStop();
+
+      // Hide session widget
+      await window.api.hideSessionWidget();
+
+      // Restore main window
+      await window.api.restoreMainWindow();
+
       setSessionState(null);
     }
   }

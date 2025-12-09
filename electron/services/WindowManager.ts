@@ -393,6 +393,7 @@ export class WindowManager {
     broadcastSessionState(sessionState: SessionState): void {
         this.widgetWindow?.webContents.send('session:updated', sessionState);
         this.panelWindow?.webContents.send('session:updated', sessionState);
+        this.sessionWidget?.webContents.send('session:updated', sessionState);
     }
 
     /**

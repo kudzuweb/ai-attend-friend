@@ -77,20 +77,11 @@ export default function TasklistView() {
     async function handleSaveEdit(taskId: string) {
         if (!editingContent.trim()) return;
 
-        // For now, we'll delete and recreate since we don't have an update endpoint
-        // In a real implementation, you'd add an updateTask IPC handler
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-            // This is a workaround - ideally we'd have a proper update method
-            await window.api.deleteTask(taskId);
-            await window.api.createTask({
-                content: editingContent.trim(),
-                parentTaskId: task.parentTaskId,
-            });
-            setEditingTaskId(null);
-            setEditingContent('');
-            await loadTasks();
-        }
+        // Use the proper update method to preserve task metadata
+        await window.api.updateTask(taskId, { content: editingContent.trim() });
+        setEditingTaskId(null);
+        setEditingContent('');
+        await loadTasks();
     }
 
     function handleToggleTaskSelection(taskId: string) {
@@ -210,7 +201,9 @@ export default function TasklistView() {
                         {!isEditing && (
                             <>
                                 <button onClick={() => handleStartEdit(task)} className="btn-small">Edit</button>
-                                <button onClick={() => setAddingSubtaskToId(task.id)} className="btn-small">+ Subtask</button>
+                                {!task.parentTaskId && (
+                                    <button onClick={() => setAddingSubtaskToId(task.id)} className="btn-small">+ Subtask</button>
+                                )}
                                 <button onClick={() => handleDelete(task.id)} className="btn-small btn-danger">Delete</button>
                             </>
                         )}

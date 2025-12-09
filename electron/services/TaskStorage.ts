@@ -88,6 +88,12 @@ export class TaskStorage {
         }
 
         await this.saveTasks(tasks);
+
+        // Recalculate parent completion if this is a subtask
+        if (payload.parentTaskId) {
+            await this.recalculateParentCompletion(payload.parentTaskId);
+        }
+
         return newTask;
     }
 
@@ -112,6 +118,20 @@ export class TaskStorage {
         return { ok: true };
     }
 
+    async updateTask(taskId: string, payload: { content: string }): Promise<{ ok: boolean }> {
+        const tasks = await this.loadTasks();
+        const task = tasks.find(t => t.id === taskId);
+
+        if (!task) {
+            return { ok: false };
+        }
+
+        task.content = payload.content;
+
+        await this.saveTasks(tasks);
+        return { ok: true };
+    }
+
     async recalculateParentCompletion(parentId: string): Promise<void> {
         const tasks = await this.loadTasks();
         const parent = tasks.find(t => t.id === parentId);
@@ -123,11 +143,21 @@ export class TaskStorage {
             !t.isDeleted
         );
 
-        const allComplete = subtasks.length > 0 && subtasks.every(st => st.isCompleted);
+        // Only recalculate if there are subtasks
+        if (subtasks.length === 0) return;
 
+        const allComplete = subtasks.every(st => st.isCompleted);
+
+        // Auto-complete parent when all subtasks are complete
         if (allComplete && !parent.isCompleted) {
             parent.isCompleted = true;
             parent.completedAt = Date.now();
+            await this.saveTasks(tasks);
+        }
+        // Auto-uncomplete parent when any subtask is incomplete
+        else if (!allComplete && parent.isCompleted) {
+            parent.isCompleted = false;
+            parent.completedAt = null;
             await this.saveTasks(tasks);
         }
     }
@@ -182,6 +212,17 @@ export class TaskStorage {
         }
 
         await this.saveTasks(tasks);
+
+        // If this is a subtask, recalculate parent completion
+        if (task.parentTaskId) {
+            await this.recalculateParentCompletion(task.parentTaskId);
+        }
+
+        // If this is a parent task, recalculate its own completion based on subtasks
+        if (task.subtaskIds.length > 0) {
+            await this.recalculateParentCompletion(taskId);
+        }
+
         return { ok: true };
     }
 

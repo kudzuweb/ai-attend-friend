@@ -176,6 +176,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('task:create', payload),
     toggleTaskComplete: (taskId) =>
         ipcRenderer.invoke('task:toggleComplete', taskId),
+    updateTask: (taskId, payload) =>
+        ipcRenderer.invoke('task:update', taskId, payload),
     deleteTask: (taskId) =>
         ipcRenderer.invoke('task:delete', taskId),
     restoreTask: (taskId) =>

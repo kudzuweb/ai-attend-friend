@@ -149,6 +149,7 @@ declare global {
                 sourceLoopId?: string;
             }) => Promise<{ ok: true; task: Task } | { ok: false; error: string }>;
             toggleTaskComplete: (taskId: string) => Promise<{ ok: boolean }>;
+            updateTask: (taskId: string, payload: { content: string }) => Promise<{ ok: boolean }>;
             deleteTask: (taskId: string) => Promise<{ ok: boolean }>;
             restoreTask: (taskId: string) => Promise<{ ok: boolean }>;
             // Open Loop APIs

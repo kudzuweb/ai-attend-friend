@@ -12,7 +12,9 @@ import {
     MAIN_WINDOW_MIN_WIDTH,
     MAIN_WINDOW_MIN_HEIGHT,
     MAIN_WINDOW_DEFAULT_WIDTH,
-    MAIN_WINDOW_DEFAULT_HEIGHT
+    MAIN_WINDOW_DEFAULT_HEIGHT,
+    SESSION_WIDGET_WIDTH,
+    SESSION_WIDGET_HEIGHT
 } from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +29,7 @@ export class WindowManager {
     private widgetWindow: BrowserWindow | null = null;
     private panelWindow: BrowserWindow | null = null;
     private mainWindow: BrowserWindow | null = null;
+    private sessionWidget: BrowserWindow | null = null;
     private preloadPath: string;
     private pendingViewChanges: ViewChangePayload[] = [];
     private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
@@ -155,6 +158,82 @@ export class WindowManager {
 
     getMainWindow(): BrowserWindow | null {
         return this.mainWindow;
+    }
+
+    /**
+     * Create the session widget window (rectangular, for new architecture)
+     */
+    async createSessionWidget(): Promise<BrowserWindow> {
+        console.log('[WindowManager] Creating session widget');
+
+        // Calculate position (top-right corner by default)
+        const display = screen.getPrimaryDisplay();
+        const { width: screenWidth } = display.workAreaSize;
+        const { x: screenX, y: screenY } = display.workArea;
+
+        const x = screenX + screenWidth - SESSION_WIDGET_WIDTH - WINDOW_MARGIN;
+        const y = screenY + WINDOW_MARGIN;
+
+        this.sessionWidget = new BrowserWindow({
+            x,
+            y,
+            width: SESSION_WIDGET_WIDTH,
+            height: SESSION_WIDGET_HEIGHT,
+            show: false,
+            frame: false,
+            transparent: false,
+            backgroundColor: '#F6F4EE',
+            resizable: false,
+            movable: true,
+            hasShadow: true,
+            fullscreenable: false,
+            skipTaskbar: true,
+            webPreferences: {
+                preload: this.preloadPath,
+                contextIsolation: true,
+                nodeIntegration: false
+            }
+        });
+
+        // Widget config
+        this.sessionWidget.setAlwaysOnTop(true, 'floating', 1);
+        this.sessionWidget.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+        // Load renderer with session widget route
+        if (process.env.NODE_ENV !== 'production') {
+            await this.sessionWidget.loadURL('http://localhost:5173/#/session-widget');
+        } else {
+            await this.sessionWidget.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}#/session-widget`);
+        }
+
+        return this.sessionWidget;
+    }
+
+    /**
+     * Show the session widget
+     */
+    showSessionWidget(): void {
+        if (!this.sessionWidget) {
+            this.createSessionWidget().then(() => {
+                this.sessionWidget?.show();
+            });
+        } else {
+            this.sessionWidget.show();
+        }
+    }
+
+    /**
+     * Hide the session widget
+     */
+    hideSessionWidget(): void {
+        this.sessionWidget?.hide();
+    }
+
+    /**
+     * Get session widget window
+     */
+    getSessionWidget(): BrowserWindow | null {
+        return this.sessionWidget;
     }
 
     /**
@@ -393,8 +472,10 @@ export class WindowManager {
         this.panelWindow?.close();
         this.widgetWindow?.close();
         this.mainWindow?.close();
+        this.sessionWidget?.close();
         this.panelWindow = null;
         this.widgetWindow = null;
         this.mainWindow = null;
+        this.sessionWidget = null;
     }
 }

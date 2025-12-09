@@ -1298,3 +1298,201 @@ button:focus-visible {
   display: flex;
   gap: 8px;
 }
+
+/* ========================================
+   Session Widget Styles (Rectangular)
+   ======================================== */
+
+.session-widget {
+  width: 280px;
+  height: 280px;
+  background: #F6F4EE;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.widget-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #999;
+  font-size: 14px;
+}
+
+.widget-header {
+  margin-bottom: 12px;
+}
+
+.focus-goal {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2C3E50;
+  text-align: center;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.timer-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.timer-progress {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: #E0E0E0;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: #8B7355;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-ring-fill.timer-warning {
+  stroke: #e67e22;
+}
+
+.progress-ring-fill.timer-critical {
+  stroke: #c0392b;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 600;
+  color: #2C3E50;
+  display: flex;
+  align-items: center;
+}
+
+.timer-text.timer-warning {
+  color: #e67e22;
+}
+
+.timer-text.timer-critical {
+  color: #c0392b;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.timer-minutes,
+.timer-seconds {
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-separator {
+  margin: 0 2px;
+}
+
+.widget-task-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.task-list-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.task-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-item {
+  font-size: 13px;
+  color: #333;
+  padding: 8px;
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-content {
+  color: #333;
+}
+
+.task-empty {
+  color: #CCC;
+}
+
+.widget-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.widget-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.widget-btn-pause {
+  color: #333;
+  background: #E0E0E0;
+  border: 1px solid #CCC;
+}
+
+.widget-btn-pause:hover {
+  background: #D0D0D0;
+}
+
+.widget-btn-stop {
+  color: white;
+  background: #c0392b;
+}
+
+.widget-btn-stop:hover {
+  background: #a93226;
+}

@@ -15,6 +15,10 @@ export const MAIN_WINDOW_MIN_HEIGHT = 600;
 export const MAIN_WINDOW_DEFAULT_WIDTH = 900;
 export const MAIN_WINDOW_DEFAULT_HEIGHT = 700;
 
+// Session widget dimensions (rectangular)
+export const SESSION_WIDGET_WIDTH = 280;
+export const SESSION_WIDGET_HEIGHT = 280;
+
 // Screenshot settings
 export const SCREENSHOT_JPEG_QUALITY = 0.85;
 export const SCREENSHOT_MAX_WIDTH = 1440;

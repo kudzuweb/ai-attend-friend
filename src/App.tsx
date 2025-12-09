@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import WidgetApp from "./components/WidgetApp"
 import PanelApp from "./components/PanelApp"
 import MainApp from "./components/MainApp"
+import SessionWidgetApp from "./components/SessionWidgetApp"
 import { ThemeProvider } from "./contexts/ThemeContext"
 import { SettingsProvider } from "./contexts/SettingsContext"
 import { SessionProvider } from "./contexts/SessionContext"
@@ -21,8 +22,15 @@ function App() {
   // NEW ARCHITECTURE ROUTING
   if (useNewArchitecture) {
     if (route === '#/session-widget') {
-      // Will implement in PR-6
-      return <div>Session Widget (Coming Soon)</div>;
+      return (
+        <ThemeProvider>
+          <SettingsProvider>
+            <SessionProvider>
+              <SessionWidgetApp />
+            </SessionProvider>
+          </SettingsProvider>
+        </ThemeProvider>
+      );
     }
 
     // Default: main app

@@ -8,7 +8,7 @@ import { SettingsProvider } from "./contexts/SettingsContext"
 import { SessionProvider } from "./contexts/SessionContext"
 
 function App() {
-  const [useNewArchitecture, setUseNewArchitecture] = useState(false);
+  const [useNewArchitecture, setUseNewArchitecture] = useState<boolean | null>(null);
   const route = window.location.hash;
 
   useEffect(() => {
@@ -18,6 +18,11 @@ function App() {
     }
     checkArchitecture();
   }, []);
+
+  // Wait for architecture config to load
+  if (useNewArchitecture === null) {
+    return null;
+  }
 
   // NEW ARCHITECTURE ROUTING
   if (useNewArchitecture) {

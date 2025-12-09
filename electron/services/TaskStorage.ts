@@ -143,7 +143,10 @@ export class TaskStorage {
             !t.isDeleted
         );
 
-        const allComplete = subtasks.length > 0 && subtasks.every(st => st.isCompleted);
+        // Only recalculate if there are subtasks
+        if (subtasks.length === 0) return;
+
+        const allComplete = subtasks.every(st => st.isCompleted);
 
         // Auto-complete parent when all subtasks are complete
         if (allComplete && !parent.isCompleted) {

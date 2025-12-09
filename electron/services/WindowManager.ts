@@ -212,14 +212,11 @@ export class WindowManager {
     /**
      * Show the session widget
      */
-    showSessionWidget(): void {
+    async showSessionWidget(): Promise<void> {
         if (!this.sessionWidget) {
-            this.createSessionWidget().then(() => {
-                this.sessionWidget?.show();
-            });
-        } else {
-            this.sessionWidget.show();
+            await this.createSessionWidget();
         }
+        this.sessionWidget.show();
     }
 
     /**

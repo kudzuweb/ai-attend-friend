@@ -104,9 +104,9 @@ export function registerIPCHandlers(
 
     // ========== Window Control Handlers (New Architecture) ==========
 
-    ipcMain.handle('window:show-session-widget', () => {
+    ipcMain.handle('window:show-session-widget', async () => {
         console.log('[IPCHandlers] window:show-session-widget received');
-        windowManager.showSessionWidget();
+        await windowManager.showSessionWidget();
     });
 
     ipcMain.handle('window:hide-session-widget', () => {

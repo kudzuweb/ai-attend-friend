@@ -148,6 +148,7 @@ export default function TasklistView() {
         setSessionSetupMode(false);
         setSelectedTaskIds([]);
         setFocusGoal('');
+        setSessionLength(25);
     }
 
     function renderTask(task: Task, depth = 0) {
@@ -278,7 +279,10 @@ export default function TasklistView() {
                         <input
                             type="number"
                             value={sessionLength}
-                            onChange={(e) => setSessionLength(parseInt(e.target.value) || 25)}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                setSessionLength(isNaN(value) || value < 1 ? 25 : Math.min(value, 180));
+                            }}
                             min="1"
                             max="180"
                             className="task-input-large"

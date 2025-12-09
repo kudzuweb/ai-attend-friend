@@ -30,6 +30,7 @@ export class WindowManager {
     private panelWindow: BrowserWindow | null = null;
     private mainWindow: BrowserWindow | null = null;
     private sessionWidget: BrowserWindow | null = null;
+    private sessionWidgetLoading: Promise<BrowserWindow> | null = null;
     private preloadPath: string;
     private pendingViewChanges: ViewChangePayload[] = [];
     private currentPosition: 'top-left' | 'top-center' | 'top-right' = 'top-right';
@@ -212,14 +213,15 @@ export class WindowManager {
     /**
      * Show the session widget
      */
-    showSessionWidget(): void {
-        if (!this.sessionWidget) {
-            this.createSessionWidget().then(() => {
-                this.sessionWidget?.show();
-            });
-        } else {
-            this.sessionWidget.show();
+    async showSessionWidget(): Promise<void> {
+        if (this.sessionWidgetLoading) {
+            await this.sessionWidgetLoading;
+        } else if (!this.sessionWidget) {
+            this.sessionWidgetLoading = this.createSessionWidget();
+            await this.sessionWidgetLoading;
+            this.sessionWidgetLoading = null;
         }
+        this.sessionWidget?.show();
     }
 
     /**

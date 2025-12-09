@@ -73,6 +73,20 @@ async function initialize() {
         throw error;
     }
 
+    // Register all IPC handlers BEFORE creating windows
+    registerIPCHandlers(
+        windowManager,
+        sessionManager,
+        screenshotService,
+        aiService,
+        storageService,
+        configService,
+        taskStorage,
+        openLoopStorage,
+        journalStorage
+    );
+    console.log('[Main] IPC handlers registered');
+
     // Create windows based on feature flag
     const useNewArchitecture = configService.getUseNewArchitecture();
 
@@ -89,20 +103,6 @@ async function initialize() {
     // Setup power monitoring for session interruptions
     sessionManager.setupPowerMonitoring();
     console.log('[Main] Power monitoring setup complete');
-
-    // Register all IPC handlers
-    registerIPCHandlers(
-        windowManager,
-        sessionManager,
-        screenshotService,
-        aiService,
-        storageService,
-        configService,
-        taskStorage,
-        openLoopStorage,
-        journalStorage
-    );
-    console.log('[Main] IPC handlers registered');
     console.log('[Main] ✓ Application initialization complete');
 }
 

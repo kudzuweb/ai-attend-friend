@@ -1060,3 +1060,241 @@ button:focus-visible {
 .subtasks {
   margin-top: 8px;
 }
+
+/* ========================================
+   Open Loops View Styles
+   ======================================== */
+
+.openloops-view {
+  max-width: 800px;
+}
+
+.add-loop-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.view-controls {
+  margin-bottom: 24px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.loop-section {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0 0 16px 0;
+}
+
+.loops-list {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.loop-item.completed {
+  background: #f5f9f5;
+  border-color: #d4edda;
+}
+
+.loop-item.archived {
+  opacity: 0.6;
+  background: #f8f8f8;
+}
+
+.loop-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loop-text {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.loop-timestamp {
+  font-size: 12px;
+  color: #999;
+}
+
+.loop-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-convert {
+  color: #8B7355;
+  font-weight: 500;
+}
+
+.btn-convert:hover {
+  background: #f5f0eb;
+  border-color: #8B7355;
+}
+
+/* ========================================
+   Journal View Styles
+   ======================================== */
+
+.journal-view {
+  max-width: 800px;
+}
+
+.add-entry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.journal-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  border: 1px solid #D0D0D0;
+  border-radius: 6px;
+  background: white;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.journal-textarea:focus {
+  outline: none;
+  border-color: #8B7355;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #666;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.filter-btn.active {
+  color: white;
+  background: #8B7355;
+  border-color: #8B7355;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.journal-entry {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.entry-date {
+  font-size: 13px;
+  color: #999;
+}
+
+.entry-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.entry-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+  white-space: pre-wrap;
+}
+
+.entry-updated {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.entry-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-edit-actions {
+  display: flex;
+  gap: 8px;
+}

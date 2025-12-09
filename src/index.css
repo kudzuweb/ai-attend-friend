@@ -1353,10 +1353,6 @@ button:focus-visible {
   height: 120px;
 }
 
-.progress-ring {
-  transform: rotate(-90deg);
-}
-
 .progress-ring-bg {
   fill: none;
   stroke: #E0E0E0;

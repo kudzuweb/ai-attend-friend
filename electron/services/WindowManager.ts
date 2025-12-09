@@ -394,6 +394,7 @@ export class WindowManager {
         this.widgetWindow?.webContents.send('session:updated', sessionState);
         this.panelWindow?.webContents.send('session:updated', sessionState);
         this.sessionWidget?.webContents.send('session:updated', sessionState);
+        this.mainWindow?.webContents.send('session:updated', sessionState);
     }
 
     /**

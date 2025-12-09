@@ -36,7 +36,7 @@ export default function SessionWidgetApp() {
   }, []);
 
   async function loadSessionState() {
-    const state = await window.api.getSessionState();
+    const state = await window.api.sessionGetState();
     setSessionState(state);
   }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TasklistView from './main-views/TasklistView';
 import OpenLoopsView from './main-views/OpenLoopsView';
 import JournalView from './main-views/JournalView';
@@ -7,6 +7,19 @@ type MainView = 'openloops' | 'tasklist' | 'journal' | 'settings';
 
 export default function MainApp() {
     const [currentView, setCurrentView] = useState<MainView>('tasklist');
+
+    // Listen for screenshot capture requests from main process
+    useEffect(() => {
+        const unsubscribe = window.api.onScreenshotCapture(async () => {
+            try {
+                const screenshot = await window.api.captureFrames();
+                await window.api.saveImage(screenshot);
+            } catch (e) {
+                console.error('[MainApp] Screenshot capture failed:', e);
+            }
+        });
+        return unsubscribe;
+    }, []);
 
     return (
         <div className="main-app">

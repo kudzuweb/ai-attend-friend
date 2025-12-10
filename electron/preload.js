@@ -190,6 +190,12 @@ const api = Object.freeze({
         ipcRenderer.invoke('window:minimize-main'),
     restoreMainWindow: () =>
         ipcRenderer.invoke('window:restore-main'),
+    // Screenshot capture listener
+    onScreenshotCapture: (callback) => {
+        const handler = () => callback();
+        ipcRenderer.on('screenshot:capture', handler);
+        return () => ipcRenderer.removeListener('screenshot:capture', handler);
+    },
 })
 
 contextBridge.exposeInMainWorld('api', api)

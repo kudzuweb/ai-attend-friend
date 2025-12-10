@@ -156,6 +156,8 @@ declare global {
             hideSessionWidget: () => Promise<void>;
             minimizeMainWindow: () => Promise<void>;
             restoreMainWindow: () => Promise<void>;
+            // Screenshot capture listener
+            onScreenshotCapture: (callback: () => void) => () => void;
         };
     }
     // media track constraints for chromium to allow more granular config

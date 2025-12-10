@@ -149,6 +149,13 @@ export class WindowManager {
     }
 
     /**
+     * Trigger screenshot capture in main window
+     */
+    triggerScreenshotCapture(): void {
+        this.mainWindow?.webContents.send('screenshot:capture');
+    }
+
+    /**
      * Close all windows
      */
     closeAll(): void {

@@ -160,6 +160,7 @@ export class SessionManager {
                     this.stopScreenshotTimer();
                     return;
                 }
+                this.windowManager.triggerScreenshotCapture();
             }, SCREENSHOT_INTERVAL_MS);
         }, SCREENSHOT_INTERVAL_MS);
 
@@ -374,6 +375,7 @@ export class SessionManager {
                 this.stopScreenshotTimer();
                 return;
             }
+            this.windowManager.triggerScreenshotCapture();
         }, SCREENSHOT_INTERVAL_MS);
 
         this.startAnalysisTimer();
@@ -468,8 +470,11 @@ export class SessionManager {
         this.currentInterruption.durationMs = now - this.currentInterruption.suspendTime;
         console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
 
-        // TODO: Show interruption reflection UI in new architecture
-        console.log('[SessionManager] TODO: Show interruption reflection UI');
+        // Auto-resume session after system wake
+        // TODO: Add interruption reflection UI in new architecture to prompt user
+        const durationMinutes = Math.round(this.currentInterruption.durationMs / 60000);
+        this.resumeAfterInterruption(`[Auto-resumed after ${durationMinutes} minute pause]`);
+        console.log('[SessionManager] Session auto-resumed after system wake');
     }
 
     /**

@@ -89,7 +89,6 @@ export class SessionManager {
                 return { ok: false as const, error: 'no images' };
             }
 
-            // Convert files to data URLs
             const dataUrls = await Promise.all(
                 recentFiles.map(file => this.screenshotService.fileToDataUrl(file))
             );
@@ -97,9 +96,6 @@ export class SessionManager {
             const res = await this.aiService.analyzeScreenshots(dataUrls, this.sessionState.focusGoal);
 
             if (res?.ok && res?.structured) {
-                const status = res.structured.status;
-
-                // Save analysis to current session if one is active
                 if (this.currentSessionId && this.currentSessionDate) {
                     await this.storageService.addSummaryToSession(
                         this.currentSessionId,
@@ -108,13 +104,9 @@ export class SessionManager {
                     );
                 }
 
-                if (status === 'distracted') {
-                    this.windowManager.showPanel();
-                    // Send analysis text to panel to trigger distraction reason view
-                    this.windowManager.changeView({ view: 'distracted-reason', data: res.structured.analysis });
-                } else if (status === 'focused') {
-                    this.windowManager.hidePanel();
-                }
+                // TODO: Handle distraction UI in new architecture
+                // For now, just log the status
+                console.log('[SessionManager] Distraction analysis:', res.structured.status);
             }
             return res;
         } catch (e: any) {
@@ -149,7 +141,6 @@ export class SessionManager {
             this.sessionState.tasks = tasks;
         }
 
-        // Create session file and track session info
         try {
             this.currentSessionId = await this.storageService.createSession(startTime, lengthMs, focusGoal, tasks);
             this.currentSessionDate = this.storageService.formatDateFolder(new Date(startTime));
@@ -160,14 +151,10 @@ export class SessionManager {
 
         this.broadcastSessionState();
 
-        // Start the screenshot timer (30s initial delay, then every 30s)
+        // Start the screenshot timer
         this.screenshotTimer = setTimeout(() => {
             if (!this.sessionState.isActive) return;
 
-            // Trigger first capture
-            this.windowManager.triggerScreenshotCapture();
-
-            // Continue with regular interval
             this.screenshotTimer = setInterval(() => {
                 if (!this.sessionState.isActive) {
                     this.stopScreenshotTimer();
@@ -176,14 +163,12 @@ export class SessionManager {
             }, SCREENSHOT_INTERVAL_MS);
         }, SCREENSHOT_INTERVAL_MS);
 
-        // Start the analysis timer (5 minutes if demo mode is OFF)
+        // Start the analysis timer
         this.startAnalysisTimer();
 
         // Schedule session end
         this.sessionTimer = setTimeout(async () => {
             await this.stopSession();
-            // Reopen panel to show analysis
-            this.windowManager.showPanel();
         }, lengthMs);
 
         return { ok: true };
@@ -191,7 +176,6 @@ export class SessionManager {
 
     /**
      * Generate final summary for the current session
-     * Called before session ends to create AI-generated summary
      */
     private async generateFinalSummary(): Promise<void> {
         if (!this.currentSessionId || !this.currentSessionDate) {
@@ -232,13 +216,10 @@ export class SessionManager {
     async stopSession(): Promise<void> {
         console.log('[SessionManager] stopSession called');
 
-        // CRITICAL: Stop all timers FIRST to prevent race conditions
-        // Must happen before any async operations that modify session data
         this.stopSessionTimer();
         this.stopScreenshotTimer();
         this.stopAnalysisTimer();
 
-        // Generate final summary after stopping timers
         await this.generateFinalSummary();
 
         this.sessionState.isActive = false;
@@ -247,7 +228,6 @@ export class SessionManager {
         this.sessionState.endTime = 0;
         this.sessionState.focusGoal = '';
 
-        // Clear current session tracking
         this.currentSessionId = null;
         this.currentSessionDate = null;
 
@@ -276,12 +256,11 @@ export class SessionManager {
     }
 
     /**
-     * Start the analysis timer (5 minutes) if demo mode is OFF
+     * Start the analysis timer if demo mode is OFF
      */
     private startAnalysisTimer(): void {
         this.stopAnalysisTimer();
 
-        // Only start if demo mode is OFF and session is active
         const demoMode = this.configService.getDemoMode();
         if (demoMode || !this.sessionState.isActive) {
             console.log('[SessionManager] Analysis timer NOT started - demoMode:', demoMode, 'isActive:', this.sessionState.isActive);
@@ -308,12 +287,9 @@ export class SessionManager {
 
     /**
      * Handle settings change - re-evaluate analysis timer state
-     * Called when settings like demoMode are updated during an active session
      */
     handleSettingsChange(): void {
         console.log('[SessionManager] Settings changed, re-evaluating analysis timer');
-        // Re-evaluate whether analysis timer should be running
-        // This will stop the timer if demoMode is now ON, or start it if demoMode is now OFF
         this.startAnalysisTimer();
     }
 
@@ -330,7 +306,6 @@ export class SessionManager {
         this.stopScreenshotTimer();
         this.stopAnalysisTimer();
 
-        // Create interruption record
         this.currentInterruption = {
             suspendTime: now,
             resumeTime: null,
@@ -342,7 +317,6 @@ export class SessionManager {
 
     /**
      * Save interruption reflection to session
-     * Returns true if successful, false if no active interruption
      */
     private async saveInterruptionReflection(reflection: string): Promise<boolean> {
         if (!this.sessionState.isActive || !this.currentInterruption) {
@@ -365,7 +339,6 @@ export class SessionManager {
 
     /**
      * Save reflection to current session
-     * Returns true if successful, false if no active session
      */
     private async saveReflection(content: string): Promise<boolean> {
         if (!this.sessionState.isActive) {
@@ -392,14 +365,10 @@ export class SessionManager {
      * Resume session and screenshot timers
      */
     private resumeSessionTimers(): void {
-        // Resume the session timer with remaining time
         this.sessionTimer = setTimeout(async () => {
             await this.stopSession();
-            this.windowManager.showPanel();
         }, this.remainingSessionTime);
 
-        // Resume screenshot timer - trigger immediately then every 30s
-        this.windowManager.triggerScreenshotCapture();
         this.screenshotTimer = setInterval(() => {
             if (!this.sessionState.isActive) {
                 this.stopScreenshotTimer();
@@ -407,7 +376,6 @@ export class SessionManager {
             }
         }, SCREENSHOT_INTERVAL_MS);
 
-        // Resume analysis timer
         this.startAnalysisTimer();
     }
 
@@ -422,23 +390,16 @@ export class SessionManager {
             return { ok: false, error: 'no active interruption' };
         }
 
-        // Adjust session end time by adding the sleep duration
         const interruptionDuration = this.currentInterruption.durationMs;
         this.sessionState.endTime += interruptionDuration;
         console.log('[SessionManager] Adjusted session end time by', interruptionDuration, 'ms');
 
-        // Save interruption reflection
         if (!await this.saveInterruptionReflection(reflection)) {
             console.log('[SessionManager] Error: could not save interruption reflection');
             return { ok: false, error: 'no active interruption' };
         }
 
-        // Resume timers
         this.resumeSessionTimers();
-
-        // Hide panel
-        this.windowManager.hidePanel();
-
         this.broadcastSessionState();
         return { ok: true };
     }
@@ -449,20 +410,17 @@ export class SessionManager {
     async endAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
         console.log('[SessionManager] endAfterInterruption called');
 
-        // Save interruption reflection
         if (!await this.saveInterruptionReflection(reflection)) {
             console.log('[SessionManager] Error: no active interruption');
             return { ok: false, error: 'no active interruption' };
         }
 
-        // End the session
         await this.stopSession();
-
         return { ok: true };
     }
 
     /**
-     * Save reflection and resume session (called from deeper reflection view)
+     * Save reflection and resume session
      */
     async saveReflectionAndResume(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
         console.log('[SessionManager] saveReflectionAndResume called');
@@ -472,21 +430,14 @@ export class SessionManager {
             return { ok: false, error: 'no active session' };
         }
 
-        // Save reflection to session
         await this.saveReflection(reflectionContent);
-
-        // Resume timers
         this.resumeSessionTimers();
-
-        // Hide panel
-        this.windowManager.hidePanel();
-
         this.broadcastSessionState();
         return { ok: true };
     }
 
     /**
-     * Save reflection and end session (called from deeper reflection view)
+     * Save reflection and end session
      */
     async saveReflectionAndEndSession(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
         console.log('[SessionManager] saveReflectionAndEndSession called');
@@ -496,12 +447,8 @@ export class SessionManager {
             return { ok: false, error: 'no active session' };
         }
 
-        // Save reflection to session
         await this.saveReflection(reflectionContent);
-
-        // End the session
         await this.stopSession();
-
         return { ok: true };
     }
 
@@ -516,15 +463,13 @@ export class SessionManager {
             return;
         }
 
-        // Record resume time
         const now = Date.now();
         this.currentInterruption.resumeTime = now;
         this.currentInterruption.durationMs = now - this.currentInterruption.suspendTime;
         console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
 
-        // Show panel with reflection UI
-        this.windowManager.showPanel();
-        this.windowManager.changeView({ view: 'interruption-reflection' });
+        // TODO: Show interruption reflection UI in new architecture
+        console.log('[SessionManager] TODO: Show interruption reflection UI');
     }
 
     /**
@@ -533,13 +478,11 @@ export class SessionManager {
     setupPowerMonitoring(): void {
         console.log('[SessionManager] Setting up power monitoring');
 
-        // Safe log wrapper to prevent EPIPE errors during shutdown
         const safeLog = (msg: string) => {
             if (!process.stdout.writable) return;
             try { console.log(msg); } catch { /* ignore EPIPE */ }
         };
 
-        // Listen for system suspend
         powerMonitor.on('suspend', () => {
             safeLog('[PowerMonitor] suspend event');
             if (!this.sessionState.isActive) return;
@@ -551,7 +494,6 @@ export class SessionManager {
             this.handleSystemWake();
         });
 
-        // macOS fires lock-screen when display sleeps
         powerMonitor.on('lock-screen', () => {
             safeLog('[PowerMonitor] lock-screen event');
             if (!this.sessionState.isActive) return;

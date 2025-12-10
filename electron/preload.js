@@ -113,15 +113,9 @@ const api = Object.freeze({
         ipcRenderer.invoke('images:get-recent', limit),
     analyzeRecent: (limit) =>
         ipcRenderer.invoke('llm:send-recent', limit),
-    showPanel: (options) => ipcRenderer.invoke('panel:show', options),
-    hidePanel: () => ipcRenderer.invoke('panel:hide'),
-    setWindowPosition: (position) => ipcRenderer.invoke('window:set-position', position),
     // settings APIs
     getSettings: () => ipcRenderer.invoke('settings:get'),
     updateSettings: (partial) => ipcRenderer.invoke('settings:update', partial),
-    // Feature flags
-    getUseNewArchitecture: () => ipcRenderer.invoke('config:getUseNewArchitecture'),
-    setUseNewArchitecture: (enabled) => ipcRenderer.invoke('config:setUseNewArchitecture', enabled),
     // session APIs
     sessionStart: (lengthMs, focusGoal, tasks) =>
         ipcRenderer.invoke('session:start', lengthMs, focusGoal, tasks),
@@ -140,29 +134,12 @@ const api = Object.freeze({
         ipcRenderer.on('session:updated', handler);
         return () => ipcRenderer.removeListener('session:updated', handler);
     },
-    onScreenshotCapture: (callback) => {
-        const handler = () => callback();
-        ipcRenderer.on('screenshot:capture', handler);
-        return () => ipcRenderer.removeListener('screenshot:capture', handler);
-    },
-    requestSessionSetup: () =>
-        ipcRenderer.invoke('ui:request-session-setup'),
-    requestSettings: () =>
-        ipcRenderer.invoke('ui:request-settings'),
-    requestAnalysis: () =>
-        ipcRenderer.invoke('ui:request-analysis'),
     handleInterruption: (action, reflection) =>
         ipcRenderer.invoke('session:handle-interruption', { action, reflection }),
     handleReflection: (action, reflection) =>
         ipcRenderer.invoke('session:handle-reflection', { action, reflection }),
     saveDistractionReason: (reason) =>
         ipcRenderer.invoke('session:save-distraction-reason', reason),
-    // unified view change listener
-    onViewChangeRequested: (callback) => {
-        const handler = (_event, payload) => callback(payload);
-        ipcRenderer.on('panel:change-view', handler);
-        return () => ipcRenderer.removeListener('panel:change-view', handler);
-    },
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
     // Task APIs
@@ -204,7 +181,7 @@ const api = Object.freeze({
         ipcRenderer.invoke('journal:update', entryId, payload),
     deleteJournalEntry: (entryId) =>
         ipcRenderer.invoke('journal:delete', entryId),
-    // Window control APIs (New Architecture)
+    // Window control APIs
     showSessionWidget: () =>
         ipcRenderer.invoke('window:show-session-widget'),
     hideSessionWidget: () =>

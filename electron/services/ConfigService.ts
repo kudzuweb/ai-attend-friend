@@ -10,7 +10,6 @@ interface AppConfig {
     completedTaskVisibility?: 'immediate' | 'end-of-session' | 'end-of-day';
     endOfDayTime?: string;
     deletedTaskRetention?: '1day' | '7days' | '30days';
-    useNewArchitecture?: boolean;
 }
 
 export class ConfigService {
@@ -108,12 +107,4 @@ export class ConfigService {
         return { ...this.config };
     }
 
-    getUseNewArchitecture(): boolean {
-        return this.config.useNewArchitecture ?? true; // Default: new architecture
-    }
-
-    setUseNewArchitecture(enabled: boolean): void {
-        this.config.useNewArchitecture = enabled;
-        this.saveConfig();
-    }
 }

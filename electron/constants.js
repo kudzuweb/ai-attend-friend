@@ -7,15 +7,12 @@ export const SCREENSHOT_INTERVAL_MS = 30_000; // 30 seconds
 export const AUTO_ANALYSIS_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Window dimensions
-export const WIDGET_CIRCLE_SIZE = 160;
-export const PANEL_WIDTH = 440;
-export const PANEL_HEIGHT = 380;
 export const MAIN_WINDOW_MIN_WIDTH = 800;
 export const MAIN_WINDOW_MIN_HEIGHT = 600;
 export const MAIN_WINDOW_DEFAULT_WIDTH = 900;
 export const MAIN_WINDOW_DEFAULT_HEIGHT = 700;
 
-// Session widget dimensions (rectangular)
+// Session widget dimensions
 export const SESSION_WIDGET_WIDTH = 280;
 export const SESSION_WIDGET_HEIGHT = 280;
 
@@ -28,7 +25,6 @@ export const SESSION_CLEANUP_BUFFER_MS = 5000; // 5 seconds
 
 // Window settings
 export const WINDOW_MARGIN = 20; // Margin from screen edges in pixels
-export const MAX_PENDING_CHANGES = 5; // Maximum queued view changes
 
 // Deletion retention periods (in milliseconds)
 export const DELETED_TASK_RETENTION = {

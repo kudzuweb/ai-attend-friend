@@ -533,27 +533,33 @@ export class SessionManager {
     setupPowerMonitoring(): void {
         console.log('[SessionManager] Setting up power monitoring');
 
+        // Safe log wrapper to prevent EPIPE errors during shutdown
+        const safeLog = (msg: string) => {
+            if (!process.stdout.writable) return;
+            try { console.log(msg); } catch { /* ignore EPIPE */ }
+        };
+
         // Listen for system suspend
         powerMonitor.on('suspend', () => {
-            console.log('[PowerMonitor] suspend event');
+            safeLog('[PowerMonitor] suspend event');
             if (!this.sessionState.isActive) return;
             this.pauseSession();
         });
 
         powerMonitor.on('resume', () => {
-            console.log('[PowerMonitor] resume event');
+            safeLog('[PowerMonitor] resume event');
             this.handleSystemWake();
         });
 
         // macOS fires lock-screen when display sleeps
         powerMonitor.on('lock-screen', () => {
-            console.log('[PowerMonitor] lock-screen event');
+            safeLog('[PowerMonitor] lock-screen event');
             if (!this.sessionState.isActive) return;
             this.pauseSession();
         });
 
         powerMonitor.on('unlock-screen', () => {
-            console.log('[PowerMonitor] unlock-screen event');
+            safeLog('[PowerMonitor] unlock-screen event');
             this.handleSystemWake();
         });
 

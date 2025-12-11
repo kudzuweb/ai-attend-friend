@@ -72,37 +72,7 @@ export function registerIPCHandlers(
         return await sessionManager.handleDistractionAnalysis(limit);
     });
 
-    // ========== Panel Handlers ==========
-
-    ipcMain.handle('panel:show', () => {
-        windowManager.showPanel();
-    });
-
-    ipcMain.handle('panel:hide', () => {
-        windowManager.hidePanel();
-    });
-
-    ipcMain.handle('window:set-position', (_evt, position: 'top-left' | 'top-center' | 'top-right') => {
-        console.log('[IPCHandlers] window:set-position received:', position);
-        windowManager.setWindowPosition(position);
-    });
-
-    ipcMain.handle('ui:request-session-setup', () => {
-        console.log('[IPCHandlers] ui:request-session-setup received');
-        windowManager.requestSessionSetup();
-    });
-
-    ipcMain.handle('ui:request-settings', () => {
-        console.log('[IPCHandlers] ui:request-settings received');
-        windowManager.requestSettings();
-    });
-
-    ipcMain.handle('ui:request-analysis', () => {
-        console.log('[IPCHandlers] ui:request-analysis received');
-        windowManager.requestAnalysis();
-    });
-
-    // ========== Window Control Handlers (New Architecture) ==========
+    // ========== Window Control Handlers ==========
 
     ipcMain.handle('window:show-session-widget', async () => {
         console.log('[IPCHandlers] window:show-session-widget received');
@@ -139,32 +109,14 @@ export function registerIPCHandlers(
 
     ipcMain.handle('settings:update', (_evt, partial: { demoMode?: boolean; tasksEnabled?: boolean }) => {
         const result = configService.updateSettings(partial);
-        // Notify SessionManager that settings changed so it can re-evaluate timers
         sessionManager.handleSettingsChange();
         return result;
-    });
-
-    // Feature flag handlers
-    ipcMain.handle('config:getUseNewArchitecture', () => {
-        return configService.getUseNewArchitecture();
-    });
-
-    ipcMain.handle('config:setUseNewArchitecture', (_evt, enabled: boolean) => {
-        configService.setUseNewArchitecture(enabled);
-        return { ok: true };
     });
 
     // ========== Session Handlers ==========
 
     ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => {
-        const result = await sessionManager.startSession(lengthMs, focusGoal, tasks);
-
-        // If session started successfully and tasks are provided, show tasks view
-        if (result.ok && tasks && tasks.some(t => t.trim())) {
-            windowManager.showTasksView();
-        }
-
-        return result;
+        return await sessionManager.startSession(lengthMs, focusGoal, tasks);
     });
 
     ipcMain.handle('session:get-state', () => {
@@ -172,11 +124,6 @@ export function registerIPCHandlers(
     });
 
     ipcMain.handle('session:stop', async () => {
-        // Clean up session screenshots asynchronously (non-blocking)
-        // TODO: Re-enable after debugging
-        // const sessionState = sessionManager.getSessionState();
-        // void screenshotService.deleteSessionScreenshots(sessionState.startTime, sessionState.endTime);
-
         await sessionManager.stopSession();
         return { ok: true as const };
     });
@@ -337,7 +284,6 @@ export function registerIPCHandlers(
 
             const result = await taskStorage.deleteTask(taskId);
 
-            // If task had a parent, recalculate parent completion
             if (result.ok && task.parentTaskId) {
                 await taskStorage.recalculateParentCompletion(task.parentTaskId);
             }

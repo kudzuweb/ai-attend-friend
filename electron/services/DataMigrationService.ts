@@ -168,10 +168,6 @@ export class DataMigrationService {
             await this.configService.set('deletedTaskRetention', '7days');
         }
 
-        if (existingConfig.useNewArchitecture === undefined) {
-            await this.configService.set('useNewArchitecture', false);
-        }
-
         console.log('[Migration] Config migrated');
     }
 }

@@ -60,12 +60,6 @@ declare global {
         content: string;
     };
 
-    // panel view change payload
-    type ViewChangePayload = {
-        view: 'session-setup' | 'settings' | 'tasks' | 'interruption-reflection' | 'distracted-reason' | 'analysis';
-        data?: any;
-    };
-
     // session state type
     type SessionState = {
         isActive: boolean;
@@ -87,8 +81,8 @@ declare global {
         interruptions: SessionInterruption[];
         distractions: DistractionReason[];
         reflections: Reflection[];
-        summaries: string[]; // array of batch summaries captured during session
-        finalSummary: string | null; // synthesized summary created when session ends
+        summaries: string[];
+        finalSummary: string | null;
     };
 
     // add window.api to Window type so TS doesn't freak out
@@ -115,13 +109,8 @@ declare global {
                 raw?: unknown;
                 count: number
             } | { ok: false; error: string }>;
-            showPanel: (options?: { setupSession?: boolean }) => Promise<void>;
-            hidePanel: () => Promise<void>;
-            setWindowPosition: (position: 'top-left' | 'top-center' | 'top-right') => Promise<void>;
             getSettings: () => Promise<{ windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean }>;
             updateSettings: (partial: { demoMode?: boolean; tasksEnabled?: boolean }) => Promise<{ windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean }>;
-            getUseNewArchitecture: () => Promise<boolean>;
-            setUseNewArchitecture: (enabled: boolean) => Promise<{ ok: boolean }>;
             sessionStart: (lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -129,14 +118,9 @@ declare global {
             sessionListAll: () => Promise<{ ok: true; sessions: Record<string, StoredSession[]> } | { ok: false; error: string }>;
             sessionGet: (sessionId: string, date: string) => Promise<{ ok: true; session: StoredSession } | { ok: false; error: string }>;
             onSessionUpdated: (callback: (state: SessionState) => void) => () => void;
-            onScreenshotCapture: (callback: () => void) => () => void;
-            requestSessionSetup: () => Promise<void>;
-            requestSettings: () => Promise<void>;
-            requestAnalysis: () => Promise<void>;
             handleInterruption: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-            onViewChangeRequested: (callback: (payload: ViewChangePayload) => void) => () => void;
             pauseSession: () => Promise<void>;
             quitApp: () => Promise<void>;
             // Task APIs
@@ -167,11 +151,13 @@ declare global {
             }) => Promise<{ ok: true; entry: JournalEntry } | { ok: false; error: string }>;
             updateJournalEntry: (entryId: string, payload: { content: string }) => Promise<{ ok: boolean }>;
             deleteJournalEntry: (entryId: string) => Promise<{ ok: boolean }>;
-            // Window control APIs (New Architecture)
+            // Window control APIs
             showSessionWidget: () => Promise<void>;
             hideSessionWidget: () => Promise<void>;
             minimizeMainWindow: () => Promise<void>;
             restoreMainWindow: () => Promise<void>;
+            // Screenshot capture listener
+            onScreenshotCapture: (callback: () => void) => () => void;
         };
     }
     // media track constraints for chromium to allow more granular config

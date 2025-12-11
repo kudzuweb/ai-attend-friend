@@ -51,6 +51,14 @@ export default function MainApp() {
                         Settings
                     </button>
                 </nav>
+                <div className="sidebar-footer">
+                    <button
+                        className="quit-button"
+                        onClick={() => window.api.quitApp()}
+                    >
+                        Quit
+                    </button>
+                </div>
             </div>
 
             <div className="main-content">

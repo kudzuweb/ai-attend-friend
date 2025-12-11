@@ -151,9 +151,12 @@ export class SessionManager {
 
         this.broadcastSessionState();
 
-        // Start the screenshot timer
+        // Start the screenshot timer - first capture after 30s, then every 30s
         this.screenshotTimer = setTimeout(() => {
             if (!this.sessionState.isActive) return;
+
+            // Capture immediately when first timeout fires
+            this.windowManager.triggerScreenshotCapture();
 
             this.screenshotTimer = setInterval(() => {
                 if (!this.sessionState.isActive) {
@@ -370,6 +373,9 @@ export class SessionManager {
             await this.stopSession();
         }, this.remainingSessionTime);
 
+        // Capture immediately on resume, then every 30s
+        this.windowManager.triggerScreenshotCapture();
+
         this.screenshotTimer = setInterval(() => {
             if (!this.sessionState.isActive) {
                 this.stopScreenshotTimer();
@@ -456,6 +462,8 @@ export class SessionManager {
 
     /**
      * Handle system wake event
+     * Note: On macOS, both 'resume' and 'unlock-screen' events may fire in quick succession.
+     * We grab and clear the interruption synchronously to prevent race conditions.
      */
     handleSystemWake(): void {
         console.log('[SessionManager] handleSystemWake');
@@ -465,15 +473,34 @@ export class SessionManager {
             return;
         }
 
-        const now = Date.now();
-        this.currentInterruption.resumeTime = now;
-        this.currentInterruption.durationMs = now - this.currentInterruption.suspendTime;
-        console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
+        // Grab and clear interruption synchronously to prevent duplicate handling
+        // from rapid resume + unlock-screen events on macOS
+        const interruption = this.currentInterruption;
+        this.currentInterruption = null;
 
-        // Auto-resume session after system wake
-        // TODO: Add interruption reflection UI in new architecture to prompt user
-        const durationMinutes = Math.round(this.currentInterruption.durationMs / 60000);
-        this.resumeAfterInterruption(`[Auto-resumed after ${durationMinutes} minute pause]`);
+        const now = Date.now();
+        interruption.resumeTime = now;
+        interruption.durationMs = now - interruption.suspendTime;
+        console.log('[SessionManager] Interruption duration (ms):', interruption.durationMs);
+
+        // Adjust session end time synchronously
+        this.sessionState.endTime += interruption.durationMs;
+        console.log('[SessionManager] Adjusted session end time by', interruption.durationMs, 'ms');
+
+        // Save interruption and resume timers
+        const durationMinutes = Math.round(interruption.durationMs / 60000);
+        interruption.userReflection = `[Auto-resumed after ${durationMinutes} minute pause]`;
+
+        if (this.currentSessionId && this.currentSessionDate) {
+            this.storageService.addInterruptionToSession(
+                this.currentSessionId,
+                this.currentSessionDate,
+                interruption
+            ).catch(e => console.error('[SessionManager] Error saving interruption:', e));
+        }
+
+        this.resumeSessionTimers();
+        this.broadcastSessionState();
         console.log('[SessionManager] Session auto-resumed after system wake');
     }
 

@@ -56,6 +56,10 @@ export default function SessionWidgetApp() {
   // Handle session end (natural expiration only)
   useEffect(() => {
     if (wasActive && sessionState && !sessionState.isActive) {
+      // Reset interruption state on session end
+      setInterruptionMode(false);
+      setInterruptionDuration(0);
+
       // Session just ended naturally, clean up windows
       let cancelled = false;
 

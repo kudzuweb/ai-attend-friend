@@ -236,6 +236,11 @@ export class SessionManager {
         this.currentSessionId = null;
         this.currentSessionDate = null;
 
+        // Reset interruption state
+        this.currentInterruption = null;
+        this.pendingInterruptionReflection = false;
+        this.remainingSessionTime = 0;
+
         this.broadcastSessionState();
     }
 
@@ -303,6 +308,13 @@ export class SessionManager {
      */
     pauseSession(): void {
         console.log('[SessionManager] Pausing session');
+
+        // Don't overwrite if we're already waiting for user response
+        if (this.pendingInterruptionReflection) {
+            console.log('[SessionManager] Already pending interruption, not creating new one');
+            return;
+        }
+
         const now = Date.now();
         this.remainingSessionTime = this.sessionState.endTime - now;
         console.log('[SessionManager] Remaining time (ms):', this.remainingSessionTime);
@@ -370,9 +382,13 @@ export class SessionManager {
      * Resume session and screenshot timers
      */
     private resumeSessionTimers(): void {
+        // Recalculate remaining time from endTime (which was extended by interruption duration)
+        // This also excludes reflection UI time since we're using Date.now()
+        const remainingTime = Math.max(0, this.sessionState.endTime - Date.now());
+
         this.sessionTimer = setTimeout(async () => {
             await this.stopSession();
-        }, this.remainingSessionTime);
+        }, remainingTime);
 
         // Capture immediately on resume, then every 30s
         this.windowManager.triggerScreenshotCapture();

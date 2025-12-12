@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 type AppSettings = {
     windowPosition: 'top-left' | 'top-center' | 'top-right';
@@ -20,6 +20,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
+    const isUpdatingRef = useRef(false);
 
     const refreshSettings = useCallback(async () => {
         try {
@@ -35,7 +36,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const updateSettings = useCallback(async (partial: Partial<AppSettings>) => {
-        if (isUpdating) return null;
+        if (isUpdatingRef.current) return null;
+        isUpdatingRef.current = true;
         setIsUpdating(true);
         try {
             console.log('[SettingsContext] Updating settings:', partial);
@@ -47,9 +49,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             console.error('[SettingsContext] Failed to update settings', error);
             return null;
         } finally {
+            isUpdatingRef.current = false;
             setIsUpdating(false);
         }
-    }, [isUpdating]);
+    }, []);
 
     useEffect(() => {
         void refreshSettings();

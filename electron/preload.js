@@ -134,6 +134,11 @@ const api = Object.freeze({
         ipcRenderer.on('session:updated', handler);
         return () => ipcRenderer.removeListener('session:updated', handler);
     },
+    onInterruption: (callback) => {
+        const handler = (_event, data) => callback(data);
+        ipcRenderer.on('session:interruption', handler);
+        return () => ipcRenderer.removeListener('session:interruption', handler);
+    },
     handleInterruption: (action, reflection) =>
         ipcRenderer.invoke('session:handle-interruption', { action, reflection }),
     handleReflection: (action, reflection) =>

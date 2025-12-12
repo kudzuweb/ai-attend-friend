@@ -1517,6 +1517,99 @@ button:focus-visible {
 }
 
 /* ========================================
+   Interruption Reflection Styles
+   ======================================== */
+
+.interruption-reflection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 12px;
+}
+
+.interruption-reflection h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0;
+  text-align: center;
+}
+
+.interruption-duration {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  text-align: center;
+}
+
+.reflection-input {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reflection-input label {
+  font-size: 12px;
+  color: #666;
+}
+
+.reflection-input textarea {
+  flex: 1;
+  padding: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #E0E0E0;
+  border-radius: 6px;
+  resize: none;
+  background: white;
+}
+
+.reflection-input textarea:focus {
+  outline: none;
+  border-color: #2C3E50;
+}
+
+.reflection-input textarea::placeholder {
+  color: #AAA;
+}
+
+.interruption-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.interruption-actions button {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.interruption-actions .btn-resume {
+  color: white;
+  background: #27ae60;
+}
+
+.interruption-actions .btn-resume:hover {
+  background: #219a52;
+}
+
+.interruption-actions .btn-end {
+  color: #333;
+  background: #E0E0E0;
+  border: 1px solid #CCC;
+}
+
+.interruption-actions .btn-end:hover {
+  background: #D0D0D0;
+}
+
+/* ========================================
    Settings View Styles
    ======================================== */
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import TimerDisplay from './widget-components/TimerDisplay';
 import WidgetTaskList from './widget-components/WidgetTaskList';
+import InterruptionReflection from './widget-components/InterruptionReflection';
 
 interface SessionState {
   isActive: boolean;
@@ -15,14 +16,22 @@ export default function SessionWidgetApp() {
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [wasActive, setWasActive] = useState(false);
+  const [interruptionMode, setInterruptionMode] = useState(false);
+  const [interruptionDuration, setInterruptionDuration] = useState(0);
 
   useEffect(() => {
     // Load initial session state
     loadSessionState();
 
     // Listen for session updates
-    const unsubscribe = window.api.onSessionUpdated((state: SessionState) => {
+    const unsubscribeSession = window.api.onSessionUpdated((state: SessionState) => {
       setSessionState(state);
+    });
+
+    // Listen for interruption events
+    const unsubscribeInterruption = window.api.onInterruption((data) => {
+      setInterruptionMode(true);
+      setInterruptionDuration(data.durationMs);
     });
 
     // Update current time every second
@@ -31,7 +40,8 @@ export default function SessionWidgetApp() {
     }, 1000);
 
     return () => {
-      unsubscribe();
+      unsubscribeSession();
+      unsubscribeInterruption();
       clearInterval(timer);
     };
   }, []);
@@ -83,6 +93,32 @@ export default function SessionWidgetApp() {
 
   async function handlePauseSession() {
     await window.api.pauseSession();
+  }
+
+  async function handleInterruptionResume(reflection: string) {
+    await window.api.handleInterruption('resume', reflection);
+    setInterruptionMode(false);
+    setInterruptionDuration(0);
+  }
+
+  async function handleInterruptionEnd(reflection: string) {
+    await window.api.handleInterruption('end', reflection);
+    setInterruptionMode(false);
+    setInterruptionDuration(0);
+    // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+  }
+
+  // Show interruption reflection UI when returning from system sleep/lock
+  if (interruptionMode && sessionState?.isActive) {
+    return (
+      <div className="session-widget">
+        <InterruptionReflection
+          durationMs={interruptionDuration}
+          onResume={handleInterruptionResume}
+          onEnd={handleInterruptionEnd}
+        />
+      </div>
+    );
   }
 
   if (!sessionState || !sessionState.isActive) {

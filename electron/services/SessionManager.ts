@@ -16,6 +16,7 @@ export class SessionManager {
     private currentSessionDate: string | null = null;
     private currentInterruption: SessionInterruption | null = null;
     private remainingSessionTime: number = 0;
+    private pendingInterruptionReflection: boolean = false;
 
     private windowManager: WindowManager;
     private storageService: StorageService;
@@ -398,6 +399,9 @@ export class SessionManager {
             return { ok: false, error: 'no active interruption' };
         }
 
+        // Reset the pending flag
+        this.pendingInterruptionReflection = false;
+
         const interruptionDuration = this.currentInterruption.durationMs;
         this.sessionState.endTime += interruptionDuration;
         console.log('[SessionManager] Adjusted session end time by', interruptionDuration, 'ms');
@@ -417,6 +421,9 @@ export class SessionManager {
      */
     async endAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
         console.log('[SessionManager] endAfterInterruption called');
+
+        // Reset the pending flag
+        this.pendingInterruptionReflection = false;
 
         if (!await this.saveInterruptionReflection(reflection)) {
             console.log('[SessionManager] Error: no active interruption');
@@ -463,7 +470,7 @@ export class SessionManager {
     /**
      * Handle system wake event
      * Note: On macOS, both 'resume' and 'unlock-screen' events may fire in quick succession.
-     * We grab and clear the interruption synchronously to prevent race conditions.
+     * We use pendingInterruptionReflection flag to prevent duplicate handling.
      */
     handleSystemWake(): void {
         console.log('[SessionManager] handleSystemWake');
@@ -473,35 +480,26 @@ export class SessionManager {
             return;
         }
 
-        // Grab and clear interruption synchronously to prevent duplicate handling
-        // from rapid resume + unlock-screen events on macOS
-        const interruption = this.currentInterruption;
-        this.currentInterruption = null;
-
-        const now = Date.now();
-        interruption.resumeTime = now;
-        interruption.durationMs = now - interruption.suspendTime;
-        console.log('[SessionManager] Interruption duration (ms):', interruption.durationMs);
-
-        // Adjust session end time synchronously
-        this.sessionState.endTime += interruption.durationMs;
-        console.log('[SessionManager] Adjusted session end time by', interruption.durationMs, 'ms');
-
-        // Save interruption and resume timers
-        const durationMinutes = Math.round(interruption.durationMs / 60000);
-        interruption.userReflection = `[Auto-resumed after ${durationMinutes} minute pause]`;
-
-        if (this.currentSessionId && this.currentSessionDate) {
-            this.storageService.addInterruptionToSession(
-                this.currentSessionId,
-                this.currentSessionDate,
-                interruption
-            ).catch(e => console.error('[SessionManager] Error saving interruption:', e));
+        // Prevent duplicate handling from rapid resume + unlock-screen events on macOS
+        if (this.pendingInterruptionReflection) {
+            console.log('[SessionManager] Already pending interruption reflection, ignoring duplicate wake');
+            return;
         }
 
-        this.resumeSessionTimers();
-        this.broadcastSessionState();
-        console.log('[SessionManager] Session auto-resumed after system wake');
+        const now = Date.now();
+        this.currentInterruption.resumeTime = now;
+        this.currentInterruption.durationMs = now - this.currentInterruption.suspendTime;
+        console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
+
+        // Mark as pending user reflection
+        this.pendingInterruptionReflection = true;
+
+        // Broadcast interruption to renderer for UI prompt
+        this.windowManager.broadcastInterruption({
+            durationMs: this.currentInterruption.durationMs,
+        });
+
+        console.log('[SessionManager] Interruption broadcast to renderer, waiting for user response');
     }
 
     /**

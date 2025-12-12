@@ -500,8 +500,16 @@ export class SessionManager {
         const now = Date.now();
         const additionalDuration = now - this.currentInterruption.suspendTime;
 
-        // If already pending reflection, accumulate additional away time and update UI
+        // If already pending reflection, check if this is a duplicate event or a new sleep cycle
         if (this.pendingInterruptionReflection) {
+            // Duplicate event: suspendTime hasn't changed since last wake (suspendTime <= resumeTime)
+            // New sleep cycle: user locked again, so suspendTime was updated (suspendTime > resumeTime)
+            const lastResumeTime = this.currentInterruption.resumeTime ?? 0;
+            if (this.currentInterruption.suspendTime <= lastResumeTime) {
+                console.log('[SessionManager] Ignoring duplicate wake event');
+                return;
+            }
+
             console.log('[SessionManager] Already pending reflection, accumulating additional duration:', additionalDuration);
             this.currentInterruption.durationMs += additionalDuration;
             this.currentInterruption.resumeTime = now;

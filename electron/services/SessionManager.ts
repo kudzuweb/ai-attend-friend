@@ -15,7 +15,6 @@ export class SessionManager {
     private currentSessionId: string | null = null;
     private currentSessionDate: string | null = null;
     private currentInterruption: SessionInterruption | null = null;
-    private remainingSessionTime: number = 0;
     private pendingInterruptionReflection: boolean = false;
     private operationQueue: Promise<void> = Promise.resolve();
 
@@ -250,7 +249,6 @@ export class SessionManager {
         // Reset interruption state
         this.currentInterruption = null;
         this.pendingInterruptionReflection = false;
-        this.remainingSessionTime = 0;
 
         this.broadcastSessionState();
     }
@@ -318,26 +316,23 @@ export class SessionManager {
      * Pause session (called when system sleeps)
      */
     pauseSession(): void {
+        const suspendTime = Date.now(); // Capture timestamp synchronously at event time
         this.enqueueOperation(async () => {
             console.log('[SessionManager] Pausing session');
 
             // If already pending reflection, update suspend time to track additional away time
             if (this.pendingInterruptionReflection && this.currentInterruption) {
                 console.log('[SessionManager] Already pending interruption, updating suspend time for additional away time');
-                this.currentInterruption.suspendTime = Date.now();
+                this.currentInterruption.suspendTime = suspendTime;
                 return;
             }
-
-            const now = Date.now();
-            this.remainingSessionTime = this.sessionState.endTime - now;
-            console.log('[SessionManager] Remaining time (ms):', this.remainingSessionTime);
 
             this.stopSessionTimer();
             this.stopScreenshotTimer();
             this.stopAnalysisTimer();
 
             this.currentInterruption = {
-                suspendTime: now,
+                suspendTime,
                 resumeTime: null,
                 durationMs: 0,
                 userReflection: null,
@@ -511,6 +506,7 @@ export class SessionManager {
      * We use pendingInterruptionReflection flag to prevent duplicate handling.
      */
     handleSystemWake(): void {
+        const wakeTime = Date.now(); // Capture timestamp synchronously at event time
         this.enqueueOperation(async () => {
             console.log('[SessionManager] handleSystemWake');
 
@@ -519,8 +515,7 @@ export class SessionManager {
                 return;
             }
 
-            const now = Date.now();
-            const additionalDuration = now - this.currentInterruption.suspendTime;
+            const additionalDuration = wakeTime - this.currentInterruption.suspendTime;
 
             // If already pending reflection, check if this is a duplicate event or a new sleep cycle
             if (this.pendingInterruptionReflection) {
@@ -534,7 +529,7 @@ export class SessionManager {
 
                 console.log('[SessionManager] Already pending reflection, accumulating additional duration:', additionalDuration);
                 this.currentInterruption.durationMs += additionalDuration;
-                this.currentInterruption.resumeTime = now;
+                this.currentInterruption.resumeTime = wakeTime;
 
                 // Update UI with new total duration
                 this.windowManager.broadcastInterruption({
@@ -544,7 +539,7 @@ export class SessionManager {
             }
 
             // First wake - calculate initial duration and show reflection UI
-            this.currentInterruption.resumeTime = now;
+            this.currentInterruption.resumeTime = wakeTime;
             this.currentInterruption.durationMs = additionalDuration;
             console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
 

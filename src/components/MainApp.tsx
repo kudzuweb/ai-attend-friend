@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import TasklistView from './main-views/TasklistView';
 import OpenLoopsView from './main-views/OpenLoopsView';
 import JournalView from './main-views/JournalView';
+import SettingsView from './main-views/SettingsView';
 
 type MainView = 'openloops' | 'tasklist' | 'journal' | 'settings';
 
@@ -65,7 +66,7 @@ export default function MainApp() {
                 {currentView === 'openloops' && <OpenLoopsView />}
                 {currentView === 'tasklist' && <TasklistView />}
                 {currentView === 'journal' && <JournalView />}
-                {currentView === 'settings' && <div>Settings View (Coming Soon)</div>}
+                {currentView === 'settings' && <SettingsView />}
             </div>
         </div>
     );

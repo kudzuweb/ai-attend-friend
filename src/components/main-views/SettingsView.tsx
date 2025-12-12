@@ -23,13 +23,19 @@ export default function SettingsView() {
 
     async function handleToggleDemoMode() {
         if (!settings) return;
-        const updated = await window.api.updateSettings({ demoMode: !settings.demoMode });
+        const newValue = !settings.demoMode;
+        // Optimistic update to prevent race condition on rapid clicks
+        setSettings({ ...settings, demoMode: newValue });
+        const updated = await window.api.updateSettings({ demoMode: newValue });
         setSettings(updated);
     }
 
     async function handleToggleTasksEnabled() {
         if (!settings) return;
-        const updated = await window.api.updateSettings({ tasksEnabled: !settings.tasksEnabled });
+        const newValue = !settings.tasksEnabled;
+        // Optimistic update to prevent race condition on rapid clicks
+        setSettings({ ...settings, tasksEnabled: newValue });
+        const updated = await window.api.updateSettings({ tasksEnabled: newValue });
         setSettings(updated);
     }
 

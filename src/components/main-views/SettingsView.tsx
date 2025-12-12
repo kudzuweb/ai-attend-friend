@@ -1,45 +1,19 @@
-import { useState, useEffect } from 'react';
-
-type Settings = {
-    windowPosition: 'top-left' | 'top-center' | 'top-right';
-    demoMode: boolean;
-    tasksEnabled: boolean;
-};
+import { useSettings } from '../../contexts/SettingsContext';
 
 export default function SettingsView() {
-    const [settings, setSettings] = useState<Settings | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { settings, isLoading, updateSettings } = useSettings();
 
-    useEffect(() => {
-        loadSettings();
-    }, []);
-
-    async function loadSettings() {
-        setLoading(true);
-        const result = await window.api.getSettings();
-        setSettings(result);
-        setLoading(false);
-    }
-
-    async function handleToggleDemoMode() {
+    function handleToggleDemoMode() {
         if (!settings) return;
-        const newValue = !settings.demoMode;
-        // Optimistic update to prevent race condition on rapid clicks
-        setSettings({ ...settings, demoMode: newValue });
-        const updated = await window.api.updateSettings({ demoMode: newValue });
-        setSettings(updated);
+        updateSettings({ demoMode: !settings.demoMode });
     }
 
-    async function handleToggleTasksEnabled() {
+    function handleToggleTasksEnabled() {
         if (!settings) return;
-        const newValue = !settings.tasksEnabled;
-        // Optimistic update to prevent race condition on rapid clicks
-        setSettings({ ...settings, tasksEnabled: newValue });
-        const updated = await window.api.updateSettings({ tasksEnabled: newValue });
-        setSettings(updated);
+        updateSettings({ tasksEnabled: !settings.tasksEnabled });
     }
 
-    if (loading || !settings) {
+    if (isLoading || !settings) {
         return (
             <div className="settings-view">
                 <h1>Settings</h1>

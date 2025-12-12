@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 type AppSettings = {
     windowPosition: 'top-left' | 'top-center' | 'top-right';
@@ -18,8 +18,12 @@ const SettingsContext = createContext<SettingsContextValue | undefined>(undefine
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    // Version counter to handle out-of-order API responses
+    const updateVersionRef = useRef(0);
 
     const refreshSettings = useCallback(async () => {
+        // Increment version to invalidate any in-flight updates
+        updateVersionRef.current++;
         try {
             console.log('[SettingsContext] Loading settings from backend...');
             const data = await window.api.getSettings();
@@ -33,17 +37,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const updateSettings = useCallback(async (partial: Partial<AppSettings>) => {
+        // Capture version for this request
+        const thisVersion = ++updateVersionRef.current;
+
+        // Optimistic update - immediately apply the partial
+        setSettings(prev => prev ? { ...prev, ...partial } : null);
+
         try {
             console.log('[SettingsContext] Updating settings:', partial);
             const updated = await window.api.updateSettings(partial);
             console.log('[SettingsContext] Settings updated:', updated);
-            setSettings(updated);
+
+            // Only apply API response if this is still the latest request
+            if (thisVersion === updateVersionRef.current) {
+                setSettings(updated);
+            }
             return updated;
         } catch (error) {
             console.error('[SettingsContext] Failed to update settings', error);
+            // Rollback on error by refreshing from backend
+            if (thisVersion === updateVersionRef.current) {
+                await refreshSettings();
+            }
             return null;
         }
-    }, []);
+    }, [refreshSettings]);
 
     useEffect(() => {
         void refreshSettings();

@@ -16,6 +16,9 @@ import { DataMigrationService } from './services/DataMigrationService.js';
 // Import IPC handlers
 import { registerIPCHandlers } from './handlers/IPCHandlers.js';
 
+// Set app name for macOS menu bar (must be done before ready event)
+app.setName('Attend');
+
 // Initialize services
 console.log('[Main] Initializing services...');
 const configService = new ConfigService();

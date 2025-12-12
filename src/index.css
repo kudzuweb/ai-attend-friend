@@ -1515,3 +1515,119 @@ button:focus-visible {
 .widget-btn-stop:hover {
   background: #a93226;
 }
+
+/* ========================================
+   Settings View Styles
+   ======================================== */
+
+.settings-view {
+  max-width: 600px;
+}
+
+.settings-view h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0 0 32px 0;
+}
+
+.settings-section {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.settings-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.setting-item {
+  margin-bottom: 20px;
+}
+
+.setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-toggle {
+  margin-bottom: 6px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.toggle-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.settings-view .toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.settings-view .toggle-switch.active {
+  background: #8B7355;
+}
+
+.settings-view .toggle-switch .toggle-thumb {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 10px;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.settings-view .toggle-switch.active .toggle-thumb {
+  transform: translateX(20px);
+}
+
+.settings-view .toggle-switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-description {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.about-text {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.about-text a {
+  color: #8B7355;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.about-text a:hover {
+  text-decoration: underline;
+}

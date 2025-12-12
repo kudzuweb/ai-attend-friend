@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 type AppSettings = {
     windowPosition: 'top-left' | 'top-center' | 'top-right';
@@ -9,6 +9,7 @@ type AppSettings = {
 type SettingsContextValue = {
     settings: AppSettings | null;
     isLoading: boolean;
+    isUpdating: boolean;
     refreshSettings: () => Promise<void>;
     updateSettings: (partial: Partial<AppSettings>) => Promise<AppSettings | null>;
 };
@@ -18,6 +19,8 @@ const SettingsContext = createContext<SettingsContextValue | undefined>(undefine
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const isUpdatingRef = useRef(false);
 
     const refreshSettings = useCallback(async () => {
         try {
@@ -33,6 +36,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const updateSettings = useCallback(async (partial: Partial<AppSettings>) => {
+        if (isUpdatingRef.current) return null;
+        isUpdatingRef.current = true;
+        setIsUpdating(true);
         try {
             console.log('[SettingsContext] Updating settings:', partial);
             const updated = await window.api.updateSettings(partial);
@@ -42,6 +48,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('[SettingsContext] Failed to update settings', error);
             return null;
+        } finally {
+            isUpdatingRef.current = false;
+            setIsUpdating(false);
         }
     }, []);
 
@@ -52,9 +61,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const value = useMemo<SettingsContextValue>(() => ({
         settings,
         isLoading,
+        isUpdating,
         refreshSettings,
         updateSettings,
-    }), [settings, isLoading, refreshSettings, updateSettings]);
+    }), [settings, isLoading, isUpdating, refreshSettings, updateSettings]);
 
     return (
         <SettingsContext.Provider value={value}>

@@ -1,7 +1,7 @@
 import { useSettings } from '../../contexts/SettingsContext';
 
 export default function SettingsView() {
-    const { settings, isLoading, updateSettings } = useSettings();
+    const { settings, isLoading, isUpdating, updateSettings } = useSettings();
 
     function handleToggleDemoMode() {
         if (!settings) return;
@@ -34,8 +34,8 @@ export default function SettingsView() {
                         <label className="toggle-label">
                             <span className="toggle-text">Demo Mode</span>
                             <div
-                                className={`toggle-switch ${settings.demoMode ? 'active' : ''}`}
-                                onClick={handleToggleDemoMode}
+                                className={`toggle-switch ${settings.demoMode ? 'active' : ''} ${isUpdating ? 'disabled' : ''}`}
+                                onClick={isUpdating ? undefined : handleToggleDemoMode}
                             >
                                 <div className="toggle-thumb" />
                             </div>
@@ -51,8 +51,8 @@ export default function SettingsView() {
                         <label className="toggle-label">
                             <span className="toggle-text">Show Tasks in Widget</span>
                             <div
-                                className={`toggle-switch ${settings.tasksEnabled ? 'active' : ''}`}
-                                onClick={handleToggleTasksEnabled}
+                                className={`toggle-switch ${settings.tasksEnabled ? 'active' : ''} ${isUpdating ? 'disabled' : ''}`}
+                                onClick={isUpdating ? undefined : handleToggleTasksEnabled}
                             >
                                 <div className="toggle-thumb" />
                             </div>

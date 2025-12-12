@@ -1603,6 +1603,11 @@ button:focus-visible {
   transform: translateX(20px);
 }
 
+.settings-view .toggle-switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .setting-description {
   font-size: 13px;
   color: #666;

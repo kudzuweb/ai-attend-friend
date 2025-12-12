@@ -156,6 +156,13 @@ export class WindowManager {
     }
 
     /**
+     * Broadcast interruption event to session widget
+     */
+    broadcastInterruption(data: { durationMs: number }): void {
+        this.sessionWidget?.webContents.send('session:interruption', data);
+    }
+
+    /**
      * Close all windows
      */
     closeAll(): void {

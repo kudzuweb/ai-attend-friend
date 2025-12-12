@@ -309,9 +309,10 @@ export class SessionManager {
     pauseSession(): void {
         console.log('[SessionManager] Pausing session');
 
-        // Don't overwrite if we're already waiting for user response
-        if (this.pendingInterruptionReflection) {
-            console.log('[SessionManager] Already pending interruption, not creating new one');
+        // If already pending reflection, update suspend time to track additional away time
+        if (this.pendingInterruptionReflection && this.currentInterruption) {
+            console.log('[SessionManager] Already pending interruption, updating suspend time for additional away time');
+            this.currentInterruption.suspendTime = Date.now();
             return;
         }
 
@@ -496,15 +497,25 @@ export class SessionManager {
             return;
         }
 
-        // Prevent duplicate handling from rapid resume + unlock-screen events on macOS
+        const now = Date.now();
+        const additionalDuration = now - this.currentInterruption.suspendTime;
+
+        // If already pending reflection, accumulate additional away time and update UI
         if (this.pendingInterruptionReflection) {
-            console.log('[SessionManager] Already pending interruption reflection, ignoring duplicate wake');
+            console.log('[SessionManager] Already pending reflection, accumulating additional duration:', additionalDuration);
+            this.currentInterruption.durationMs += additionalDuration;
+            this.currentInterruption.resumeTime = now;
+
+            // Update UI with new total duration
+            this.windowManager.broadcastInterruption({
+                durationMs: this.currentInterruption.durationMs,
+            });
             return;
         }
 
-        const now = Date.now();
+        // First wake - calculate initial duration and show reflection UI
         this.currentInterruption.resumeTime = now;
-        this.currentInterruption.durationMs = now - this.currentInterruption.suspendTime;
+        this.currentInterruption.durationMs = additionalDuration;
         console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
 
         // Mark as pending user reflection

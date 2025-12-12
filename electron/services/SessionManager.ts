@@ -17,6 +17,7 @@ export class SessionManager {
     private currentInterruption: SessionInterruption | null = null;
     private remainingSessionTime: number = 0;
     private pendingInterruptionReflection: boolean = false;
+    private operationQueue: Promise<void> = Promise.resolve();
 
     private windowManager: WindowManager;
     private storageService: StorageService;
@@ -44,6 +45,16 @@ export class SessionManager {
             endTime: 0,
             focusGoal: '',
         };
+    }
+
+    /**
+     * Enqueue an operation to run sequentially, preventing race conditions
+     */
+    private enqueueOperation<T>(operation: () => Promise<T>): Promise<T> {
+        const result = this.operationQueue.then(operation);
+        // Swallow errors to keep chain going, errors propagate via result
+        this.operationQueue = result.then(() => {}, () => {});
+        return result;
     }
 
     /**
@@ -307,30 +318,32 @@ export class SessionManager {
      * Pause session (called when system sleeps)
      */
     pauseSession(): void {
-        console.log('[SessionManager] Pausing session');
+        this.enqueueOperation(async () => {
+            console.log('[SessionManager] Pausing session');
 
-        // If already pending reflection, update suspend time to track additional away time
-        if (this.pendingInterruptionReflection && this.currentInterruption) {
-            console.log('[SessionManager] Already pending interruption, updating suspend time for additional away time');
-            this.currentInterruption.suspendTime = Date.now();
-            return;
-        }
+            // If already pending reflection, update suspend time to track additional away time
+            if (this.pendingInterruptionReflection && this.currentInterruption) {
+                console.log('[SessionManager] Already pending interruption, updating suspend time for additional away time');
+                this.currentInterruption.suspendTime = Date.now();
+                return;
+            }
 
-        const now = Date.now();
-        this.remainingSessionTime = this.sessionState.endTime - now;
-        console.log('[SessionManager] Remaining time (ms):', this.remainingSessionTime);
+            const now = Date.now();
+            this.remainingSessionTime = this.sessionState.endTime - now;
+            console.log('[SessionManager] Remaining time (ms):', this.remainingSessionTime);
 
-        this.stopSessionTimer();
-        this.stopScreenshotTimer();
-        this.stopAnalysisTimer();
+            this.stopSessionTimer();
+            this.stopScreenshotTimer();
+            this.stopAnalysisTimer();
 
-        this.currentInterruption = {
-            suspendTime: now,
-            resumeTime: null,
-            durationMs: 0,
-            userReflection: null,
-        };
-        console.log('[SessionManager] Interruption record created:', this.currentInterruption);
+            this.currentInterruption = {
+                suspendTime: now,
+                resumeTime: null,
+                durationMs: 0,
+                userReflection: null,
+            };
+            console.log('[SessionManager] Interruption record created:', this.currentInterruption);
+        });
     }
 
     /**
@@ -409,79 +422,87 @@ export class SessionManager {
      * Resume session after interruption
      */
     async resumeAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
-        console.log('[SessionManager] resumeAfterInterruption called');
+        return this.enqueueOperation(async () => {
+            console.log('[SessionManager] resumeAfterInterruption called');
 
-        if (!this.currentInterruption) {
-            console.log('[SessionManager] Error: no active interruption');
-            return { ok: false, error: 'no active interruption' };
-        }
+            if (!this.currentInterruption) {
+                console.log('[SessionManager] Error: no active interruption');
+                return { ok: false as const, error: 'no active interruption' };
+            }
 
-        // Reset the pending flag
-        this.pendingInterruptionReflection = false;
+            // Reset the pending flag
+            this.pendingInterruptionReflection = false;
 
-        const interruptionDuration = this.currentInterruption.durationMs;
-        this.sessionState.endTime += interruptionDuration;
-        console.log('[SessionManager] Adjusted session end time by', interruptionDuration, 'ms');
+            const interruptionDuration = this.currentInterruption.durationMs;
+            this.sessionState.endTime += interruptionDuration;
+            console.log('[SessionManager] Adjusted session end time by', interruptionDuration, 'ms');
 
-        if (!await this.saveInterruptionReflection(reflection)) {
-            console.log('[SessionManager] Error: could not save interruption reflection');
-            return { ok: false, error: 'no active interruption' };
-        }
+            if (!await this.saveInterruptionReflection(reflection)) {
+                console.log('[SessionManager] Error: could not save interruption reflection');
+                return { ok: false as const, error: 'no active interruption' };
+            }
 
-        this.resumeSessionTimers();
-        this.broadcastSessionState();
-        return { ok: true };
+            this.resumeSessionTimers();
+            this.broadcastSessionState();
+            return { ok: true as const };
+        });
     }
 
     /**
      * End session after interruption
      */
     async endAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
-        console.log('[SessionManager] endAfterInterruption called');
+        return this.enqueueOperation(async () => {
+            console.log('[SessionManager] endAfterInterruption called');
 
-        // Reset the pending flag
-        this.pendingInterruptionReflection = false;
+            // Reset the pending flag
+            this.pendingInterruptionReflection = false;
 
-        if (!await this.saveInterruptionReflection(reflection)) {
-            console.log('[SessionManager] Error: no active interruption');
-            return { ok: false, error: 'no active interruption' };
-        }
+            if (!await this.saveInterruptionReflection(reflection)) {
+                console.log('[SessionManager] Error: no active interruption');
+                return { ok: false as const, error: 'no active interruption' };
+            }
 
-        await this.stopSession();
-        return { ok: true };
+            await this.stopSession();
+            return { ok: true as const };
+        });
     }
 
     /**
      * Save reflection and resume session
      */
     async saveReflectionAndResume(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
-        console.log('[SessionManager] saveReflectionAndResume called');
+        return this.enqueueOperation(async () => {
+            console.log('[SessionManager] saveReflectionAndResume called');
 
-        if (!this.sessionState.isActive) {
-            console.log('[SessionManager] Error: no active session');
-            return { ok: false, error: 'no active session' };
-        }
+            if (!this.sessionState.isActive) {
+                console.log('[SessionManager] Error: no active session');
+                return { ok: false as const, error: 'no active session' };
+            }
 
-        await this.saveReflection(reflectionContent);
-        this.resumeSessionTimers();
-        this.broadcastSessionState();
-        return { ok: true };
+            await this.saveReflection(reflectionContent);
+            this.resumeSessionTimers();
+            this.broadcastSessionState();
+            return { ok: true as const };
+        });
     }
 
     /**
      * Save reflection and end session
      */
     async saveReflectionAndEndSession(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
-        console.log('[SessionManager] saveReflectionAndEndSession called');
+        return this.enqueueOperation(async () => {
+            console.log('[SessionManager] saveReflectionAndEndSession called');
 
-        if (!this.sessionState.isActive) {
-            console.log('[SessionManager] Error: no active session');
-            return { ok: false, error: 'no active session' };
-        }
+            if (!this.sessionState.isActive) {
+                console.log('[SessionManager] Error: no active session');
+                return { ok: false as const, error: 'no active session' };
+            }
 
-        await this.saveReflection(reflectionContent);
-        await this.stopSession();
-        return { ok: true };
+            await this.saveReflection(reflectionContent);
+            await this.stopSession();
+            return { ok: true as const };
+        });
     }
 
     /**
@@ -490,51 +511,53 @@ export class SessionManager {
      * We use pendingInterruptionReflection flag to prevent duplicate handling.
      */
     handleSystemWake(): void {
-        console.log('[SessionManager] handleSystemWake');
+        this.enqueueOperation(async () => {
+            console.log('[SessionManager] handleSystemWake');
 
-        if (!this.sessionState.isActive || !this.currentInterruption) {
-            console.log('[SessionManager] No active session or interruption, ignoring wake');
-            return;
-        }
-
-        const now = Date.now();
-        const additionalDuration = now - this.currentInterruption.suspendTime;
-
-        // If already pending reflection, check if this is a duplicate event or a new sleep cycle
-        if (this.pendingInterruptionReflection) {
-            // Duplicate event: suspendTime hasn't changed since last wake (suspendTime <= resumeTime)
-            // New sleep cycle: user locked again, so suspendTime was updated (suspendTime > resumeTime)
-            const lastResumeTime = this.currentInterruption.resumeTime ?? 0;
-            if (this.currentInterruption.suspendTime <= lastResumeTime) {
-                console.log('[SessionManager] Ignoring duplicate wake event');
+            if (!this.sessionState.isActive || !this.currentInterruption) {
+                console.log('[SessionManager] No active session or interruption, ignoring wake');
                 return;
             }
 
-            console.log('[SessionManager] Already pending reflection, accumulating additional duration:', additionalDuration);
-            this.currentInterruption.durationMs += additionalDuration;
-            this.currentInterruption.resumeTime = now;
+            const now = Date.now();
+            const additionalDuration = now - this.currentInterruption.suspendTime;
 
-            // Update UI with new total duration
+            // If already pending reflection, check if this is a duplicate event or a new sleep cycle
+            if (this.pendingInterruptionReflection) {
+                // Duplicate event: suspendTime hasn't changed since last wake (suspendTime <= resumeTime)
+                // New sleep cycle: user locked again, so suspendTime was updated (suspendTime > resumeTime)
+                const lastResumeTime = this.currentInterruption.resumeTime ?? 0;
+                if (this.currentInterruption.suspendTime <= lastResumeTime) {
+                    console.log('[SessionManager] Ignoring duplicate wake event');
+                    return;
+                }
+
+                console.log('[SessionManager] Already pending reflection, accumulating additional duration:', additionalDuration);
+                this.currentInterruption.durationMs += additionalDuration;
+                this.currentInterruption.resumeTime = now;
+
+                // Update UI with new total duration
+                this.windowManager.broadcastInterruption({
+                    durationMs: this.currentInterruption.durationMs,
+                });
+                return;
+            }
+
+            // First wake - calculate initial duration and show reflection UI
+            this.currentInterruption.resumeTime = now;
+            this.currentInterruption.durationMs = additionalDuration;
+            console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
+
+            // Mark as pending user reflection
+            this.pendingInterruptionReflection = true;
+
+            // Broadcast interruption to renderer for UI prompt
             this.windowManager.broadcastInterruption({
                 durationMs: this.currentInterruption.durationMs,
             });
-            return;
-        }
 
-        // First wake - calculate initial duration and show reflection UI
-        this.currentInterruption.resumeTime = now;
-        this.currentInterruption.durationMs = additionalDuration;
-        console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
-
-        // Mark as pending user reflection
-        this.pendingInterruptionReflection = true;
-
-        // Broadcast interruption to renderer for UI prompt
-        this.windowManager.broadcastInterruption({
-            durationMs: this.currentInterruption.durationMs,
+            console.log('[SessionManager] Interruption broadcast to renderer, waiting for user response');
         });
-
-        console.log('[SessionManager] Interruption broadcast to renderer, waiting for user response');
     }
 
     /**

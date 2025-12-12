@@ -155,6 +155,13 @@ export function registerIPCHandlers(
         }
     });
 
+    // ========== Stuck Reflection Handler ==========
+
+    ipcMain.handle('session:save-stuck-reflection', async (_evt, reflection: string) => {
+        console.log('[IPCHandlers] session:save-stuck-reflection called');
+        return await sessionManager.saveStuckReflection(reflection);
+    });
+
     // ========== Distraction Handlers ==========
 
     ipcMain.handle('session:save-distraction-reason', async (_evt, reason: string) => {

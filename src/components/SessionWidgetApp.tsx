@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import TimerDisplay from './widget-components/TimerDisplay';
 import WidgetTaskList from './widget-components/WidgetTaskList';
 import InterruptionReflection from './widget-components/InterruptionReflection';
+import StuckPrompt from './widget-components/StuckPrompt';
 
 interface SessionState {
   isActive: boolean;
@@ -18,6 +19,7 @@ export default function SessionWidgetApp() {
   const [wasActive, setWasActive] = useState(false);
   const [interruptionMode, setInterruptionMode] = useState(false);
   const [interruptionDuration, setInterruptionDuration] = useState(0);
+  const [stuckMode, setStuckMode] = useState(false);
 
   useEffect(() => {
     // Load initial session state
@@ -112,6 +114,34 @@ export default function SessionWidgetApp() {
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 
+  function handleStuckClick() {
+    window.api.pauseSession(); // Pause timer while in stuck flow
+    setStuckMode(true);
+  }
+
+  async function handleStuckResume(reflection: string) {
+    await window.api.handleInterruption('resume', reflection); // Resume timer + save reflection
+    setStuckMode(false);
+  }
+
+  async function handleStuckEnd() {
+    await window.api.sessionStop();
+    setStuckMode(false);
+    // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+  }
+
+  // Show stuck prompt UI when user clicks "Stuck" button
+  if (stuckMode && sessionState?.isActive) {
+    return (
+      <div className="session-widget">
+        <StuckPrompt
+          onResume={handleStuckResume}
+          onEnd={handleStuckEnd}
+        />
+      </div>
+    );
+  }
+
   // Show interruption reflection UI when returning from system sleep/lock
   if (interruptionMode && sessionState?.isActive) {
     return (
@@ -152,6 +182,13 @@ export default function SessionWidgetApp() {
       <WidgetTaskList tasks={sessionState.tasks || ['', '', '']} />
 
       <div className="widget-actions">
+        <button
+          className="widget-btn widget-btn-stuck"
+          onClick={handleStuckClick}
+          title="I'm stuck"
+        >
+          Stuck
+        </button>
         <button
           className="widget-btn widget-btn-pause"
           onClick={handlePauseSession}

@@ -464,6 +464,21 @@ export class SessionManager {
     }
 
     /**
+     * Save stuck reflection (session remains running, no timer changes)
+     */
+    async saveStuckReflection(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
+        console.log('[SessionManager] saveStuckReflection called');
+
+        if (!this.sessionState.isActive) {
+            console.log('[SessionManager] Error: no active session');
+            return { ok: false as const, error: 'no active session' };
+        }
+
+        await this.saveReflection(reflectionContent);
+        return { ok: true as const };
+    }
+
+    /**
      * Save reflection and resume session
      */
     async saveReflectionAndResume(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {

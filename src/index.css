@@ -960,6 +960,21 @@ button:focus-visible {
   border-color: #8B7355;
 }
 
+.add-task-inline {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.add-task-inline .task-input {
+  flex: 1;
+}
+
+.add-task-inline button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-primary {
   padding: 12px 24px;
   font-size: 14px;

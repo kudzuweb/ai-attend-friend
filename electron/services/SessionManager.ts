@@ -479,8 +479,19 @@ export class SessionManager {
 
             const phase = this.sessionPhase;
 
+            // If already paused (e.g., user clicked Pause then Stuck), update to user pauseType
+            if (phase.phase === 'paused') {
+                console.log('[SessionManager] Already paused, updating to user pauseType for stuck flow');
+                this.transitionTo({
+                    ...phase,
+                    pauseType: 'user',
+                    suspendTime, // Reset suspend time for stuck timing
+                });
+                return;
+            }
+
             if (phase.phase !== 'active') {
-                console.log('[SessionManager] Cannot pause for stuck - not active');
+                console.log('[SessionManager] Cannot pause for stuck - not active or paused');
                 return;
             }
 

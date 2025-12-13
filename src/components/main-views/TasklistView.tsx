@@ -285,13 +285,34 @@ export default function TasklistView() {
                     <div className="form-section">
                         <label>Select Tasks (up to 3)</label>
                         <p className="view-description">Selected: {selectedTaskIds.length}/3</p>
+                        <div className="add-task-inline">
+                            <input
+                                type="text"
+                                value={newTaskContent}
+                                onChange={(e) => setNewTaskContent(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && newTaskContent.trim()) {
+                                        handleAddTask();
+                                    }
+                                }}
+                                placeholder="Add a new task..."
+                                className="task-input"
+                            />
+                            <button
+                                onClick={handleAddTask}
+                                disabled={!newTaskContent.trim()}
+                                className="btn-small"
+                            >
+                                Add
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div className="tasks-list">
                     {topLevelTasks.length === 0 ? (
                         <div className="empty-state">
-                            <p>No tasks available. Create some tasks first!</p>
+                            <p>No tasks yet. Add one above to get started!</p>
                         </div>
                     ) : (
                         topLevelTasks.map(task => renderTask(task))

@@ -157,6 +157,11 @@ export function registerIPCHandlers(
 
     // ========== Stuck Flow Handlers ==========
 
+    ipcMain.handle('session:pause-for-stuck', () => {
+        console.log('[IPCHandlers] session:pause-for-stuck called');
+        sessionManager.pauseSessionForStuck();
+    });
+
     ipcMain.handle('session:resume-after-stuck', async (_evt, payload: { reflection: string; pauseDurationMs: number }) => {
         console.log('[IPCHandlers] session:resume-after-stuck called');
         return await sessionManager.resumeAfterStuck(payload.reflection, payload.pauseDurationMs);

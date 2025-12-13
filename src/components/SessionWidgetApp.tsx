@@ -127,7 +127,7 @@ export default function SessionWidgetApp() {
 
   async function handleStuckClick() {
     const startTime = Date.now(); // Capture time before pause
-    await window.api.pauseSession(); // Pause timer while in stuck flow
+    await window.api.pauseSessionForStuck(); // Pause timer while in stuck flow (user-initiated)
     setModalState({ type: 'stuck', startTime });
   }
 

@@ -4,7 +4,7 @@ type PromptKey = 'smallest-step' | 'unclear' | 'avoiding';
 
 interface Props {
     onResume: (reflection: string) => void;
-    onEnd: () => void;
+    onEnd: (reflection: string) => void;
 }
 
 const prompts: Record<PromptKey, string> = {
@@ -19,6 +19,10 @@ export default function StuckPrompt({ onResume, onEnd }: Props) {
 
     function handleResume() {
         onResume(reflection);
+    }
+
+    function handleEnd() {
+        onEnd(reflection);
     }
 
     return (
@@ -62,7 +66,7 @@ export default function StuckPrompt({ onResume, onEnd }: Props) {
                 </button>
                 <button
                     className="btn-end"
-                    onClick={onEnd}
+                    onClick={handleEnd}
                 >
                     End Session
                 </button>

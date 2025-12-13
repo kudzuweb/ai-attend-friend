@@ -20,6 +20,7 @@ export default function SessionWidgetApp() {
   const [interruptionMode, setInterruptionMode] = useState(false);
   const [interruptionDuration, setInterruptionDuration] = useState(0);
   const [stuckMode, setStuckMode] = useState(false);
+  const [stuckStartTime, setStuckStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     // Load initial session state
@@ -114,19 +115,24 @@ export default function SessionWidgetApp() {
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 
-  function handleStuckClick() {
-    window.api.pauseSession(); // Pause timer while in stuck flow
+  async function handleStuckClick() {
+    const startTime = Date.now(); // Capture time before pause
+    await window.api.pauseSession(); // Pause timer while in stuck flow
+    setStuckStartTime(startTime);
     setStuckMode(true);
   }
 
   async function handleStuckResume(reflection: string) {
-    await window.api.handleInterruption('resume', reflection); // Resume timer + save reflection
+    const pauseDurationMs = stuckStartTime ? Date.now() - stuckStartTime : 0;
+    await window.api.resumeAfterStuck(reflection, pauseDurationMs);
     setStuckMode(false);
+    setStuckStartTime(null);
   }
 
-  async function handleStuckEnd() {
-    await window.api.sessionStop();
+  async function handleStuckEnd(reflection: string) {
+    await window.api.endAfterStuck(reflection);
     setStuckMode(false);
+    setStuckStartTime(null);
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 

@@ -1725,6 +1725,76 @@ button:focus-visible {
   background: #D0D0D0;
 }
 
+/* Distraction Prompt */
+.distraction-prompt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 10px;
+}
+
+.distraction-prompt h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0;
+  text-align: center;
+}
+
+.distraction-subtext {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  text-align: center;
+}
+
+.analysis-box {
+  font-size: 13px;
+  color: #2C3E50;
+  margin: 0;
+  padding: 10px;
+  background: #F8F9FA;
+  border-radius: 6px;
+  border-left: 3px solid #e67e22;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.distraction-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.distraction-actions button {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.distraction-actions .btn-resume {
+  color: white;
+  background: #27ae60;
+}
+
+.distraction-actions .btn-resume:hover {
+  background: #219a52;
+}
+
+.distraction-actions .btn-end {
+  color: #333;
+  background: #E0E0E0;
+  border: 1px solid #CCC;
+}
+
+.distraction-actions .btn-end:hover {
+  background: #D0D0D0;
+}
+
 .widget-btn-stuck {
   color: #6c5ce7;
   background: #e8e6ff;

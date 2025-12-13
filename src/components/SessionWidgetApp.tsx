@@ -3,6 +3,7 @@ import TimerDisplay from './widget-components/TimerDisplay';
 import WidgetTaskList from './widget-components/WidgetTaskList';
 import InterruptionReflection from './widget-components/InterruptionReflection';
 import StuckPrompt from './widget-components/StuckPrompt';
+import DistractionPrompt from './widget-components/DistractionPrompt';
 
 interface SessionState {
   isActive: boolean;
@@ -21,6 +22,9 @@ export default function SessionWidgetApp() {
   const [interruptionDuration, setInterruptionDuration] = useState(0);
   const [stuckMode, setStuckMode] = useState(false);
   const [stuckStartTime, setStuckStartTime] = useState<number | null>(null);
+  const [distractionMode, setDistractionMode] = useState(false);
+  const [distractionAnalysis, setDistractionAnalysis] = useState('');
+  const [distractionSuggestedPrompt, setDistractionSuggestedPrompt] = useState('');
 
   useEffect(() => {
     // Load initial session state
@@ -37,6 +41,13 @@ export default function SessionWidgetApp() {
       setInterruptionDuration(data.durationMs);
     });
 
+    // Listen for distraction events
+    const unsubscribeDistraction = window.api.onDistraction((data) => {
+      setDistractionMode(true);
+      setDistractionAnalysis(data.analysis);
+      setDistractionSuggestedPrompt(data.suggestedPrompt);
+    });
+
     // Update current time every second
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
@@ -45,6 +56,7 @@ export default function SessionWidgetApp() {
     return () => {
       unsubscribeSession();
       unsubscribeInterruption();
+      unsubscribeDistraction();
       clearInterval(timer);
     };
   }, []);
@@ -59,9 +71,12 @@ export default function SessionWidgetApp() {
   // Handle session end (natural expiration only)
   useEffect(() => {
     if (wasActive && sessionState && !sessionState.isActive) {
-      // Reset interruption state on session end
+      // Reset all modal states on session end
       setInterruptionMode(false);
       setInterruptionDuration(0);
+      setDistractionMode(false);
+      setDistractionAnalysis('');
+      setDistractionSuggestedPrompt('');
 
       // Session just ended naturally, clean up windows
       let cancelled = false;
@@ -136,6 +151,26 @@ export default function SessionWidgetApp() {
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 
+  async function handleDistractionResume(reason: string) {
+    if (reason.trim()) {
+      await window.api.saveDistractionReason(reason);
+    }
+    setDistractionMode(false);
+    setDistractionAnalysis('');
+    setDistractionSuggestedPrompt('');
+  }
+
+  async function handleDistractionEnd(reason: string) {
+    if (reason.trim()) {
+      await window.api.saveDistractionReason(reason);
+    }
+    await window.api.sessionStop();
+    setDistractionMode(false);
+    setDistractionAnalysis('');
+    setDistractionSuggestedPrompt('');
+    // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+  }
+
   // Show stuck prompt UI when user clicks "Stuck" button
   if (stuckMode && sessionState?.isActive) {
     return (
@@ -156,6 +191,20 @@ export default function SessionWidgetApp() {
           durationMs={interruptionDuration}
           onResume={handleInterruptionResume}
           onEnd={handleInterruptionEnd}
+        />
+      </div>
+    );
+  }
+
+  // Show distraction prompt UI when AI detects distraction
+  if (distractionMode && sessionState?.isActive) {
+    return (
+      <div className="session-widget">
+        <DistractionPrompt
+          analysis={distractionAnalysis}
+          suggestedPrompt={distractionSuggestedPrompt}
+          onResume={handleDistractionResume}
+          onEnd={handleDistractionEnd}
         />
       </div>
     );

@@ -115,9 +115,19 @@ export class SessionManager {
                     );
                 }
 
-                // TODO: Handle distraction UI in new architecture
-                // For now, just log the status
-                console.log('[SessionManager] Distraction analysis:', res.structured.status);
+                // Show distraction prompt UI when status is distracted
+                // Guard against session ending while API call was in-flight
+                if (res.structured.status === 'distracted' && this.sessionState.isActive) {
+                    console.log('[SessionManager] Distraction detected, broadcasting to UI');
+                    this.windowManager.broadcastDistraction({
+                        analysis: res.structured.analysis,
+                        suggestedPrompt: res.structured.suggested_prompt,
+                    });
+                } else if (res.structured.status === 'distracted') {
+                    console.log('[SessionManager] Distraction detected but session ended, ignoring');
+                } else {
+                    console.log('[SessionManager] User is focused');
+                }
             }
             return res;
         } catch (e: any) {

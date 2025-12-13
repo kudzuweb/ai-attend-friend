@@ -124,6 +124,7 @@ declare global {
             handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             pauseSession: () => Promise<void>;
+            pauseSessionForStuck: () => Promise<void>;
             resumeAfterStuck: (reflection: string, pauseDurationMs: number) => Promise<{ ok: true } | { ok: false; error: string }>;
             endAfterStuck: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             quitApp: () => Promise<void>;

@@ -152,6 +152,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:save-distraction-reason', reason),
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
+    pauseSessionForStuck: () =>
+        ipcRenderer.invoke('session:pause-for-stuck'),
     resumeAfterStuck: (reflection, pauseDurationMs) =>
         ipcRenderer.invoke('session:resume-after-stuck', { reflection, pauseDurationMs }),
     endAfterStuck: (reflection) =>

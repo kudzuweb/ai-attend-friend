@@ -7,15 +7,55 @@ import type { AIAnalysisService } from './AIAnalysisService.js';
 import type { ConfigService } from './ConfigService.js';
 import { SCREENSHOT_INTERVAL_MS, AUTO_ANALYSIS_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT } from '../constants.js';
 
+// Session phase discriminated union - replaces multiple boolean flags
+type SessionPhase =
+    | { phase: 'idle' }
+    | {
+        phase: 'active';
+        sessionId: string;
+        sessionDate: string;
+        endTime: number;
+        focusGoal: string;
+        tasks?: [string, string, string];
+    }
+    | {
+        phase: 'paused';
+        sessionId: string;
+        sessionDate: string;
+        endTime: number;
+        focusGoal: string;
+        tasks?: [string, string, string];
+        pauseType: 'system' | 'user';
+        suspendTime: number;
+    }
+    | {
+        phase: 'awaiting_reflection';
+        sessionId: string;
+        sessionDate: string;
+        endTime: number;
+        focusGoal: string;
+        tasks?: [string, string, string];
+        pauseType: 'system' | 'user';
+        suspendTime: number;
+        wakeTime: number;
+        durationMs: number;
+    }
+    | {
+        phase: 'stopping';
+        sessionId: string;
+        sessionDate: string;
+    };
+
 export class SessionManager {
-    private sessionState: SessionState;
+    // State machine - single source of truth for session state
+    private sessionPhase: SessionPhase = { phase: 'idle' };
+    private lengthMs: number = 0;  // Original session length (for UI)
+    private startTime: number = 0; // Session start time (for UI)
+
+    // Timer refs (unchanged)
     private sessionTimer: NodeJS.Timeout | null = null;
     private screenshotTimer: NodeJS.Timeout | null = null;
     private analysisTimer: NodeJS.Timeout | null = null;
-    private currentSessionId: string | null = null;
-    private currentSessionDate: string | null = null;
-    private currentInterruption: SessionInterruption | null = null;
-    private pendingInterruptionReflection: boolean = false;
     private operationQueue: Promise<void> = Promise.resolve();
 
     private windowManager: WindowManager;
@@ -36,14 +76,7 @@ export class SessionManager {
         this.screenshotService = screenshotService;
         this.aiService = aiService;
         this.configService = configService;
-
-        this.sessionState = {
-            isActive: false,
-            lengthMs: 0,
-            startTime: 0,
-            endTime: 0,
-            focusGoal: '',
-        };
+        // sessionPhase is initialized to { phase: 'idle' } in the field declaration
     }
 
     /**
@@ -57,27 +90,68 @@ export class SessionManager {
     }
 
     /**
-     * Get current session state
+     * Transition to a new session phase - single point of state change
      */
-    getSessionState(): SessionState {
-        return { ...this.sessionState };
+    private transitionTo(newPhase: SessionPhase): void {
+        const oldPhase = this.sessionPhase.phase;
+        console.log(`[SessionManager] Phase transition: ${oldPhase} → ${newPhase.phase}`);
+        this.sessionPhase = newPhase;
+        this.broadcastSessionState();
     }
 
     /**
-     * Get current session ID and date
+     * Get current session state (backward-compatible with SessionState interface)
      */
-    getCurrentSession(): { id: string | null; date: string | null } {
+    getSessionState(): SessionState {
+        const phase = this.sessionPhase;
+
+        if (phase.phase === 'idle') {
+            return { isActive: false, lengthMs: 0, startTime: 0, endTime: 0, focusGoal: '' };
+        }
+
+        if (phase.phase === 'stopping') {
+            return { isActive: false, lengthMs: this.lengthMs, startTime: this.startTime, endTime: 0, focusGoal: '' };
+        }
+
+        // active, paused, or awaiting_reflection - session is "active" from UI perspective
         return {
-            id: this.currentSessionId,
-            date: this.currentSessionDate
+            isActive: true,
+            lengthMs: this.lengthMs,
+            startTime: this.startTime,
+            endTime: phase.endTime,
+            focusGoal: phase.focusGoal,
+            tasks: phase.tasks,
         };
     }
 
     /**
-     * Get current interruption if any
+     * Get current session ID and date (derived from phase)
+     */
+    getCurrentSession(): { id: string | null; date: string | null } {
+        const phase = this.sessionPhase;
+        if (phase.phase === 'idle') {
+            return { id: null, date: null };
+        }
+        return {
+            id: phase.sessionId,
+            date: phase.sessionDate
+        };
+    }
+
+    /**
+     * Get current interruption if any (derived from phase)
      */
     getCurrentInterruption(): SessionInterruption | null {
-        return this.currentInterruption;
+        const phase = this.sessionPhase;
+        if (phase.phase === 'paused' || phase.phase === 'awaiting_reflection') {
+            return {
+                suspendTime: phase.suspendTime,
+                resumeTime: phase.phase === 'awaiting_reflection' ? phase.wakeTime : null,
+                durationMs: phase.phase === 'awaiting_reflection' ? phase.durationMs : 0,
+                userReflection: null,
+            };
+        }
+        return null;
     }
 
     /**
@@ -94,6 +168,13 @@ export class SessionManager {
         count: number
     } | { ok: false; error: string }> {
         try {
+            const phase = this.sessionPhase;
+
+            // Get focus goal from phase if active/paused/awaiting_reflection
+            const focusGoal = phase.phase !== 'idle' && phase.phase !== 'stopping'
+                ? phase.focusGoal
+                : '';
+
             const recentFiles = await this.screenshotService.getRecentScreenshots(limit ?? DEFAULT_RECENT_SCREENSHOTS_LIMIT);
 
             if (recentFiles.length === 0) {
@@ -104,29 +185,38 @@ export class SessionManager {
                 recentFiles.map(file => this.screenshotService.fileToDataUrl(file))
             );
 
-            const res = await this.aiService.analyzeScreenshots(dataUrls, this.sessionState.focusGoal);
+            const res = await this.aiService.analyzeScreenshots(dataUrls, focusGoal);
 
             if (res?.ok && res?.structured) {
-                if (this.currentSessionId && this.currentSessionDate) {
+                // Re-check phase after async call - session may have changed
+                const currentPhase = this.sessionPhase;
+
+                // Save summary for any running session phase (screenshots were captured while active)
+                const isRunningSession = currentPhase.phase === 'active' ||
+                    currentPhase.phase === 'paused' ||
+                    currentPhase.phase === 'awaiting_reflection';
+
+                if (isRunningSession) {
                     await this.storageService.addSummaryToSession(
-                        this.currentSessionId,
-                        this.currentSessionDate,
+                        currentPhase.sessionId,
+                        currentPhase.sessionDate,
                         res.structured.analysis
                     );
-                }
 
-                // Show distraction prompt UI when status is distracted
-                // Guard against session ending while API call was in-flight
-                if (res.structured.status === 'distracted' && this.sessionState.isActive) {
-                    console.log('[SessionManager] Distraction detected, broadcasting to UI');
-                    this.windowManager.broadcastDistraction({
-                        analysis: res.structured.analysis,
-                        suggestedPrompt: res.structured.suggested_prompt,
-                    });
+                    // Only broadcast distraction UI when actively working (not paused/awaiting)
+                    if (res.structured.status === 'distracted' && currentPhase.phase === 'active') {
+                        console.log('[SessionManager] Distraction detected, broadcasting to UI');
+                        this.windowManager.broadcastDistraction({
+                            analysis: res.structured.analysis,
+                            suggestedPrompt: res.structured.suggested_prompt,
+                        });
+                    } else if (res.structured.status === 'distracted') {
+                        console.log('[SessionManager] Distraction detected but session paused, summary saved but not broadcasting');
+                    } else {
+                        console.log('[SessionManager] User is focused');
+                    }
                 } else if (res.structured.status === 'distracted') {
                     console.log('[SessionManager] Distraction detected but session ended, ignoring');
-                } else {
-                    console.log('[SessionManager] User is focused');
                 }
             }
             return res;
@@ -139,48 +229,54 @@ export class SessionManager {
      * Broadcast session state to all windows
      */
     private broadcastSessionState(): void {
-        this.windowManager.broadcastSessionState(this.sessionState);
+        this.windowManager.broadcastSessionState(this.getSessionState());
     }
 
     /**
      * Start a new session
      */
     async startSession(lengthMs: number, focusGoal: string, tasks?: [string, string, string]): Promise<{ ok: true } | { ok: false; error: string }> {
-        if (this.sessionState.isActive) {
+        if (this.sessionPhase.phase !== 'idle') {
             return { ok: false, error: 'session already active' };
         }
 
         const startTime = Date.now();
         const endTime = startTime + lengthMs;
 
-        this.sessionState.isActive = true;
-        this.sessionState.lengthMs = lengthMs;
-        this.sessionState.startTime = startTime;
-        this.sessionState.endTime = endTime;
-        this.sessionState.focusGoal = focusGoal;
-        if (tasks) {
-            this.sessionState.tasks = tasks;
-        }
+        // Store metadata for UI
+        this.lengthMs = lengthMs;
+        this.startTime = startTime;
+
+        let sessionId: string;
+        let sessionDate: string;
 
         try {
-            this.currentSessionId = await this.storageService.createSession(startTime, lengthMs, focusGoal, tasks);
-            this.currentSessionDate = this.storageService.formatDateFolder(new Date(startTime));
+            sessionId = await this.storageService.createSession(startTime, lengthMs, focusGoal, tasks);
+            sessionDate = this.storageService.formatDateFolder(new Date(startTime));
         } catch (e) {
             console.error('Error creating session:', e);
             return { ok: false, error: 'failed to create session file' };
         }
 
-        this.broadcastSessionState();
+        // Transition to active phase
+        this.transitionTo({
+            phase: 'active',
+            sessionId,
+            sessionDate,
+            endTime,
+            focusGoal,
+            tasks,
+        });
 
         // Start the screenshot timer - first capture after 30s, then every 30s
         this.screenshotTimer = setTimeout(() => {
-            if (!this.sessionState.isActive) return;
+            if (this.sessionPhase.phase !== 'active') return;
 
             // Capture immediately when first timeout fires
             this.windowManager.triggerScreenshotCapture();
 
             this.screenshotTimer = setInterval(() => {
-                if (!this.sessionState.isActive) {
+                if (this.sessionPhase.phase !== 'active') {
                     this.stopScreenshotTimer();
                     return;
                 }
@@ -203,14 +299,17 @@ export class SessionManager {
      * Generate final summary for the current session
      */
     private async generateFinalSummary(): Promise<void> {
-        if (!this.currentSessionId || !this.currentSessionDate) {
+        const phase = this.sessionPhase;
+
+        // Only generate summary if we have session info (stopping phase has sessionId/sessionDate)
+        if (phase.phase !== 'stopping') {
             return;
         }
 
         try {
             const session = await this.storageService.loadSession(
-                this.currentSessionId,
-                this.currentSessionDate
+                phase.sessionId,
+                phase.sessionDate
             );
 
             if (session && session.summaries.length > 0) {
@@ -224,8 +323,8 @@ export class SessionManager {
 
                 if (finalSummary) {
                     await this.storageService.setFinalSummary(
-                        this.currentSessionId,
-                        this.currentSessionDate,
+                        phase.sessionId,
+                        phase.sessionDate,
                         finalSummary
                     );
                 }
@@ -241,26 +340,31 @@ export class SessionManager {
     async stopSession(): Promise<void> {
         console.log('[SessionManager] stopSession called');
 
+        const phase = this.sessionPhase;
+
+        // Can stop from active, paused, or awaiting_reflection
+        if (phase.phase === 'idle' || phase.phase === 'stopping') {
+            console.log('[SessionManager] Already stopped or stopping');
+            return;
+        }
+
         this.stopSessionTimer();
         this.stopScreenshotTimer();
         this.stopAnalysisTimer();
 
+        // Transition to stopping phase (prevents concurrent operations)
+        this.transitionTo({
+            phase: 'stopping',
+            sessionId: phase.sessionId,
+            sessionDate: phase.sessionDate,
+        });
+
         await this.generateFinalSummary();
 
-        this.sessionState.isActive = false;
-        this.sessionState.lengthMs = 0;
-        this.sessionState.startTime = 0;
-        this.sessionState.endTime = 0;
-        this.sessionState.focusGoal = '';
-
-        this.currentSessionId = null;
-        this.currentSessionDate = null;
-
-        // Reset interruption state
-        this.currentInterruption = null;
-        this.pendingInterruptionReflection = false;
-
-        this.broadcastSessionState();
+        // Reset metadata and transition to idle
+        this.lengthMs = 0;
+        this.startTime = 0;
+        this.transitionTo({ phase: 'idle' });
     }
 
     /**
@@ -291,8 +395,9 @@ export class SessionManager {
         this.stopAnalysisTimer();
 
         const demoMode = this.configService.getDemoMode();
-        if (demoMode || !this.sessionState.isActive) {
-            console.log('[SessionManager] Analysis timer NOT started - demoMode:', demoMode, 'isActive:', this.sessionState.isActive);
+        const isActive = this.sessionPhase.phase === 'active';
+        if (demoMode || !isActive) {
+            console.log('[SessionManager] Analysis timer NOT started - demoMode:', demoMode, 'isActive:', isActive);
             return;
         }
 
@@ -323,17 +428,27 @@ export class SessionManager {
     }
 
     /**
-     * Pause session (called when system sleeps)
+     * Pause session (called when system sleeps/locks)
      */
     pauseSession(): void {
         const suspendTime = Date.now(); // Capture timestamp synchronously at event time
         this.enqueueOperation(async () => {
-            console.log('[SessionManager] Pausing session');
+            console.log('[SessionManager] Pausing session (system)');
 
-            // If already pending reflection, update suspend time to track additional away time
-            if (this.pendingInterruptionReflection && this.currentInterruption) {
-                console.log('[SessionManager] Already pending interruption, updating suspend time for additional away time');
-                this.currentInterruption.suspendTime = suspendTime;
+            const phase = this.sessionPhase;
+
+            // Only pause from active state
+            if (phase.phase !== 'active') {
+                // If already paused/awaiting, update suspend time for new sleep cycle
+                if (phase.phase === 'paused' || phase.phase === 'awaiting_reflection') {
+                    console.log('[SessionManager] Already paused, updating suspend time for additional away time');
+                    // Create new phase with updated suspendTime (spread won't work due to type narrowing)
+                    if (phase.phase === 'paused') {
+                        this.transitionTo({ ...phase, suspendTime });
+                    } else {
+                        this.transitionTo({ ...phase, suspendTime });
+                    }
+                }
                 return;
             }
 
@@ -341,79 +456,93 @@ export class SessionManager {
             this.stopScreenshotTimer();
             this.stopAnalysisTimer();
 
-            this.currentInterruption = {
+            this.transitionTo({
+                phase: 'paused',
+                sessionId: phase.sessionId,
+                sessionDate: phase.sessionDate,
+                endTime: phase.endTime,
+                focusGoal: phase.focusGoal,
+                tasks: phase.tasks,
+                pauseType: 'system',
                 suspendTime,
-                resumeTime: null,
-                durationMs: 0,
-                userReflection: null,
-            };
-            console.log('[SessionManager] Interruption record created:', this.currentInterruption);
+            });
         });
     }
 
     /**
-     * Save interruption reflection to session
+     * Pause session for user-initiated stuck flow
      */
-    private async saveInterruptionReflection(reflection: string): Promise<boolean> {
-        if (!this.sessionState.isActive || !this.currentInterruption) {
-            return false;
-        }
+    pauseSessionForStuck(): void {
+        const suspendTime = Date.now();
+        this.enqueueOperation(async () => {
+            console.log('[SessionManager] Pausing session (stuck)');
 
-        this.currentInterruption.userReflection = reflection;
+            const phase = this.sessionPhase;
 
-        if (this.currentSessionId && this.currentSessionDate) {
-            await this.storageService.addInterruptionToSession(
-                this.currentSessionId,
-                this.currentSessionDate,
-                this.currentInterruption
-            );
-        }
+            // If already paused (e.g., user clicked Pause then Stuck), update to user pauseType
+            if (phase.phase === 'paused') {
+                console.log('[SessionManager] Already paused, updating to user pauseType for stuck flow');
+                this.transitionTo({
+                    ...phase,
+                    pauseType: 'user',
+                    suspendTime, // Reset suspend time for stuck timing
+                });
+                return;
+            }
 
-        this.currentInterruption = null;
-        return true;
+            if (phase.phase !== 'active') {
+                console.log('[SessionManager] Cannot pause for stuck - not active or paused');
+                return;
+            }
+
+            this.stopSessionTimer();
+            this.stopScreenshotTimer();
+            this.stopAnalysisTimer();
+
+            this.transitionTo({
+                phase: 'paused',
+                sessionId: phase.sessionId,
+                sessionDate: phase.sessionDate,
+                endTime: phase.endTime,
+                focusGoal: phase.focusGoal,
+                tasks: phase.tasks,
+                pauseType: 'user',
+                suspendTime,
+            });
+        });
     }
 
     /**
      * Save reflection to current session
+     * Works from any phase that has session info (active, paused, awaiting_reflection)
      */
-    private async saveReflection(content: string): Promise<boolean> {
-        if (!this.sessionState.isActive) {
-            return false;
-        }
-
+    private async saveReflection(content: string, sessionId: string, sessionDate: string): Promise<void> {
         const reflection: Reflection = {
             timestamp: Date.now(),
             content: content,
         };
 
-        if (this.currentSessionId && this.currentSessionDate) {
-            await this.storageService.addReflectionToSession(
-                this.currentSessionId,
-                this.currentSessionDate,
-                reflection
-            );
-        }
-
-        return true;
+        await this.storageService.addReflectionToSession(
+            sessionId,
+            sessionDate,
+            reflection
+        );
     }
 
     /**
      * Resume session and screenshot timers
+     * @param remainingMs - time remaining in session (already calculated by caller)
      */
-    private resumeSessionTimers(): void {
-        // Recalculate remaining time from endTime (which was extended by interruption duration)
-        // This also excludes reflection UI time since we're using Date.now()
-        const remainingTime = Math.max(0, this.sessionState.endTime - Date.now());
-
+    private resumeSessionTimers(remainingMs: number): void {
         this.sessionTimer = setTimeout(async () => {
             await this.stopSession();
-        }, remainingTime);
+        }, remainingMs);
 
         // Capture immediately on resume, then every 30s
         this.windowManager.triggerScreenshotCapture();
 
         this.screenshotTimer = setInterval(() => {
-            if (!this.sessionState.isActive) {
+            if (this.sessionPhase.phase !== 'active') {
                 this.stopScreenshotTimer();
                 return;
             }
@@ -424,31 +553,47 @@ export class SessionManager {
     }
 
     /**
-     * Resume session after interruption
+     * Resume session after interruption (system wake)
      */
     async resumeAfterInterruption(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
         return this.enqueueOperation(async () => {
             console.log('[SessionManager] resumeAfterInterruption called');
 
-            if (!this.currentInterruption) {
-                console.log('[SessionManager] Error: no active interruption');
-                return { ok: false as const, error: 'no active interruption' };
+            const phase = this.sessionPhase;
+
+            if (phase.phase !== 'awaiting_reflection') {
+                console.log('[SessionManager] Error: not awaiting reflection');
+                return { ok: false as const, error: 'not awaiting reflection' };
             }
 
-            // Reset the pending flag
-            this.pendingInterruptionReflection = false;
+            // Save interruption to storage
+            await this.storageService.addInterruptionToSession(
+                phase.sessionId,
+                phase.sessionDate,
+                {
+                    suspendTime: phase.suspendTime,
+                    resumeTime: phase.wakeTime,
+                    durationMs: phase.durationMs,
+                    userReflection: reflection,
+                }
+            );
 
-            const interruptionDuration = this.currentInterruption.durationMs;
-            this.sessionState.endTime += interruptionDuration;
-            console.log('[SessionManager] Adjusted session end time by', interruptionDuration, 'ms');
+            // Calculate new end time (extend by interruption duration)
+            const newEndTime = phase.endTime + phase.durationMs;
+            const remainingMs = Math.max(0, newEndTime - Date.now());
+            console.log('[SessionManager] Adjusted session end time by', phase.durationMs, 'ms');
 
-            if (!await this.saveInterruptionReflection(reflection)) {
-                console.log('[SessionManager] Error: could not save interruption reflection');
-                return { ok: false as const, error: 'no active interruption' };
-            }
+            // Transition back to active
+            this.transitionTo({
+                phase: 'active',
+                sessionId: phase.sessionId,
+                sessionDate: phase.sessionDate,
+                endTime: newEndTime,
+                focusGoal: phase.focusGoal,
+                tasks: phase.tasks,
+            });
 
-            this.resumeSessionTimers();
-            this.broadcastSessionState();
+            this.resumeSessionTimers(remainingMs);
             return { ok: true as const };
         });
     }
@@ -460,13 +605,24 @@ export class SessionManager {
         return this.enqueueOperation(async () => {
             console.log('[SessionManager] endAfterInterruption called');
 
-            // Reset the pending flag
-            this.pendingInterruptionReflection = false;
+            const phase = this.sessionPhase;
 
-            if (!await this.saveInterruptionReflection(reflection)) {
-                console.log('[SessionManager] Error: no active interruption');
-                return { ok: false as const, error: 'no active interruption' };
+            if (phase.phase !== 'awaiting_reflection') {
+                console.log('[SessionManager] Error: not awaiting reflection');
+                return { ok: false as const, error: 'not awaiting reflection' };
             }
+
+            // Save interruption to storage
+            await this.storageService.addInterruptionToSession(
+                phase.sessionId,
+                phase.sessionDate,
+                {
+                    suspendTime: phase.suspendTime,
+                    resumeTime: phase.wakeTime,
+                    durationMs: phase.durationMs,
+                    userReflection: reflection,
+                }
+            );
 
             await this.stopSession();
             return { ok: true as const };
@@ -481,23 +637,33 @@ export class SessionManager {
         return this.enqueueOperation(async () => {
             console.log('[SessionManager] resumeAfterStuck called with duration:', pauseDurationMs);
 
-            if (!this.sessionState.isActive) {
-                console.log('[SessionManager] Error: no active session');
-                return { ok: false as const, error: 'no active session' };
+            const phase = this.sessionPhase;
+
+            // Must be in paused state with pauseType='user'
+            if (phase.phase !== 'paused' || phase.pauseType !== 'user') {
+                console.log('[SessionManager] Error: not paused from stuck');
+                return { ok: false as const, error: 'not paused from stuck' };
             }
 
-            // Extend session end time by pause duration
-            this.sessionState.endTime += pauseDurationMs;
+            // Save as a proper reflection (not interruption)
+            await this.saveReflection(reflection, phase.sessionId, phase.sessionDate);
+
+            // Calculate new end time (extend by pause duration)
+            const newEndTime = phase.endTime + pauseDurationMs;
+            const remainingMs = Math.max(0, newEndTime - Date.now());
             console.log('[SessionManager] Extended session end time by', pauseDurationMs, 'ms');
 
-            // Save as a proper reflection (not interruption)
-            await this.saveReflection(reflection);
+            // Transition back to active
+            this.transitionTo({
+                phase: 'active',
+                sessionId: phase.sessionId,
+                sessionDate: phase.sessionDate,
+                endTime: newEndTime,
+                focusGoal: phase.focusGoal,
+                tasks: phase.tasks,
+            });
 
-            // Clear any interruption state that pauseSession created
-            this.currentInterruption = null;
-
-            this.resumeSessionTimers();
-            this.broadcastSessionState();
+            this.resumeSessionTimers(remainingMs);
             return { ok: true as const };
         });
     }
@@ -509,16 +675,16 @@ export class SessionManager {
         return this.enqueueOperation(async () => {
             console.log('[SessionManager] endAfterStuck called');
 
-            if (!this.sessionState.isActive) {
-                console.log('[SessionManager] Error: no active session');
-                return { ok: false as const, error: 'no active session' };
+            const phase = this.sessionPhase;
+
+            // Must be in paused state with pauseType='user'
+            if (phase.phase !== 'paused' || phase.pauseType !== 'user') {
+                console.log('[SessionManager] Error: not paused from stuck');
+                return { ok: false as const, error: 'not paused from stuck' };
             }
 
             // Save reflection before ending
-            await this.saveReflection(reflection);
-
-            // Clear any interruption state
-            this.currentInterruption = null;
+            await this.saveReflection(reflection, phase.sessionId, phase.sessionDate);
 
             await this.stopSession();
             return { ok: true as const };
@@ -526,37 +692,55 @@ export class SessionManager {
     }
 
     /**
-     * Save reflection and resume session
+     * Save reflection and resume session (generic flow)
      */
     async saveReflectionAndResume(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
         return this.enqueueOperation(async () => {
             console.log('[SessionManager] saveReflectionAndResume called');
 
-            if (!this.sessionState.isActive) {
-                console.log('[SessionManager] Error: no active session');
-                return { ok: false as const, error: 'no active session' };
+            const phase = this.sessionPhase;
+
+            // Need to be in a pausable state (paused or awaiting_reflection)
+            if (phase.phase !== 'paused' && phase.phase !== 'awaiting_reflection') {
+                console.log('[SessionManager] Error: no paused session');
+                return { ok: false as const, error: 'no paused session' };
             }
 
-            await this.saveReflection(reflectionContent);
-            this.resumeSessionTimers();
-            this.broadcastSessionState();
+            await this.saveReflection(reflectionContent, phase.sessionId, phase.sessionDate);
+
+            const remainingMs = Math.max(0, phase.endTime - Date.now());
+
+            // Transition back to active
+            this.transitionTo({
+                phase: 'active',
+                sessionId: phase.sessionId,
+                sessionDate: phase.sessionDate,
+                endTime: phase.endTime,
+                focusGoal: phase.focusGoal,
+                tasks: phase.tasks,
+            });
+
+            this.resumeSessionTimers(remainingMs);
             return { ok: true as const };
         });
     }
 
     /**
-     * Save reflection and end session
+     * Save reflection and end session (generic flow)
      */
     async saveReflectionAndEndSession(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {
         return this.enqueueOperation(async () => {
             console.log('[SessionManager] saveReflectionAndEndSession called');
 
-            if (!this.sessionState.isActive) {
+            const phase = this.sessionPhase;
+
+            // Need session info to save reflection
+            if (phase.phase === 'idle' || phase.phase === 'stopping') {
                 console.log('[SessionManager] Error: no active session');
                 return { ok: false as const, error: 'no active session' };
             }
 
-            await this.saveReflection(reflectionContent);
+            await this.saveReflection(reflectionContent, phase.sessionId, phase.sessionDate);
             await this.stopSession();
             return { ok: true as const };
         });
@@ -564,56 +748,66 @@ export class SessionManager {
 
     /**
      * Handle system wake event
-     * Note: On macOS, both 'resume' and 'unlock-screen' events may fire in quick succession.
-     * We use pendingInterruptionReflection flag to prevent duplicate handling.
+     * Transitions from 'paused' (pauseType='system') to 'awaiting_reflection'
+     * On macOS, both 'resume' and 'unlock-screen' events may fire in quick succession
      */
     handleSystemWake(): void {
         const wakeTime = Date.now(); // Capture timestamp synchronously at event time
         this.enqueueOperation(async () => {
             console.log('[SessionManager] handleSystemWake');
 
-            if (!this.sessionState.isActive || !this.currentInterruption) {
-                console.log('[SessionManager] No active session or interruption, ignoring wake');
+            const phase = this.sessionPhase;
+
+            // Handle wake from paused state (system pause)
+            if (phase.phase === 'paused' && phase.pauseType === 'system') {
+                const durationMs = wakeTime - phase.suspendTime;
+                console.log('[SessionManager] Interruption duration (ms):', durationMs);
+
+                // Transition to awaiting_reflection
+                this.transitionTo({
+                    phase: 'awaiting_reflection',
+                    sessionId: phase.sessionId,
+                    sessionDate: phase.sessionDate,
+                    endTime: phase.endTime,
+                    focusGoal: phase.focusGoal,
+                    tasks: phase.tasks,
+                    pauseType: phase.pauseType,
+                    suspendTime: phase.suspendTime,
+                    wakeTime,
+                    durationMs,
+                });
+
+                // Broadcast interruption to renderer for UI prompt
+                this.windowManager.broadcastInterruption({ durationMs });
+                console.log('[SessionManager] Interruption broadcast to renderer, waiting for user response');
                 return;
             }
 
-            const additionalDuration = wakeTime - this.currentInterruption.suspendTime;
-
-            // If already pending reflection, check if this is a duplicate event or a new sleep cycle
-            if (this.pendingInterruptionReflection) {
-                // Duplicate event: suspendTime hasn't changed since last wake (suspendTime <= resumeTime)
-                // New sleep cycle: user locked again, so suspendTime was updated (suspendTime > resumeTime)
-                const lastResumeTime = this.currentInterruption.resumeTime ?? 0;
-                if (this.currentInterruption.suspendTime <= lastResumeTime) {
+            // Handle additional sleep cycle while already awaiting reflection
+            if (phase.phase === 'awaiting_reflection') {
+                // Duplicate event check: if suspendTime hasn't changed, ignore
+                if (phase.suspendTime <= phase.wakeTime) {
                     console.log('[SessionManager] Ignoring duplicate wake event');
                     return;
                 }
 
-                console.log('[SessionManager] Already pending reflection, accumulating additional duration:', additionalDuration);
-                this.currentInterruption.durationMs += additionalDuration;
-                this.currentInterruption.resumeTime = wakeTime;
+                // New sleep cycle - accumulate duration
+                const additionalDuration = wakeTime - phase.suspendTime;
+                const newDurationMs = phase.durationMs + additionalDuration;
+                console.log('[SessionManager] Already awaiting reflection, accumulating additional duration:', additionalDuration);
+
+                this.transitionTo({
+                    ...phase,
+                    wakeTime,
+                    durationMs: newDurationMs,
+                });
 
                 // Update UI with new total duration
-                this.windowManager.broadcastInterruption({
-                    durationMs: this.currentInterruption.durationMs,
-                });
+                this.windowManager.broadcastInterruption({ durationMs: newDurationMs });
                 return;
             }
 
-            // First wake - calculate initial duration and show reflection UI
-            this.currentInterruption.resumeTime = wakeTime;
-            this.currentInterruption.durationMs = additionalDuration;
-            console.log('[SessionManager] Interruption duration (ms):', this.currentInterruption.durationMs);
-
-            // Mark as pending user reflection
-            this.pendingInterruptionReflection = true;
-
-            // Broadcast interruption to renderer for UI prompt
-            this.windowManager.broadcastInterruption({
-                durationMs: this.currentInterruption.durationMs,
-            });
-
-            console.log('[SessionManager] Interruption broadcast to renderer, waiting for user response');
+            console.log('[SessionManager] Ignoring wake - not in system-paused state');
         });
     }
 
@@ -630,7 +824,9 @@ export class SessionManager {
 
         powerMonitor.on('suspend', () => {
             safeLog('[PowerMonitor] suspend event');
-            if (!this.sessionState.isActive) return;
+            // Allow pauseSession for any running session (it handles updating suspendTime for already-paused states)
+            const phase = this.sessionPhase.phase;
+            if (phase === 'idle' || phase === 'stopping') return;
             this.pauseSession();
         });
 
@@ -641,7 +837,9 @@ export class SessionManager {
 
         powerMonitor.on('lock-screen', () => {
             safeLog('[PowerMonitor] lock-screen event');
-            if (!this.sessionState.isActive) return;
+            // Allow pauseSession for any running session (it handles updating suspendTime for already-paused states)
+            const phase = this.sessionPhase.phase;
+            if (phase === 'idle' || phase === 'stopping') return;
             this.pauseSession();
         });
 

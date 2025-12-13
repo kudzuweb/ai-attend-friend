@@ -14,17 +14,17 @@ interface SessionState {
   tasks?: [string, string, string];
 }
 
+type ModalState =
+  | { type: 'none' }
+  | { type: 'stuck'; startTime: number }
+  | { type: 'interruption'; durationMs: number }
+  | { type: 'distraction'; analysis: string; suggestedPrompt: string };
+
 export default function SessionWidgetApp() {
   const [sessionState, setSessionState] = useState<SessionState | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [wasActive, setWasActive] = useState(false);
-  const [interruptionMode, setInterruptionMode] = useState(false);
-  const [interruptionDuration, setInterruptionDuration] = useState(0);
-  const [stuckMode, setStuckMode] = useState(false);
-  const [stuckStartTime, setStuckStartTime] = useState<number | null>(null);
-  const [distractionMode, setDistractionMode] = useState(false);
-  const [distractionAnalysis, setDistractionAnalysis] = useState('');
-  const [distractionSuggestedPrompt, setDistractionSuggestedPrompt] = useState('');
+  const [modalState, setModalState] = useState<ModalState>({ type: 'none' });
 
   useEffect(() => {
     // Load initial session state
@@ -37,15 +37,16 @@ export default function SessionWidgetApp() {
 
     // Listen for interruption events
     const unsubscribeInterruption = window.api.onInterruption((data) => {
-      setInterruptionMode(true);
-      setInterruptionDuration(data.durationMs);
+      setModalState({ type: 'interruption', durationMs: data.durationMs });
     });
 
     // Listen for distraction events
     const unsubscribeDistraction = window.api.onDistraction((data) => {
-      setDistractionMode(true);
-      setDistractionAnalysis(data.analysis);
-      setDistractionSuggestedPrompt(data.suggestedPrompt);
+      setModalState({
+        type: 'distraction',
+        analysis: data.analysis,
+        suggestedPrompt: data.suggestedPrompt
+      });
     });
 
     // Update current time every second
@@ -71,12 +72,8 @@ export default function SessionWidgetApp() {
   // Handle session end (natural expiration only)
   useEffect(() => {
     if (wasActive && sessionState && !sessionState.isActive) {
-      // Reset all modal states on session end
-      setInterruptionMode(false);
-      setInterruptionDuration(0);
-      setDistractionMode(false);
-      setDistractionAnalysis('');
-      setDistractionSuggestedPrompt('');
+      // Reset modal state on session end
+      setModalState({ type: 'none' });
 
       // Session just ended naturally, clean up windows
       let cancelled = false;
@@ -119,35 +116,32 @@ export default function SessionWidgetApp() {
 
   async function handleInterruptionResume(reflection: string) {
     await window.api.handleInterruption('resume', reflection);
-    setInterruptionMode(false);
-    setInterruptionDuration(0);
+    setModalState({ type: 'none' });
   }
 
   async function handleInterruptionEnd(reflection: string) {
     await window.api.handleInterruption('end', reflection);
-    setInterruptionMode(false);
-    setInterruptionDuration(0);
+    setModalState({ type: 'none' });
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 
   async function handleStuckClick() {
     const startTime = Date.now(); // Capture time before pause
     await window.api.pauseSession(); // Pause timer while in stuck flow
-    setStuckStartTime(startTime);
-    setStuckMode(true);
+    setModalState({ type: 'stuck', startTime });
   }
 
   async function handleStuckResume(reflection: string) {
-    const pauseDurationMs = stuckStartTime ? Date.now() - stuckStartTime : 0;
+    const pauseDurationMs = modalState.type === 'stuck'
+      ? Date.now() - modalState.startTime
+      : 0;
     await window.api.resumeAfterStuck(reflection, pauseDurationMs);
-    setStuckMode(false);
-    setStuckStartTime(null);
+    setModalState({ type: 'none' });
   }
 
   async function handleStuckEnd(reflection: string) {
     await window.api.endAfterStuck(reflection);
-    setStuckMode(false);
-    setStuckStartTime(null);
+    setModalState({ type: 'none' });
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 
@@ -155,9 +149,7 @@ export default function SessionWidgetApp() {
     if (reason.trim()) {
       await window.api.saveDistractionReason(reason);
     }
-    setDistractionMode(false);
-    setDistractionAnalysis('');
-    setDistractionSuggestedPrompt('');
+    setModalState({ type: 'none' });
   }
 
   async function handleDistractionEnd(reason: string) {
@@ -165,14 +157,12 @@ export default function SessionWidgetApp() {
       await window.api.saveDistractionReason(reason);
     }
     await window.api.sessionStop();
-    setDistractionMode(false);
-    setDistractionAnalysis('');
-    setDistractionSuggestedPrompt('');
+    setModalState({ type: 'none' });
     // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
   }
 
   // Show stuck prompt UI when user clicks "Stuck" button
-  if (stuckMode && sessionState?.isActive) {
+  if (modalState.type === 'stuck' && sessionState?.isActive) {
     return (
       <div className="session-widget">
         <StuckPrompt
@@ -184,11 +174,11 @@ export default function SessionWidgetApp() {
   }
 
   // Show interruption reflection UI when returning from system sleep/lock
-  if (interruptionMode && sessionState?.isActive) {
+  if (modalState.type === 'interruption' && sessionState?.isActive) {
     return (
       <div className="session-widget">
         <InterruptionReflection
-          durationMs={interruptionDuration}
+          durationMs={modalState.durationMs}
           onResume={handleInterruptionResume}
           onEnd={handleInterruptionEnd}
         />
@@ -197,12 +187,12 @@ export default function SessionWidgetApp() {
   }
 
   // Show distraction prompt UI when AI detects distraction
-  if (distractionMode && sessionState?.isActive) {
+  if (modalState.type === 'distraction' && sessionState?.isActive) {
     return (
       <div className="session-widget">
         <DistractionPrompt
-          analysis={distractionAnalysis}
-          suggestedPrompt={distractionSuggestedPrompt}
+          analysis={modalState.analysis}
+          suggestedPrompt={modalState.suggestedPrompt}
           onResume={handleDistractionResume}
           onEnd={handleDistractionEnd}
         />

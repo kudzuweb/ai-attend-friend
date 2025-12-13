@@ -139,6 +139,11 @@ const api = Object.freeze({
         ipcRenderer.on('session:interruption', handler);
         return () => ipcRenderer.removeListener('session:interruption', handler);
     },
+    onDistraction: (callback) => {
+        const handler = (_event, data) => callback(data);
+        ipcRenderer.on('session:distraction', handler);
+        return () => ipcRenderer.removeListener('session:distraction', handler);
+    },
     handleInterruption: (action, reflection) =>
         ipcRenderer.invoke('session:handle-interruption', { action, reflection }),
     handleReflection: (action, reflection) =>

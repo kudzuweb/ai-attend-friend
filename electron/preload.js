@@ -147,6 +147,10 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:save-distraction-reason', reason),
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
+    resumeAfterStuck: (reflection, pauseDurationMs) =>
+        ipcRenderer.invoke('session:resume-after-stuck', { reflection, pauseDurationMs }),
+    endAfterStuck: (reflection) =>
+        ipcRenderer.invoke('session:end-after-stuck', { reflection }),
     // Task APIs
     getTasks: () =>
         ipcRenderer.invoke('task:getAll'),

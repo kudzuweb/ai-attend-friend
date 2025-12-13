@@ -155,6 +155,18 @@ export function registerIPCHandlers(
         }
     });
 
+    // ========== Stuck Flow Handlers ==========
+
+    ipcMain.handle('session:resume-after-stuck', async (_evt, payload: { reflection: string; pauseDurationMs: number }) => {
+        console.log('[IPCHandlers] session:resume-after-stuck called');
+        return await sessionManager.resumeAfterStuck(payload.reflection, payload.pauseDurationMs);
+    });
+
+    ipcMain.handle('session:end-after-stuck', async (_evt, payload: { reflection: string }) => {
+        console.log('[IPCHandlers] session:end-after-stuck called');
+        return await sessionManager.endAfterStuck(payload.reflection);
+    });
+
     // ========== Distraction Handlers ==========
 
     ipcMain.handle('session:save-distraction-reason', async (_evt, reason: string) => {

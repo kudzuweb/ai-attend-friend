@@ -464,6 +464,58 @@ export class SessionManager {
     }
 
     /**
+     * Resume session after user-initiated stuck flow
+     * Unlike system interruptions, stuck flow passes duration from the renderer
+     */
+    async resumeAfterStuck(reflection: string, pauseDurationMs: number): Promise<{ ok: true } | { ok: false; error: string }> {
+        return this.enqueueOperation(async () => {
+            console.log('[SessionManager] resumeAfterStuck called with duration:', pauseDurationMs);
+
+            if (!this.sessionState.isActive) {
+                console.log('[SessionManager] Error: no active session');
+                return { ok: false as const, error: 'no active session' };
+            }
+
+            // Extend session end time by pause duration
+            this.sessionState.endTime += pauseDurationMs;
+            console.log('[SessionManager] Extended session end time by', pauseDurationMs, 'ms');
+
+            // Save as a proper reflection (not interruption)
+            await this.saveReflection(reflection);
+
+            // Clear any interruption state that pauseSession created
+            this.currentInterruption = null;
+
+            this.resumeSessionTimers();
+            this.broadcastSessionState();
+            return { ok: true as const };
+        });
+    }
+
+    /**
+     * End session after user-initiated stuck flow, saving reflection first
+     */
+    async endAfterStuck(reflection: string): Promise<{ ok: true } | { ok: false; error: string }> {
+        return this.enqueueOperation(async () => {
+            console.log('[SessionManager] endAfterStuck called');
+
+            if (!this.sessionState.isActive) {
+                console.log('[SessionManager] Error: no active session');
+                return { ok: false as const, error: 'no active session' };
+            }
+
+            // Save reflection before ending
+            await this.saveReflection(reflection);
+
+            // Clear any interruption state
+            this.currentInterruption = null;
+
+            await this.stopSession();
+            return { ok: true as const };
+        });
+    }
+
+    /**
      * Save reflection and resume session
      */
     async saveReflectionAndResume(reflectionContent: string): Promise<{ ok: true } | { ok: false; error: string }> {

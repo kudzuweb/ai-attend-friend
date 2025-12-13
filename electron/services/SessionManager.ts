@@ -191,25 +191,32 @@ export class SessionManager {
                 // Re-check phase after async call - session may have changed
                 const currentPhase = this.sessionPhase;
 
-                // Only save summary and broadcast if still in active phase (not paused/stopped during async call)
-                if (currentPhase.phase === 'active') {
+                // Save summary for any running session phase (screenshots were captured while active)
+                const isRunningSession = currentPhase.phase === 'active' ||
+                    currentPhase.phase === 'paused' ||
+                    currentPhase.phase === 'awaiting_reflection';
+
+                if (isRunningSession) {
                     await this.storageService.addSummaryToSession(
                         currentPhase.sessionId,
                         currentPhase.sessionDate,
                         res.structured.analysis
                     );
 
-                    if (res.structured.status === 'distracted') {
+                    // Only broadcast distraction UI when actively working (not paused/awaiting)
+                    if (res.structured.status === 'distracted' && currentPhase.phase === 'active') {
                         console.log('[SessionManager] Distraction detected, broadcasting to UI');
                         this.windowManager.broadcastDistraction({
                             analysis: res.structured.analysis,
                             suggestedPrompt: res.structured.suggested_prompt,
                         });
+                    } else if (res.structured.status === 'distracted') {
+                        console.log('[SessionManager] Distraction detected but session paused, summary saved but not broadcasting');
                     } else {
                         console.log('[SessionManager] User is focused');
                     }
                 } else if (res.structured.status === 'distracted') {
-                    console.log('[SessionManager] Distraction detected but session not active, ignoring');
+                    console.log('[SessionManager] Distraction detected but session ended, ignoring');
                 }
             }
             return res;
@@ -806,7 +813,9 @@ export class SessionManager {
 
         powerMonitor.on('suspend', () => {
             safeLog('[PowerMonitor] suspend event');
-            if (this.sessionPhase.phase !== 'active') return;
+            // Allow pauseSession for any running session (it handles updating suspendTime for already-paused states)
+            const phase = this.sessionPhase.phase;
+            if (phase === 'idle' || phase === 'stopping') return;
             this.pauseSession();
         });
 
@@ -817,7 +826,9 @@ export class SessionManager {
 
         powerMonitor.on('lock-screen', () => {
             safeLog('[PowerMonitor] lock-screen event');
-            if (this.sessionPhase.phase !== 'active') return;
+            // Allow pauseSession for any running session (it handles updating suspendTime for already-paused states)
+            const phase = this.sessionPhase.phase;
+            if (phase === 'idle' || phase === 'stopping') return;
             this.pauseSession();
         });
 

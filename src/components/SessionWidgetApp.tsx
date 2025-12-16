@@ -20,19 +20,25 @@ type ModalState =
   | { type: 'interruption'; durationMs: number }
   | { type: 'distraction'; analysis: string; suggestedPrompt: string };
 
+// UI state machine for widget lifecycle
+type WidgetUIPhase =
+  | { phase: 'idle' }                                // No session, widget hidden
+  | { phase: 'running'; sessionState: SessionState } // Active session
+  | { phase: 'cleaning_up' };                        // Session ended, hiding widget
+
 export default function SessionWidgetApp() {
-  const [sessionState, setSessionState] = useState<SessionState | null>(null);
+  const [uiPhase, setUIPhase] = useState<WidgetUIPhase>({ phase: 'idle' });
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [wasActive, setWasActive] = useState(false);
   const [modalState, setModalState] = useState<ModalState>({ type: 'none' });
 
+  // Initialize and subscribe to events
   useEffect(() => {
     // Load initial session state
     loadSessionState();
 
-    // Listen for session updates
+    // Listen for session updates - this drives the state machine
     const unsubscribeSession = window.api.onSessionUpdated((state: SessionState) => {
-      setSessionState(state);
+      handleSessionStateUpdate(state);
     });
 
     // Listen for interruption events
@@ -62,51 +68,63 @@ export default function SessionWidgetApp() {
     };
   }, []);
 
-  // Track when session becomes active
-  useEffect(() => {
-    if (sessionState?.isActive) {
-      setWasActive(true);
-    }
-  }, [sessionState?.isActive]);
+  // Handle session state updates - drives phase transitions
+  function handleSessionStateUpdate(sessionState: SessionState) {
+    setUIPhase(currentPhase => {
+      // Session started: idle -> running
+      if (sessionState.isActive && currentPhase.phase === 'idle') {
+        return { phase: 'running', sessionState };
+      }
 
-  // Handle session end (natural expiration only)
+      // Session state updated while running: update sessionState in phase
+      if (sessionState.isActive && currentPhase.phase === 'running') {
+        return { phase: 'running', sessionState };
+      }
+
+      // Session ended: running -> cleaning_up
+      if (!sessionState.isActive && currentPhase.phase === 'running') {
+        return { phase: 'cleaning_up' };
+      }
+
+      // Ignore other transitions (e.g., updates during cleaning_up)
+      return currentPhase;
+    });
+  }
+
+  // Handle cleanup when entering cleaning_up phase
   useEffect(() => {
-    if (wasActive && sessionState && !sessionState.isActive) {
-      // Reset modal state on session end
+    if (uiPhase.phase !== 'cleaning_up') return;
+
+    let cancelled = false;
+
+    (async () => {
+      // Reset modal state
       setModalState({ type: 'none' });
 
-      // Session just ended naturally, clean up windows
-      let cancelled = false;
+      if (cancelled) return;
 
-      (async () => {
-        // Check if a new session started before we hide the widget
-        if (cancelled) return;
+      await window.api.hideSessionWidget();
+      await window.api.restoreMainWindow();
 
-        await window.api.hideSessionWidget();
-        await window.api.restoreMainWindow();
+      if (!cancelled) {
+        setUIPhase({ phase: 'idle' });
+      }
+    })();
 
-        // Only reset wasActive if we weren't cancelled
-        if (!cancelled) {
-          setWasActive(false);
-        }
-      })();
-
-      // If session becomes active again before cleanup completes, cancel it
-      return () => {
-        cancelled = true;
-      };
-    }
-  }, [sessionState?.isActive, wasActive]);
+    return () => {
+      cancelled = true;
+    };
+  }, [uiPhase.phase]);
 
   async function loadSessionState() {
     const state = await window.api.sessionGetState();
-    setSessionState(state);
+    handleSessionStateUpdate(state);
   }
 
   async function handleStopSession() {
     if (confirm('End this session?')) {
       await window.api.sessionStop();
-      // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+      // Note: Phase transition to cleaning_up handled by handleSessionStateUpdate
     }
   }
 
@@ -122,7 +140,7 @@ export default function SessionWidgetApp() {
   async function handleInterruptionEnd(reflection: string) {
     await window.api.handleInterruption('end', reflection);
     setModalState({ type: 'none' });
-    // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+    // Note: Phase transition to cleaning_up handled by handleSessionStateUpdate
   }
 
   async function handleStuckClick() {
@@ -142,7 +160,7 @@ export default function SessionWidgetApp() {
   async function handleStuckEnd(reflection: string) {
     await window.api.endAfterStuck(reflection);
     setModalState({ type: 'none' });
-    // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+    // Note: Phase transition to cleaning_up handled by handleSessionStateUpdate
   }
 
   async function handleDistractionResume(reason: string) {
@@ -158,11 +176,14 @@ export default function SessionWidgetApp() {
     }
     await window.api.sessionStop();
     setModalState({ type: 'none' });
-    // Note: Window cleanup will be handled by the useEffect that watches sessionState.isActive
+    // Note: Phase transition to cleaning_up handled by handleSessionStateUpdate
   }
 
+  // Guard: only show modals when in running phase
+  const isRunning = uiPhase.phase === 'running';
+
   // Show stuck prompt UI when user clicks "Stuck" button
-  if (modalState.type === 'stuck' && sessionState?.isActive) {
+  if (modalState.type === 'stuck' && isRunning) {
     return (
       <div className="session-widget">
         <StuckPrompt
@@ -174,7 +195,7 @@ export default function SessionWidgetApp() {
   }
 
   // Show interruption reflection UI when returning from system sleep/lock
-  if (modalState.type === 'interruption' && sessionState?.isActive) {
+  if (modalState.type === 'interruption' && isRunning) {
     return (
       <div className="session-widget">
         <InterruptionReflection
@@ -187,7 +208,7 @@ export default function SessionWidgetApp() {
   }
 
   // Show distraction prompt UI when AI detects distraction
-  if (modalState.type === 'distraction' && sessionState?.isActive) {
+  if (modalState.type === 'distraction' && isRunning) {
     return (
       <div className="session-widget">
         <DistractionPrompt
@@ -200,7 +221,8 @@ export default function SessionWidgetApp() {
     );
   }
 
-  if (!sessionState || !sessionState.isActive) {
+  // Not in running phase - show empty state
+  if (uiPhase.phase !== 'running') {
     return (
       <div className="session-widget">
         <div className="widget-empty">
@@ -210,6 +232,8 @@ export default function SessionWidgetApp() {
     );
   }
 
+  // Running phase - show timer and controls
+  const { sessionState } = uiPhase;
   const timeElapsed = currentTime - sessionState.startTime;
   const timeRemaining = Math.max(0, sessionState.lengthMs - timeElapsed);
 

@@ -33,7 +33,7 @@ export default function MainApp() {
     return (
         <div className="main-app">
             <div className="sidebar">
-                <h2>AI Attend Friend</h2>
+                <h2>Attend</h2>
                 <nav>
                     <button
                         className={currentView === 'openloops' ? 'active' : ''}

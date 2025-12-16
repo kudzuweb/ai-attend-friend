@@ -1,29 +1,34 @@
 import MainApp from "./components/MainApp"
 import SessionWidgetApp from "./components/SessionWidgetApp"
+import LoadingScreen from "./components/LoadingScreen"
 import { ThemeProvider } from "./contexts/ThemeContext"
-import { SettingsProvider } from "./contexts/SettingsContext"
-import { SessionProvider } from "./contexts/SessionContext"
+import { SettingsProvider, useSettings } from "./contexts/SettingsContext"
+import { SessionProvider, useSession } from "./contexts/SessionContext"
 
-function App() {
+function AppContent() {
   const route = window.location.hash;
+  const { isLoading: settingsLoading } = useSettings();
+  const { isLoading: sessionLoading } = useSession();
+
+  const isLoading = settingsLoading || sessionLoading;
 
   if (route === '#/session-widget') {
-    return (
-      <ThemeProvider>
-        <SettingsProvider>
-          <SessionProvider>
-            <SessionWidgetApp />
-          </SessionProvider>
-        </SettingsProvider>
-      </ThemeProvider>
-    );
+    return <SessionWidgetApp />;
   }
 
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return <MainApp />;
+}
+
+function App() {
   return (
     <ThemeProvider>
       <SettingsProvider>
         <SessionProvider>
-          <MainApp />
+          <AppContent />
         </SessionProvider>
       </SettingsProvider>
     </ThemeProvider>

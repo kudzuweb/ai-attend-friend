@@ -164,7 +164,6 @@ export class SessionManager {
         ok: true;
         structured: {
             status: 'focused' | 'distracted';
-            reflection_prompt: string;
         };
         raw?: unknown;
         count: number
@@ -172,10 +171,13 @@ export class SessionManager {
         try {
             const phase = this.sessionPhase;
 
-            // Get focus goal from phase if active/paused/awaiting_reflection
+            // Get focus goal and tasks from phase if active/paused/awaiting_reflection
             const focusGoal = phase.phase !== 'idle' && phase.phase !== 'stopping'
                 ? phase.focusGoal
                 : '';
+            const tasks = phase.phase !== 'idle' && phase.phase !== 'stopping'
+                ? phase.tasks
+                : undefined;
 
             const recentFiles = await this.screenshotService.getRecentScreenshots(limit ?? DEFAULT_RECENT_SCREENSHOTS_LIMIT);
 
@@ -187,7 +189,7 @@ export class SessionManager {
                 recentFiles.map(file => this.screenshotService.fileToDataUrl(file))
             );
 
-            const res = await this.aiService.analyzeScreenshots(dataUrls, focusGoal);
+            const res = await this.aiService.analyzeScreenshots(dataUrls, focusGoal, tasks);
 
             if (res?.ok && res?.structured) {
                 // Re-check phase after async call - session may have changed
@@ -196,9 +198,7 @@ export class SessionManager {
                 // Only broadcast distraction UI when actively working (not paused/awaiting)
                 if (res.structured.status === 'distracted' && currentPhase.phase === 'active') {
                     console.log('[SessionManager] Distraction detected, broadcasting to UI');
-                    this.windowManager.broadcastDistraction({
-                        reflectionPrompt: res.structured.reflection_prompt,
-                    });
+                    this.windowManager.broadcastDistraction();
                 } else if (res.structured.status === 'distracted') {
                     console.log('[SessionManager] Distraction detected but session paused/ended, not broadcasting');
                 } else {

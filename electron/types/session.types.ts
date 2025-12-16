@@ -44,7 +44,6 @@ export interface StoredSession {
 
 export interface AnalysisResult {
     status: 'focused' | 'distracted';
-    reflection_prompt: string;
 }
 
 /**

@@ -140,7 +140,7 @@ const api = Object.freeze({
         return () => ipcRenderer.removeListener('session:interruption', handler);
     },
     onDistraction: (callback) => {
-        const handler = (_event, data) => callback(data);
+        const handler = () => callback();
         ipcRenderer.on('session:distraction', handler);
         return () => ipcRenderer.removeListener('session:distraction', handler);
     },

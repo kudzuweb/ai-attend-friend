@@ -18,7 +18,7 @@ type ModalState =
   | { type: 'none' }
   | { type: 'stuck'; startTime: number }
   | { type: 'interruption'; durationMs: number }
-  | { type: 'distraction'; reflectionPrompt: string };
+  | { type: 'distraction' };
 
 // UI state machine for widget lifecycle
 type WidgetUIPhase =
@@ -47,11 +47,8 @@ export default function SessionWidgetApp() {
     });
 
     // Listen for distraction events
-    const unsubscribeDistraction = window.api.onDistraction((data) => {
-      setModalState({
-        type: 'distraction',
-        reflectionPrompt: data.reflectionPrompt
-      });
+    const unsubscribeDistraction = window.api.onDistraction(() => {
+      setModalState({ type: 'distraction' });
     });
 
     // Update current time every second
@@ -217,7 +214,6 @@ export default function SessionWidgetApp() {
     return (
       <div className="session-widget">
         <DistractionPrompt
-          reflectionPrompt={modalState.reflectionPrompt}
           onResume={handleDistractionResume}
           onEnd={handleDistractionEnd}
         />

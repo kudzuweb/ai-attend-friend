@@ -1,35 +1,41 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
-type PromptKey = 'ai-suggested' | 'feeling' | 'need' | 'resistance';
+type PromptKey = 'feeling' | 'need' | 'resistance' | 'avoidance' | 'pull';
 
 interface Props {
-    reflectionPrompt: string;
     onResume: (reason: string) => void;
     onEnd: (reason: string) => void;
 }
 
-const fallbackPrompts: Record<Exclude<PromptKey, 'ai-suggested'>, string> = {
+const curatedPrompts: Record<PromptKey, string> = {
     'feeling': "What were you feeling just before you drifted?",
     'need': "What need was this activity meeting?",
     'resistance': "What's making the focus goal feel hard right now?",
+    'avoidance': "Was there something you were avoiding?",
+    'pull': "What pulled your attention away?",
 };
 
 const promptLabels: Record<PromptKey, string> = {
-    'ai-suggested': 'AI insight',
     'feeling': 'Feeling',
     'need': 'Need',
     'resistance': 'Resistance',
+    'avoidance': 'Avoidance',
+    'pull': 'Pull',
 };
 
-export default function DistractionPrompt({ reflectionPrompt, onResume, onEnd }: Props) {
+const promptKeys = Object.keys(curatedPrompts) as PromptKey[];
+
+export default function DistractionPrompt({ onResume, onEnd }: Props) {
+    // Pick a random prompt on mount
+    const initialPrompt = useMemo(() => {
+        return promptKeys[Math.floor(Math.random() * promptKeys.length)];
+    }, []);
+
     const [reason, setReason] = useState('');
-    const [selectedPrompt, setSelectedPrompt] = useState<PromptKey>('ai-suggested');
+    const [selectedPrompt, setSelectedPrompt] = useState<PromptKey>(initialPrompt);
 
     function getPromptText(): string {
-        if (selectedPrompt === 'ai-suggested') {
-            return reflectionPrompt || fallbackPrompts.feeling;
-        }
-        return fallbackPrompts[selectedPrompt];
+        return curatedPrompts[selectedPrompt];
     }
 
     function handleResume() {

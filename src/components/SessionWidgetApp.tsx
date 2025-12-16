@@ -81,12 +81,18 @@ export default function SessionWidgetApp() {
         return { phase: 'running', sessionState };
       }
 
+      // New session started during cleanup: cleaning_up -> running
+      // This cancels the cleanup and starts showing the new session
+      if (sessionState.isActive && currentPhase.phase === 'cleaning_up') {
+        return { phase: 'running', sessionState };
+      }
+
       // Session ended: running -> cleaning_up
       if (!sessionState.isActive && currentPhase.phase === 'running') {
         return { phase: 'cleaning_up' };
       }
 
-      // Ignore other transitions (e.g., updates during cleaning_up)
+      // Ignore other transitions (e.g., inactive updates during cleaning_up)
       return currentPhase;
     });
   }

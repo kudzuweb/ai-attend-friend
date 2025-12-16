@@ -12,6 +12,7 @@ import { TaskStorage } from './services/TaskStorage.js';
 import { OpenLoopStorage } from './services/OpenLoopStorage.js';
 import { JournalStorage } from './services/JournalStorage.js';
 import { DataMigrationService } from './services/DataMigrationService.js';
+import { CaptureOrchestrator } from './services/CaptureOrchestrator.js';
 
 // Import IPC handlers
 import { registerIPCHandlers } from './handlers/IPCHandlers.js';
@@ -32,6 +33,10 @@ console.log('[Main] AIAnalysisService initialized');
 const storageService = new StorageService();
 console.log('[Main] StorageService initialized');
 
+// Capture orchestrator for screenshot state machine
+const captureOrchestrator = new CaptureOrchestrator(windowManager, screenshotService);
+console.log('[Main] CaptureOrchestrator initialized');
+
 // NEW: Initialize new storage services
 const taskStorage = new TaskStorage();
 console.log('[Main] TaskStorage initialized');
@@ -40,7 +45,7 @@ console.log('[Main] OpenLoopStorage initialized');
 const journalStorage = new JournalStorage();
 console.log('[Main] JournalStorage initialized');
 
-const sessionManager = new SessionManager(windowManager, storageService, screenshotService, aiService, configService);
+const sessionManager = new SessionManager(windowManager, storageService, screenshotService, aiService, configService, captureOrchestrator);
 console.log('[Main] SessionManager initialized');
 
 /**
@@ -86,7 +91,8 @@ async function initialize() {
         configService,
         taskStorage,
         openLoopStorage,
-        journalStorage
+        journalStorage,
+        captureOrchestrator
     );
     console.log('[Main] IPC handlers registered');
 

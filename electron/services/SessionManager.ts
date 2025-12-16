@@ -5,7 +5,8 @@ import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
 import type { AIAnalysisService } from './AIAnalysisService.js';
 import type { ConfigService } from './ConfigService.js';
-import { SCREENSHOT_INTERVAL_MS, AUTO_ANALYSIS_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT } from '../constants.js';
+import type { CaptureOrchestrator } from './CaptureOrchestrator.js';
+import { AUTO_ANALYSIS_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT } from '../constants.js';
 
 // Session phase discriminated union - replaces multiple boolean flags
 type SessionPhase =
@@ -52,9 +53,8 @@ export class SessionManager {
     private lengthMs: number = 0;  // Original session length (for UI)
     private startTime: number = 0; // Session start time (for UI)
 
-    // Timer refs (unchanged)
+    // Timer refs
     private sessionTimer: NodeJS.Timeout | null = null;
-    private screenshotTimer: NodeJS.Timeout | null = null;
     private analysisTimer: NodeJS.Timeout | null = null;
     private operationQueue: Promise<void> = Promise.resolve();
 
@@ -63,19 +63,22 @@ export class SessionManager {
     private screenshotService: ScreenshotService;
     private aiService: AIAnalysisService;
     private configService: ConfigService;
+    private captureOrchestrator: CaptureOrchestrator;
 
     constructor(
         windowManager: WindowManager,
         storageService: StorageService,
         screenshotService: ScreenshotService,
         aiService: AIAnalysisService,
-        configService: ConfigService
+        configService: ConfigService,
+        captureOrchestrator: CaptureOrchestrator
     ) {
         this.windowManager = windowManager;
         this.storageService = storageService;
         this.screenshotService = screenshotService;
         this.aiService = aiService;
         this.configService = configService;
+        this.captureOrchestrator = captureOrchestrator;
         // sessionPhase is initialized to { phase: 'idle' } in the field declaration
     }
 
@@ -268,21 +271,8 @@ export class SessionManager {
             tasks,
         });
 
-        // Start the screenshot timer - first capture after 30s, then every 30s
-        this.screenshotTimer = setTimeout(() => {
-            if (this.sessionPhase.phase !== 'active') return;
-
-            // Capture immediately when first timeout fires
-            this.windowManager.triggerScreenshotCapture();
-
-            this.screenshotTimer = setInterval(() => {
-                if (this.sessionPhase.phase !== 'active') {
-                    this.stopScreenshotTimer();
-                    return;
-                }
-                this.windowManager.triggerScreenshotCapture();
-            }, SCREENSHOT_INTERVAL_MS);
-        }, SCREENSHOT_INTERVAL_MS);
+        // Enable screenshot capture via orchestrator
+        await this.captureOrchestrator.enable();
 
         // Start the analysis timer
         this.startAnalysisTimer();
@@ -349,7 +339,7 @@ export class SessionManager {
         }
 
         this.stopSessionTimer();
-        this.stopScreenshotTimer();
+        this.captureOrchestrator.disable();
         this.stopAnalysisTimer();
 
         // Transition to stopping phase (prevents concurrent operations)
@@ -374,17 +364,6 @@ export class SessionManager {
         if (this.sessionTimer) {
             clearTimeout(this.sessionTimer);
             this.sessionTimer = null;
-        }
-    }
-
-    /**
-     * Stop screenshot timer
-     */
-    private stopScreenshotTimer(): void {
-        if (this.screenshotTimer) {
-            clearTimeout(this.screenshotTimer);
-            clearInterval(this.screenshotTimer);
-            this.screenshotTimer = null;
         }
     }
 
@@ -453,7 +432,7 @@ export class SessionManager {
             }
 
             this.stopSessionTimer();
-            this.stopScreenshotTimer();
+            this.captureOrchestrator.pause();
             this.stopAnalysisTimer();
 
             this.transitionTo({
@@ -496,7 +475,7 @@ export class SessionManager {
             }
 
             this.stopSessionTimer();
-            this.stopScreenshotTimer();
+            this.captureOrchestrator.pause();
             this.stopAnalysisTimer();
 
             this.transitionTo({
@@ -538,16 +517,8 @@ export class SessionManager {
             await this.stopSession();
         }, remainingMs);
 
-        // Capture immediately on resume, then every 30s
-        this.windowManager.triggerScreenshotCapture();
-
-        this.screenshotTimer = setInterval(() => {
-            if (this.sessionPhase.phase !== 'active') {
-                this.stopScreenshotTimer();
-                return;
-            }
-            this.windowManager.triggerScreenshotCapture();
-        }, SCREENSHOT_INTERVAL_MS);
+        // Resume screenshot capture via orchestrator
+        this.captureOrchestrator.resume();
 
         this.startAnalysisTimer();
     }

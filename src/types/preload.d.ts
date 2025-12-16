@@ -163,6 +163,12 @@ declare global {
             restoreMainWindow: () => Promise<void>;
             // Screenshot capture listener
             onScreenshotCapture: (callback: () => void) => () => void;
+            // Report screenshot capture result to orchestrator
+            reportScreenshotResult: (result: {
+                ok: true; dataUrl: string; capturedAt: string
+            } | {
+                ok: false; error: string
+            }) => Promise<void>;
         };
     }
     // media track constraints for chromium to allow more granular config

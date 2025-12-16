@@ -8,8 +8,8 @@ type CapturePhase =
     | { phase: 'disabled' }                                      // No session, capture off
     | { phase: 'idle' }                                          // Ready to capture
     | { phase: 'permission_denied'; reason: string }             // User denied permission
-    | { phase: 'capturing' }                                     // Capture in progress
-    | { phase: 'saving'; dataUrl: string; capturedAt: string }   // Save in progress
+    | { phase: 'capturing'; retryCount: number }                 // Capture in progress
+    | { phase: 'saving'; dataUrl: string; capturedAt: string; retryCount: number }  // Save in progress
     | { phase: 'error'; error: string; retryCount: number };     // Capture failed
 
 const MAX_RETRIES = 3;
@@ -84,13 +84,24 @@ export class CaptureOrchestrator {
      */
     resume(): void {
         console.log('[CaptureOrchestrator] Resuming capture');
-        if (this.phase.phase === 'idle' || this.phase.phase === 'error') {
+
+        const phase = this.phase;
+
+        // Handle stuck states from pause during in-flight operation
+        if (phase.phase === 'capturing' || phase.phase === 'saving') {
+            console.log(`[CaptureOrchestrator] Resetting stuck ${phase.phase} state to idle`);
+            this.transitionTo({ phase: 'idle' });
+            this.startCaptureLoop();
+            return;
+        }
+
+        if (phase.phase === 'idle' || phase.phase === 'error') {
             // If in error state, reset to idle
-            if (this.phase.phase === 'error') {
+            if (phase.phase === 'error') {
                 this.transitionTo({ phase: 'idle' });
             }
             this.startCaptureLoop();
-        } else if (this.phase.phase === 'permission_denied') {
+        } else if (phase.phase === 'permission_denied') {
             // Try permission check again on resume
             const status = this.checkPermission();
             if (status === 'granted') {
@@ -132,13 +143,13 @@ export class CaptureOrchestrator {
         }
     }
 
-    private triggerCapture(): void {
+    private triggerCapture(retryCount: number = 0): void {
         if (this.phase.phase !== 'idle') {
             console.log(`[CaptureOrchestrator] Skipping capture - phase is ${this.phase.phase}`);
             return;
         }
 
-        this.transitionTo({ phase: 'capturing' });
+        this.transitionTo({ phase: 'capturing', retryCount });
         this.windowManager.triggerScreenshotCapture();
     }
 
@@ -155,9 +166,11 @@ export class CaptureOrchestrator {
             return;
         }
 
+        const { retryCount } = this.phase;
+
         if (!result.ok) {
             console.error('[CaptureOrchestrator] Capture failed:', result.error);
-            this.transitionTo({ phase: 'error', error: result.error, retryCount: 0 });
+            this.transitionTo({ phase: 'error', error: result.error, retryCount });
             this.scheduleRetry();
             return;
         }
@@ -165,7 +178,8 @@ export class CaptureOrchestrator {
         this.transitionTo({
             phase: 'saving',
             dataUrl: result.dataUrl,
-            capturedAt: result.capturedAt
+            capturedAt: result.capturedAt,
+            retryCount
         });
 
         try {
@@ -176,7 +190,7 @@ export class CaptureOrchestrator {
             this.transitionTo({
                 phase: 'error',
                 error: e?.message ?? 'Save failed',
-                retryCount: 0
+                retryCount
             });
             this.scheduleRetry();
         }
@@ -198,19 +212,14 @@ export class CaptureOrchestrator {
             return;
         }
 
-        console.log(`[CaptureOrchestrator] Scheduling retry ${retryCount + 1}/${MAX_RETRIES} in ${RETRY_DELAY_MS}ms`);
+        const nextRetryCount = retryCount + 1;
+        console.log(`[CaptureOrchestrator] Scheduling retry ${nextRetryCount}/${MAX_RETRIES} in ${RETRY_DELAY_MS}ms`);
 
         setTimeout(() => {
             if (this.phase.phase === 'error') {
-                const currentRetryCount = this.phase.retryCount;
                 this.transitionTo({ phase: 'idle' });
-                // Trigger immediate capture on retry
-                if (this.phase.phase === 'idle') {
-                    this.transitionTo({ phase: 'capturing' });
-                    this.windowManager.triggerScreenshotCapture();
-                    // Update retry count for next potential failure
-                    // Note: we track this implicitly through the error → retry cycle
-                }
+                // Trigger capture with incremented retry count
+                this.triggerCapture(nextRetryCount);
             }
         }, RETRY_DELAY_MS);
     }

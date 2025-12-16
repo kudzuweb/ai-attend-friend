@@ -1859,3 +1859,97 @@ button:focus-visible {
   color: var(--text-secondary);
   margin: 0;
 }
+
+/* =====================================================
+   Permission Check Screen
+   ===================================================== */
+
+.permission-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: var(--panel-bg);
+  font-family: system-ui, -apple-system, sans-serif;
+  padding: 24px;
+}
+
+.permission-content {
+  max-width: 480px;
+  text-align: left;
+}
+
+.permission-check h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 0 0 16px 0;
+}
+
+.permission-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+.permission-steps {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin: 0 0 24px 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.permission-steps li {
+  margin-bottom: 8px;
+}
+
+.permission-steps strong {
+  color: var(--text-heading);
+}
+
+.permission-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.permission-actions .btn-primary {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: var(--button-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.permission-actions .btn-primary:hover {
+  background: var(--button-primary-hover);
+}
+
+.permission-actions .btn-primary:active {
+  background: var(--button-primary-active);
+}
+
+.permission-actions .btn-secondary {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: linear-gradient(to bottom, var(--button-bg-start), var(--button-bg-end));
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.permission-actions .btn-secondary:hover {
+  background: linear-gradient(to bottom, var(--button-bg-hover-start), var(--button-bg-hover-end));
+}
+
+.permission-actions .btn-secondary:active {
+  background: linear-gradient(to bottom, var(--button-bg-active-start), var(--button-bg-active-end));
+}

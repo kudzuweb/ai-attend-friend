@@ -153,137 +153,6 @@ body,
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
 }
 
-.widget-shell {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  outline: 2px solid red;
-}
-
-.widget-shell-inner {
-  position: absolute;
-  inset: 6px;
-  width: calc(100% - 12px);
-  height: calc(100% - 12px);
-  /* aspect-ratio: 1 / 1; */
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 30% 30%, var(--widget-gradient-1) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, var(--widget-gradient-2) 0%, transparent 50%),
-    linear-gradient(135deg,
-      var(--widget-gradient-3-1) 0%,
-      var(--widget-gradient-3-2) 25%,
-      var(--widget-gradient-3-3) 50%,
-      var(--widget-gradient-3-4) 75%,
-      var(--widget-gradient-3-5) 100%
-    );
-  box-shadow:
-    inset 0 0 20px var(--widget-shadow-1),
-    inset -5px -5px 15px var(--widget-shadow-2),
-    0 8px 16px var(--widget-shadow-3);
-  border: 1px solid var(--widget-border);
-  overflow: visible;
-  backdrop-filter: blur(2px);
-  display: block;
-  position: relative;
-  color: var(--widget-text);
-  text-shadow: 0 1px 2px var(--widget-text-shadow);
-  -webkit-app-region: drag;
-  /* outline: 2px solid blue; */
-}
-
-.wedge-button {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 400;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-  letter-spacing: 0.3px;
-  color: var(--widget-text);
-  text-shadow: 0 1px 2px var(--widget-text-shadow);
-  transition: background 0.2s;
-  -webkit-app-region: no-drag;
-}
-
-/* Drag handle in the center circle */
-.drag-handle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30%;
-  height: 30%;
-  border-radius: 50%;
-  -webkit-app-region: drag;
-  cursor: move;
-  z-index: 10;
-}
-
-.wedge-button:hover {
-  background: var(--widget-button-hover);
-}
-
-.wedge-button:active {
-  background: var(--widget-button-active);
-}
-
-/* Top wedge - Session */
-.wedge-top {
-  clip-path: url(#wedge-top);
-}
-
-.wedge-top .wedge-label {
-  position: absolute;
-  top: 18%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* Right wedge - Settings */
-.wedge-right {
-  clip-path: url(#wedge-right);
-}
-
-.wedge-right .wedge-label {
-  position: absolute;
-  right: 18%;
-  top: 50%;
-  transform: translate(50%, -50%);
-}
-
-/* Bottom wedge - Quit */
-.wedge-bottom {
-  clip-path: url(#wedge-bottom);
-}
-
-.wedge-bottom .wedge-label {
-  position: absolute;
-  bottom: 18%;
-  left: 50%;
-  transform: translate(-50%, 50%);
-}
-
-/* Left wedge - Open Panel */
-.wedge-left {
-  clip-path: url(#wedge-left);
-}
-
-.wedge-left .wedge-label {
-  position: absolute;
-  left: 18%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
 .panel-root {
   display: flex;
   flex-direction: column;
@@ -1453,7 +1322,8 @@ button:focus-visible {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
   margin-bottom: 12px;
 }
 
@@ -1539,7 +1409,9 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   gap: 12px;
+  overflow: hidden;
 }
 
 .interruption-reflection h2 {
@@ -1548,6 +1420,7 @@ button:focus-visible {
   color: #2C3E50;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .interruption-duration {
@@ -1555,6 +1428,7 @@ button:focus-visible {
   color: #666;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .reflection-input {
@@ -1562,6 +1436,8 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .reflection-input label {
@@ -1592,6 +1468,7 @@ button:focus-visible {
 .interruption-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .interruption-actions button {
@@ -1632,7 +1509,9 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   gap: 10px;
+  overflow: hidden;
 }
 
 .stuck-prompt h2 {
@@ -1641,6 +1520,7 @@ button:focus-visible {
   color: #2C3E50;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .stuck-subtext {
@@ -1648,11 +1528,13 @@ button:focus-visible {
   color: #666;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .prompt-selector {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .prompt-option {
@@ -1688,11 +1570,13 @@ button:focus-visible {
   padding: 8px;
   background: #F8F9FA;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .stuck-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .stuck-actions button {
@@ -1730,7 +1614,9 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   gap: 10px;
+  overflow: hidden;
 }
 
 .distraction-prompt h2 {
@@ -1739,6 +1625,7 @@ button:focus-visible {
   color: #2C3E50;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .distraction-subtext {
@@ -1746,6 +1633,7 @@ button:focus-visible {
   color: #666;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .analysis-box {
@@ -1758,11 +1646,13 @@ button:focus-visible {
   border-left: 3px solid #e67e22;
   max-height: 80px;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .distraction-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .distraction-actions button {

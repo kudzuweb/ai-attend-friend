@@ -125,14 +125,12 @@ export class AIAnalysisService {
                                     type: 'string',
                                     enum: ['focused', 'distracted'],
                                 },
-                                analysis: {
+                                reflection_prompt: {
                                     type: 'string',
-                                },
-                                suggested_prompt: {
-                                    type: 'string',
+                                    description: 'A thoughtful reflection prompt for when distracted. Empty string if focused.',
                                 },
                             },
-                            required: ['status', 'analysis', 'suggested_prompt'],
+                            required: ['status', 'reflection_prompt'],
                             additionalProperties: false,
                         },
                     },

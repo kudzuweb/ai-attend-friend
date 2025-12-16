@@ -164,8 +164,7 @@ export class SessionManager {
         ok: true;
         structured: {
             status: 'focused' | 'distracted';
-            analysis: string;
-            suggested_prompt: string;
+            reflection_prompt: string;
         };
         raw?: unknown;
         count: number
@@ -194,32 +193,16 @@ export class SessionManager {
                 // Re-check phase after async call - session may have changed
                 const currentPhase = this.sessionPhase;
 
-                // Save summary for any running session phase (screenshots were captured while active)
-                const isRunningSession = currentPhase.phase === 'active' ||
-                    currentPhase.phase === 'paused' ||
-                    currentPhase.phase === 'awaiting_reflection';
-
-                if (isRunningSession) {
-                    await this.storageService.addSummaryToSession(
-                        currentPhase.sessionId,
-                        currentPhase.sessionDate,
-                        res.structured.analysis
-                    );
-
-                    // Only broadcast distraction UI when actively working (not paused/awaiting)
-                    if (res.structured.status === 'distracted' && currentPhase.phase === 'active') {
-                        console.log('[SessionManager] Distraction detected, broadcasting to UI');
-                        this.windowManager.broadcastDistraction({
-                            analysis: res.structured.analysis,
-                            suggestedPrompt: res.structured.suggested_prompt,
-                        });
-                    } else if (res.structured.status === 'distracted') {
-                        console.log('[SessionManager] Distraction detected but session paused, summary saved but not broadcasting');
-                    } else {
-                        console.log('[SessionManager] User is focused');
-                    }
+                // Only broadcast distraction UI when actively working (not paused/awaiting)
+                if (res.structured.status === 'distracted' && currentPhase.phase === 'active') {
+                    console.log('[SessionManager] Distraction detected, broadcasting to UI');
+                    this.windowManager.broadcastDistraction({
+                        reflectionPrompt: res.structured.reflection_prompt,
+                    });
                 } else if (res.structured.status === 'distracted') {
-                    console.log('[SessionManager] Distraction detected but session ended, ignoring');
+                    console.log('[SessionManager] Distraction detected but session paused/ended, not broadcasting');
+                } else {
+                    console.log('[SessionManager] User is focused');
                 }
             }
             return res;

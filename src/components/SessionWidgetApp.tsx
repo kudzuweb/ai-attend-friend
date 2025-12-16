@@ -18,7 +18,7 @@ type ModalState =
   | { type: 'none' }
   | { type: 'stuck'; startTime: number }
   | { type: 'interruption'; durationMs: number }
-  | { type: 'distraction'; analysis: string; suggestedPrompt: string };
+  | { type: 'distraction'; reflectionPrompt: string };
 
 // UI state machine for widget lifecycle
 type WidgetUIPhase =
@@ -50,8 +50,7 @@ export default function SessionWidgetApp() {
     const unsubscribeDistraction = window.api.onDistraction((data) => {
       setModalState({
         type: 'distraction',
-        analysis: data.analysis,
-        suggestedPrompt: data.suggestedPrompt
+        reflectionPrompt: data.reflectionPrompt
       });
     });
 
@@ -218,8 +217,7 @@ export default function SessionWidgetApp() {
     return (
       <div className="session-widget">
         <DistractionPrompt
-          analysis={modalState.analysis}
-          suggestedPrompt={modalState.suggestedPrompt}
+          reflectionPrompt={modalState.reflectionPrompt}
           onResume={handleDistractionResume}
           onEnd={handleDistractionEnd}
         />

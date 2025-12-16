@@ -1453,7 +1453,8 @@ button:focus-visible {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
   margin-bottom: 12px;
 }
 
@@ -1539,7 +1540,9 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   gap: 12px;
+  overflow: hidden;
 }
 
 .interruption-reflection h2 {
@@ -1548,6 +1551,7 @@ button:focus-visible {
   color: #2C3E50;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .interruption-duration {
@@ -1555,6 +1559,7 @@ button:focus-visible {
   color: #666;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .reflection-input {
@@ -1562,6 +1567,8 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .reflection-input label {
@@ -1592,6 +1599,7 @@ button:focus-visible {
 .interruption-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .interruption-actions button {
@@ -1632,7 +1640,9 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   gap: 10px;
+  overflow: hidden;
 }
 
 .stuck-prompt h2 {
@@ -1641,6 +1651,7 @@ button:focus-visible {
   color: #2C3E50;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .stuck-subtext {
@@ -1648,11 +1659,13 @@ button:focus-visible {
   color: #666;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .prompt-selector {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .prompt-option {
@@ -1688,11 +1701,13 @@ button:focus-visible {
   padding: 8px;
   background: #F8F9FA;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .stuck-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .stuck-actions button {
@@ -1730,7 +1745,9 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   gap: 10px;
+  overflow: hidden;
 }
 
 .distraction-prompt h2 {
@@ -1739,6 +1756,7 @@ button:focus-visible {
   color: #2C3E50;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .distraction-subtext {
@@ -1746,6 +1764,7 @@ button:focus-visible {
   color: #666;
   margin: 0;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .analysis-box {
@@ -1758,11 +1777,13 @@ button:focus-visible {
   border-left: 3px solid #e67e22;
   max-height: 80px;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .distraction-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .distraction-actions button {

@@ -74,7 +74,8 @@ export class AIAnalysisService {
      */
     async analyzeScreenshots(
         dataUrls: string[],
-        focusGoal: string = ''
+        focusGoal: string = '',
+        tasks?: [string, string, string]
     ): Promise<{
         ok: true;
         structured: AnalysisResult;
@@ -105,6 +106,17 @@ export class AIAnalysisService {
             };
         }
 
+        // Build context text with focus goal and tasks
+        let contextText = '';
+        if (focusGoal) {
+            contextText += `The user's focus goal for this session: "${focusGoal}"\n`;
+        }
+        if (tasks && tasks.some(t => t.trim())) {
+            const taskList = tasks.filter(t => t.trim()).map((t, i) => `${i + 1}. ${t}`).join('\n');
+            contextText += `Tasks they planned to work on:\n${taskList}\n`;
+        }
+        contextText += '\nThese screenshots portray the last five minutes of activity:';
+
         const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
             method: 'POST',
             headers: {
@@ -125,12 +137,8 @@ export class AIAnalysisService {
                                     type: 'string',
                                     enum: ['focused', 'distracted'],
                                 },
-                                reflection_prompt: {
-                                    type: 'string',
-                                    description: 'A thoughtful reflection prompt for when distracted. Empty string if focused.',
-                                },
                             },
-                            required: ['status', 'reflection_prompt'],
+                            required: ['status'],
                             additionalProperties: false,
                         },
                     },
@@ -144,9 +152,7 @@ export class AIAnalysisService {
                     'content': [
                         {
                             'type': 'text',
-                            'text': focusGoal
-                                ? `The user stated they want to focus on: "${focusGoal}"\n\nThese screenshots portray the last five minutes of activity:`
-                                : 'these screenshots portray the last five minutes of activity:'
+                            'text': contextText
                         },
                         ...dataUrls.map(url => ({
                             'type': 'image_url',

@@ -165,8 +165,8 @@ export class WindowManager {
     /**
      * Broadcast distraction event to session widget
      */
-    broadcastDistraction(data: { reflectionPrompt: string }): void {
-        this.sessionWidget?.webContents.send('session:distraction', data);
+    broadcastDistraction(): void {
+        this.sessionWidget?.webContents.send('session:distraction');
     }
 
     /**

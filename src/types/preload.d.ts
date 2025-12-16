@@ -103,7 +103,6 @@ declare global {
                 ok: true;
                 structured: {
                     status: 'focused' | 'distracted';
-                    reflection_prompt: string;
                 };
                 raw?: unknown;
                 count: number
@@ -118,7 +117,7 @@ declare global {
             sessionGet: (sessionId: string, date: string) => Promise<{ ok: true; session: StoredSession } | { ok: false; error: string }>;
             onSessionUpdated: (callback: (state: SessionState) => void) => () => void;
             onInterruption: (callback: (data: { durationMs: number }) => void) => () => void;
-            onDistraction: (callback: (data: { reflectionPrompt: string }) => void) => () => void;
+            onDistraction: (callback: () => void) => () => void;
             handleInterruption: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;

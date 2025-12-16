@@ -14,9 +14,17 @@ export default function MainApp() {
         const unsubscribe = window.api.onScreenshotCapture(async () => {
             try {
                 const screenshot = await window.api.captureFrames();
-                await window.api.saveImage(screenshot);
-            } catch (e) {
+                await window.api.reportScreenshotResult({
+                    ok: true,
+                    dataUrl: screenshot.dataUrl,
+                    capturedAt: screenshot.capturedAt
+                });
+            } catch (e: any) {
                 console.error('[MainApp] Screenshot capture failed:', e);
+                await window.api.reportScreenshotResult({
+                    ok: false,
+                    error: e?.message ?? 'capture failed'
+                });
             }
         });
         return unsubscribe;

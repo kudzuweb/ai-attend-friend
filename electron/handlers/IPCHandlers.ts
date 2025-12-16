@@ -8,6 +8,7 @@ import type { ConfigService } from '../services/ConfigService.js';
 import type { TaskStorage } from '../services/TaskStorage.js';
 import type { OpenLoopStorage } from '../services/OpenLoopStorage.js';
 import type { JournalStorage } from '../services/JournalStorage.js';
+import type { CaptureOrchestrator } from '../services/CaptureOrchestrator.js';
 
 export function registerIPCHandlers(
     windowManager: WindowManager,
@@ -18,7 +19,8 @@ export function registerIPCHandlers(
     configService: ConfigService,
     taskStorage: TaskStorage,
     openLoopStorage: OpenLoopStorage,
-    journalStorage: JournalStorage
+    journalStorage: JournalStorage,
+    captureOrchestrator: CaptureOrchestrator
 ) {
     console.log('[IPCHandlers] Registering IPC handlers');
 
@@ -64,6 +66,15 @@ export function registerIPCHandlers(
         } catch (e: any) {
             return { ok: false as const, error: e?.message ?? 'get recent image handler failed' };
         }
+    });
+
+    ipcMain.handle('screenshot:capture-result', async (_evt, result: {
+        ok: true; dataUrl: string; capturedAt: string
+    } | {
+        ok: false; error: string
+    }) => {
+        console.log('[IPCHandlers] screenshot:capture-result received, ok:', result.ok);
+        await captureOrchestrator.handleCaptureResult(result);
     });
 
     // ========== AI Analysis Handlers ==========

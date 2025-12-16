@@ -212,6 +212,9 @@ const api = Object.freeze({
         ipcRenderer.on('screenshot:capture', handler);
         return () => ipcRenderer.removeListener('screenshot:capture', handler);
     },
+    // Report screenshot capture result to orchestrator
+    reportScreenshotResult: (result) =>
+        ipcRenderer.invoke('screenshot:capture-result', result),
 })
 
 contextBridge.exposeInMainWorld('api', api)

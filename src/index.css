@@ -745,20 +745,24 @@ button:focus-visible {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.main-app .sidebar-footer .quit-button {
-  width: 100%;
+.main-app .sidebar-footer .settings-button {
+  width: 36px;
+  height: 36px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.7);
-  padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
+  padding: 0;
 }
 
-.main-app .sidebar-footer .quit-button:hover {
-  background: rgba(255, 255, 255, 0.15);
+.main-app .sidebar-footer .settings-button:hover,
+.main-app .sidebar-footer .settings-button.active {
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 

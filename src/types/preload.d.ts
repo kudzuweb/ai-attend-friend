@@ -37,6 +37,7 @@ declare global {
         createdAt: number;
         updatedAt: number;
         sessionId: string | null;
+        sourceLoopId: string | null;
         tags: string[];
     };
 
@@ -151,6 +152,7 @@ declare global {
             createJournalEntry: (payload: {
                 content: string;
                 sessionId?: string | null;
+                sourceLoopId?: string | null;
             }) => Promise<{ ok: true; entry: JournalEntry } | { ok: false; error: string }>;
             updateJournalEntry: (entryId: string, payload: { content: string }) => Promise<{ ok: boolean }>;
             deleteJournalEntry: (entryId: string) => Promise<{ ok: boolean }>;

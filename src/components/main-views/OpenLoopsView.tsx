@@ -1,8 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-export default function OpenLoopsView() {
+type MainView = 'openloops' | 'focus' | 'reflection' | 'settings';
+
+interface OpenLoopsViewProps {
+    onNavigate?: (view: MainView) => void;
+}
+
+export default function OpenLoopsView({ onNavigate }: OpenLoopsViewProps) {
     const [loops, setLoops] = useState<OpenLoop[]>([]);
     const [newLoopContent, setNewLoopContent] = useState('');
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         loadLoops();
@@ -56,7 +74,23 @@ export default function OpenLoopsView() {
 
         if (result.ok) {
             await handleDeleteSilent(loop.id);
+            onNavigate?.('focus');
         }
+        setOpenDropdownId(null);
+    }
+
+    async function handleConvertToReflection(loop: OpenLoop) {
+        const result = await window.api.createJournalEntry({
+            content: loop.content,
+            sessionId: null,
+            sourceLoopId: loop.id,
+        });
+
+        if (result.ok) {
+            await handleDeleteSilent(loop.id);
+            onNavigate?.('reflection');
+        }
+        setOpenDropdownId(null);
     }
 
     const activeLoops = loops.filter(l => !l.archivedAt && !l.completedAt);
@@ -123,13 +157,28 @@ export default function OpenLoopsView() {
                                     className="loop-inline-input"
                                 />
                                 <div className="loop-actions">
-                                    <button
-                                        onClick={() => handleConvertToTask(loop)}
-                                        className="btn-small btn-convert"
-                                        title="Convert to Task"
-                                    >
-                                        Task →
-                                    </button>
+                                    <div className="convert-dropdown" ref={openDropdownId === loop.id ? dropdownRef : null}>
+                                        <button
+                                            onClick={() => setOpenDropdownId(openDropdownId === loop.id ? null : loop.id)}
+                                            className="btn-icon btn-convert-arrow"
+                                            title="Convert"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="5" y1="12" x2="19" y2="12" />
+                                                <polyline points="12 5 19 12 12 19" />
+                                            </svg>
+                                        </button>
+                                        {openDropdownId === loop.id && (
+                                            <div className="convert-dropdown-menu">
+                                                <button onClick={() => handleConvertToTask(loop)}>
+                                                    Task
+                                                </button>
+                                                <button onClick={() => handleConvertToReflection(loop)}>
+                                                    Reflection
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => handleDelete(loop.id)}
                                         className="btn-icon"

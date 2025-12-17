@@ -78,7 +78,7 @@ export default function MainApp() {
             </div>
 
             <div className="main-content">
-                {currentView === 'openloops' && <OpenLoopsView />}
+                {currentView === 'openloops' && <OpenLoopsView onNavigate={setCurrentView} />}
                 {currentView === 'focus' && <TasklistView />}
                 {currentView === 'reflection' && <JournalView />}
                 {currentView === 'settings' && <SettingsView />}

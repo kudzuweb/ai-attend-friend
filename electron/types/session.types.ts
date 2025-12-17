@@ -80,6 +80,7 @@ export interface JournalEntry {
     createdAt: number;
     updatedAt: number;
     sessionId: string | null;
+    sourceLoopId: string | null;
     tags: string[];
 }
 

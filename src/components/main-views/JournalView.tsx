@@ -72,8 +72,10 @@ export default function JournalView() {
     }
 
     async function handleDeleteSilent(entryId: string) {
-        await window.api.deleteJournalEntry(entryId);
-        await loadEntries();
+        const result = await window.api.deleteJournalEntry(entryId);
+        if (result.ok) {
+            await loadEntries();
+        }
     }
 
     return (

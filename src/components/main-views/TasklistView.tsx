@@ -64,8 +64,10 @@ export default function TasklistView() {
     }
 
     async function handleDeleteSilent(taskId: string) {
-        await window.api.deleteTask(taskId);
-        await loadTasks();
+        const result = await window.api.deleteTask(taskId);
+        if (result.ok) {
+            await loadTasks();
+        }
     }
 
     async function handleUpdateTask(taskId: string, newContent: string) {

@@ -54,8 +54,10 @@ export default function OpenLoopsView({ onNavigate }: OpenLoopsViewProps) {
     }
 
     async function handleDeleteSilent(loopId: string) {
-        await window.api.deleteOpenLoop(loopId);
-        await loadLoops();
+        const result = await window.api.deleteOpenLoop(loopId);
+        if (result.ok) {
+            await loadLoops();
+        }
     }
 
     async function handleUpdateLoop(loopId: string, newContent: string) {

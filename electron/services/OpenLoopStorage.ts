@@ -91,4 +91,18 @@ export class OpenLoopStorage {
         await this.saveLoops(loops);
         return { ok: true };
     }
+
+    async updateLoop(loopId: string, updates: { content: string }): Promise<{ ok: boolean }> {
+        const loops = await this.loadLoops();
+        const loop = loops.find(l => l.id === loopId);
+
+        if (!loop) {
+            return { ok: false };
+        }
+
+        loop.content = updates.content;
+
+        await this.saveLoops(loops);
+        return { ok: true };
+    }
 }

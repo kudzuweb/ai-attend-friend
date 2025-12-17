@@ -8,7 +8,7 @@ export interface SessionState {
     startTime: number;
     endTime: number;
     focusGoal: string;
-    tasks?: [string, string, string];
+    tasks?: string[];
 }
 
 export interface SessionInterruption {
@@ -34,7 +34,7 @@ export interface StoredSession {
     endTime: number;
     lengthMs: number;
     focusGoal: string;
-    tasks?: [string, string, string];
+    tasks?: string[];
     interruptions: SessionInterruption[];
     distractions: DistractionReason[];
     reflections: Reflection[];

@@ -248,7 +248,7 @@ export default function SessionWidgetApp() {
         totalTime={sessionState.lengthMs}
       />
 
-      <WidgetTaskList tasks={sessionState.tasks || ['', '', '']} />
+      <WidgetTaskList tasks={sessionState.tasks || []} />
 
       <div className="widget-actions">
         <button

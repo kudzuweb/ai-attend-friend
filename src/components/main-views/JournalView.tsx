@@ -1,11 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+
+const reflectionPrompts = [
+    "What's present for you right now?",
+    "Pause. What do you notice?",
+    "Let your thoughts flow...",
+    "What would you like to remember?",
+    "Take a breath. What's here?",
+];
 
 export default function JournalView() {
     const [entries, setEntries] = useState<JournalEntry[]>([]);
     const [newEntryContent, setNewEntryContent] = useState('');
-    const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-    const [editingContent, setEditingContent] = useState('');
     const [filterMode, setFilterMode] = useState<'all' | 'sessions-only' | 'standalone'>('all');
+
+    const randomPlaceholder = useMemo(() =>
+        reflectionPrompts[Math.floor(Math.random() * reflectionPrompts.length)],
+    []);
 
     useEffect(() => {
         loadEntries();
@@ -44,26 +54,14 @@ export default function JournalView() {
         }
     }
 
-    function handleStartEdit(entry: JournalEntry) {
-        setEditingEntryId(entry.id);
-        setEditingContent(entry.content);
-    }
-
-    function handleCancelEdit() {
-        setEditingEntryId(null);
-        setEditingContent('');
-    }
-
-    async function handleSaveEdit(entryId: string) {
-        if (!editingContent.trim()) return;
+    async function handleUpdateEntry(entryId: string, newContent: string) {
+        if (!newContent.trim()) return;
 
         const result = await window.api.updateJournalEntry(entryId, {
-            content: editingContent.trim(),
+            content: newContent.trim(),
         });
 
         if (result.ok) {
-            setEditingEntryId(null);
-            setEditingContent('');
             await loadEntries();
         }
     }
@@ -78,9 +76,9 @@ export default function JournalView() {
     return (
         <div className="journal-view">
             <div className="view-header">
-                <h1>Journal</h1>
+                <h1>Reflections</h1>
                 <p className="view-description">
-                    Record your thoughts, reflections, and insights
+                    Review your session logs and insights
                 </p>
             </div>
 
@@ -91,11 +89,11 @@ export default function JournalView() {
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && e.metaKey) handleAddEntry();
                     }}
-                    placeholder="Write your thoughts... (⌘+Enter to save)"
+                    placeholder={randomPlaceholder}
                     className="journal-textarea"
                     rows={4}
                 />
-                <button onClick={handleAddEntry} className="btn-primary">Add Entry</button>
+                <button onClick={handleAddEntry} className="btn-primary" disabled={!newEntryContent.trim()}>Save Entry</button>
             </div>
 
             <div className="view-controls">
@@ -129,49 +127,30 @@ export default function JournalView() {
                 ) : (
                     entries.map(entry => (
                         <div key={entry.id} className="journal-entry">
-                            {editingEntryId === entry.id ? (
-                                <div className="entry-edit">
-                                    <textarea
-                                        value={editingContent}
-                                        onChange={(e) => setEditingContent(e.target.value)}
-                                        className="journal-textarea"
-                                        rows={4}
-                                        autoFocus
-                                    />
-                                    <div className="entry-edit-actions">
-                                        <button onClick={() => handleSaveEdit(entry.id)} className="btn-small">
-                                            Save
-                                        </button>
-                                        <button onClick={handleCancelEdit} className="btn-small">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="entry-header">
-                                        <span className="entry-date">
-                                            {new Date(entry.createdAt).toLocaleString()}
-                                        </span>
-                                        {entry.sessionId && (
-                                            <span className="entry-badge">Session Reflection</span>
-                                        )}
-                                    </div>
-                                    <p className="entry-content">{entry.content}</p>
-                                    {entry.updatedAt !== entry.createdAt && (
-                                        <span className="entry-updated">
-                                            Updated: {new Date(entry.updatedAt).toLocaleString()}
-                                        </span>
-                                    )}
-                                    <div className="entry-actions">
-                                        <button onClick={() => handleStartEdit(entry)} className="btn-small">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(entry.id)} className="btn-small btn-danger">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </>
+                            <div className="entry-row">
+                                <textarea
+                                    defaultValue={entry.content}
+                                    onBlur={(e) => {
+                                        if (e.target.value !== entry.content) {
+                                            handleUpdateEntry(entry.id, e.target.value);
+                                        }
+                                    }}
+                                    className="entry-textarea"
+                                    rows={2}
+                                />
+                                <button
+                                    onClick={() => handleDelete(entry.id)}
+                                    className="btn-icon btn-icon-danger"
+                                    title="Delete"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            {entry.sessionId && (
+                                <span className="entry-badge">Session Reflection</span>
                             )}
                         </div>
                     ))

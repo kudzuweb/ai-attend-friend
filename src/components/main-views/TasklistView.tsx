@@ -3,14 +3,13 @@ import { useState, useEffect } from 'react';
 export default function TasklistView() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [newTaskContent, setNewTaskContent] = useState('');
-    const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-    const [editingContent, setEditingContent] = useState('');
     const [addingSubtaskToId, setAddingSubtaskToId] = useState<string | null>(null);
     const [newSubtaskContent, setNewSubtaskContent] = useState('');
     const [sessionSetupMode, setSessionSetupMode] = useState(false);
     const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
     const [focusGoal, setFocusGoal] = useState('');
     const [sessionLength, setSessionLength] = useState(25); // minutes
+    const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
     useEffect(() => {
         loadTasks();
@@ -64,23 +63,9 @@ export default function TasklistView() {
         }
     }
 
-    function handleStartEdit(task: Task) {
-        setEditingTaskId(task.id);
-        setEditingContent(task.content);
-    }
-
-    function handleCancelEdit() {
-        setEditingTaskId(null);
-        setEditingContent('');
-    }
-
-    async function handleSaveEdit(taskId: string) {
-        if (!editingContent.trim()) return;
-
-        // Use the proper update method to preserve task metadata
-        await window.api.updateTask(taskId, { content: editingContent.trim() });
-        setEditingTaskId(null);
-        setEditingContent('');
+    async function handleUpdateTask(taskId: string, newContent: string) {
+        if (!newContent.trim()) return;
+        await window.api.updateTask(taskId, { content: newContent.trim() });
         await loadTasks();
     }
 
@@ -98,9 +83,8 @@ export default function TasklistView() {
             return;
         }
 
-        // Get selected tasks (up to 3 for old format compatibility)
+        // Get selected tasks
         const selectedTasks = selectedTaskIds
-            .slice(0, 3)
             .map(id => tasks.find(t => t.id === id))
             .filter(Boolean) as Task[];
 
@@ -109,15 +93,11 @@ export default function TasklistView() {
             return;
         }
 
-        const tasksTuple: [string, string, string] = [
-            selectedTasks[0]?.content || '',
-            selectedTasks[1]?.content || '',
-            selectedTasks[2]?.content || '',
-        ];
+        const taskContents = selectedTasks.map(t => t.content);
 
         const lengthMs = sessionLength * 60 * 1000;
 
-        const result = await window.api.sessionStart(lengthMs, focusGoal, tasksTuple);
+        const result = await window.api.sessionStart(lengthMs, focusGoal, taskContents);
 
         if (result.ok) {
             // Show session widget first to ensure seamless transition
@@ -143,21 +123,31 @@ export default function TasklistView() {
     }
 
     function renderTask(task: Task, depth = 0) {
-        const isEditing = editingTaskId === task.id;
         const isAddingSubtask = addingSubtaskToId === task.id;
         const subtasks = tasks.filter(t => t.parentTaskId === task.id);
         const isSelected = selectedTaskIds.includes(task.id);
+        const isActive = activeTaskId === task.id;
 
         return (
-            <div key={task.id} className="task-item" style={{ marginLeft: `${depth * 20}px` }}>
+            <div
+                key={task.id}
+                className={`task-item ${isActive ? 'active' : ''}`}
+                style={{ marginLeft: `${depth * 20}px` }}
+                onClick={() => setActiveTaskId(task.id)}
+            >
                 <div className="task-row">
+                    <div className="drag-handle" title="Drag to reorder">
+                        <svg width="14" height="10" viewBox="0 0 14 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <line x1="1" y1="3" x2="13" y2="3" />
+                            <line x1="1" y1="7" x2="13" y2="7" />
+                        </svg>
+                    </div>
                     {sessionSetupMode ? (
                         <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleToggleTaskSelection(task.id)}
                             className="task-checkbox"
-                            disabled={!isSelected && selectedTaskIds.length >= 3}
                         />
                     ) : (
                         <input
@@ -168,45 +158,37 @@ export default function TasklistView() {
                         />
                     )}
 
-                    {isEditing ? (
-                        <div className="task-edit">
-                            <input
-                                type="text"
-                                value={editingContent}
-                                onChange={(e) => setEditingContent(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveEdit(task.id);
-                                    if (e.key === 'Escape') handleCancelEdit();
-                                }}
-                                autoFocus
-                                className="task-input"
-                            />
-                            <button onClick={() => handleSaveEdit(task.id)} className="btn-small">Save</button>
-                            <button onClick={handleCancelEdit} className="btn-small">Cancel</button>
-                        </div>
-                    ) : (
-                        <div className="task-content">
-                            <span className={task.isCompleted ? 'task-text completed' : 'task-text'}>
-                                {task.content}
-                            </span>
-                            {task.isCompleted && task.completedAt && (
-                                <span className="task-timestamp">
-                                    {new Date(task.completedAt).toLocaleString()}
-                                </span>
-                            )}
-                        </div>
-                    )}
+                    <input
+                        type="text"
+                        defaultValue={task.content}
+                        onBlur={(e) => {
+                            if (e.target.value !== task.content) {
+                                handleUpdateTask(task.id, e.target.value);
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                            }
+                        }}
+                        className={`task-inline-input ${task.isCompleted ? 'completed' : ''}`}
+                    />
 
                     <div className="task-actions">
-                        {!isEditing && (
-                            <>
-                                <button onClick={() => handleStartEdit(task)} className="btn-small">Edit</button>
-                                {!task.parentTaskId && (
-                                    <button onClick={() => setAddingSubtaskToId(task.id)} className="btn-small">+ Subtask</button>
-                                )}
-                                <button onClick={() => handleDelete(task.id)} className="btn-small btn-danger">Delete</button>
-                            </>
+                        {!task.parentTaskId && (
+                            <button onClick={(e) => { e.stopPropagation(); setAddingSubtaskToId(task.id); }} className="btn-icon" title="Add Subtask">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
                         )}
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} className="btn-icon btn-icon-danger" title="Delete">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -283,45 +265,45 @@ export default function TasklistView() {
                     </div>
 
                     <div className="form-section">
-                        <label>Select Tasks (up to 3)</label>
-                        <p className="view-description">Selected: {selectedTaskIds.length}/3</p>
-                        <div className="add-task-inline">
-                            <input
-                                type="text"
-                                value={newTaskContent}
-                                onChange={(e) => setNewTaskContent(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && newTaskContent.trim()) {
-                                        handleAddTask();
-                                    }
-                                }}
-                                placeholder="Add a new task..."
-                                className="task-input"
-                            />
-                            <button
-                                onClick={handleAddTask}
-                                disabled={!newTaskContent.trim()}
-                                className="btn-small"
-                            >
-                                Add
-                            </button>
-                        </div>
+                        <label>Select Tasks</label>
                     </div>
                 </div>
 
-                <div className="tasks-list">
-                    {topLevelTasks.length === 0 ? (
-                        <div className="empty-state">
-                            <p>No tasks yet. Add one above to get started!</p>
-                        </div>
-                    ) : (
-                        topLevelTasks.map(task => renderTask(task))
-                    )}
+                <div className="unified-card">
+                    <div className="card-input-row">
+                        <input
+                            type="text"
+                            value={newTaskContent}
+                            onChange={(e) => setNewTaskContent(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newTaskContent.trim()) {
+                                    handleAddTask();
+                                }
+                            }}
+                            placeholder="Add a new task..."
+                            className="card-input"
+                        />
+                        <button onClick={handleAddTask} className="btn-primary">Add</button>
+                    </div>
+
+                    <div className="card-items">
+                        {topLevelTasks.length === 0 ? (
+                            <div className="empty-state">
+                                <p>No tasks yet. Add one above to get started!</p>
+                            </div>
+                        ) : (
+                            topLevelTasks.map(task => renderTask(task))
+                        )}
+                    </div>
                 </div>
 
                 <div className="session-setup-actions" style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-                    <button onClick={handleStartSession} className="btn-primary">
-                        Start Session
+                    <button onClick={handleStartSession} className="btn-primary btn-with-icon">
+                        <span>Start Session</span>
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </button>
                     <button onClick={handleCancelSessionSetup} className="btn-small">
                         Cancel
@@ -334,35 +316,43 @@ export default function TasklistView() {
     return (
         <div className="tasklist-view">
             <div className="view-header">
-                <h1>Tasklist</h1>
-                <p className="view-description">Manage your tasks and subtasks</p>
+                <div className="view-header-row">
+                    <h1>Focus</h1>
+                    <button onClick={() => setSessionSetupMode(true)} className="btn-primary btn-with-icon">
+                        <span>Start Session</span>
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                </div>
+                <p className="view-description">Set intentions for your session</p>
             </div>
 
-            <div className="add-task-section">
-                <input
-                    type="text"
-                    value={newTaskContent}
-                    onChange={(e) => setNewTaskContent(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddTask();
-                    }}
-                    placeholder="Add a new task..."
-                    className="task-input-large"
-                />
-                <button onClick={handleAddTask} className="btn-primary">Add Task</button>
-                <button onClick={() => setSessionSetupMode(true)} className="btn-primary" style={{ marginLeft: '12px' }}>
-                    Start Session
-                </button>
-            </div>
+            <div className="unified-card">
+                <div className="card-input-row">
+                    <input
+                        type="text"
+                        value={newTaskContent}
+                        onChange={(e) => setNewTaskContent(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleAddTask();
+                        }}
+                        placeholder="Add a new task..."
+                        className="card-input"
+                    />
+                    <button onClick={handleAddTask} className="btn-primary">Add</button>
+                </div>
 
-            <div className="tasks-list">
-                {topLevelTasks.length === 0 ? (
-                    <div className="empty-state">
-                        <p>No tasks yet. Add your first task above!</p>
-                    </div>
-                ) : (
-                    topLevelTasks.map(task => renderTask(task))
-                )}
+                <div className="card-items">
+                    {topLevelTasks.length === 0 ? (
+                        <div className="empty-state">
+                            <p>No tasks yet. Add your first task above!</p>
+                        </div>
+                    ) : (
+                        topLevelTasks.map(task => renderTask(task))
+                    )}
+                </div>
             </div>
         </div>
     );

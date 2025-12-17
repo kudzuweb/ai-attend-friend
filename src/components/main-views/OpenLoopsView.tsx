@@ -4,6 +4,8 @@ export default function OpenLoopsView() {
     const [loops, setLoops] = useState<OpenLoop[]>([]);
     const [newLoopContent, setNewLoopContent] = useState('');
     const [showArchived, setShowArchived] = useState(false);
+    const [selectedLoopIds, setSelectedLoopIds] = useState<string[]>([]);
+    const [selectionMode, setSelectionMode] = useState(false);
 
     useEffect(() => {
         loadLoops();
@@ -39,6 +41,12 @@ export default function OpenLoopsView() {
         await loadLoops();
     }
 
+    async function handleUpdateLoop(loopId: string, newContent: string) {
+        if (!newContent.trim()) return;
+        await window.api.updateOpenLoop(loopId, { content: newContent.trim() });
+        await loadLoops();
+    }
+
     async function handleConvertToTask(loop: OpenLoop) {
         // Create a new task from the loop content
         const result = await window.api.createTask({
@@ -53,6 +61,28 @@ export default function OpenLoopsView() {
         }
     }
 
+    function handleToggleLoopSelection(loopId: string) {
+        setSelectedLoopIds(prev =>
+            prev.includes(loopId)
+                ? prev.filter(id => id !== loopId)
+                : [...prev, loopId]
+        );
+    }
+
+    async function handleBatchConvert() {
+        const selectedLoops = loops.filter(l => selectedLoopIds.includes(l.id));
+        for (const loop of selectedLoops) {
+            await handleConvertToTask(loop);
+        }
+        setSelectedLoopIds([]);
+        setSelectionMode(false);
+    }
+
+    function handleCancelSelection() {
+        setSelectedLoopIds([]);
+        setSelectionMode(false);
+    }
+
     const activeLoops = loops.filter(l => !l.archivedAt && !l.completedAt);
     const completedLoops = loops.filter(l => l.completedAt && !l.archivedAt);
     const archivedLoops = loops.filter(l => l.archivedAt);
@@ -62,73 +92,86 @@ export default function OpenLoopsView() {
             <div className="view-header">
                 <h1>Open Loops</h1>
                 <p className="view-description">
-                    Capture thoughts and ideas that need to be processed later
+                    Capture unfinished tasks, ideas, and fleeting thoughts
                 </p>
             </div>
 
-            <div className="add-loop-section">
-                <input
-                    type="text"
-                    value={newLoopContent}
-                    onChange={(e) => setNewLoopContent(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddLoop();
-                    }}
-                    placeholder="What's on your mind?"
-                    className="task-input-large"
-                />
-                <button onClick={handleAddLoop} className="btn-primary">Add Loop</button>
-            </div>
-
-            <div className="view-controls">
-                <label className="checkbox-label">
+            <div className="unified-card">
+                <div className="card-input-row">
                     <input
-                        type="checkbox"
-                        checked={showArchived}
-                        onChange={(e) => setShowArchived(e.target.checked)}
+                        type="text"
+                        value={newLoopContent}
+                        onChange={(e) => setNewLoopContent(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleAddLoop();
+                        }}
+                        placeholder="What's on your mind?"
+                        className="card-input-lg"
                     />
-                    Show archived loops
-                </label>
-            </div>
-
-            {activeLoops.length > 0 && (
-                <div className="loop-section">
-                    <h2 className="section-title">Active Loops</h2>
-                    <div className="loops-list">
-                        {activeLoops.map(loop => (
-                            <div key={loop.id} className="loop-item">
-                                <div className="loop-content">
-                                    <p className="loop-text">{loop.content}</p>
-                                    <span className="loop-timestamp">
-                                        {new Date(loop.createdAt).toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="loop-actions">
-                                    <button
-                                        onClick={() => handleConvertToTask(loop)}
-                                        className="btn-small btn-convert"
-                                        title="Convert to Task"
-                                    >
-                                        → Task
-                                    </button>
-                                    <button
-                                        onClick={() => handleToggleComplete(loop.id)}
-                                        className="btn-small"
-                                    >
-                                        Complete
-                                    </button>
-                                    <button
-                                        onClick={() => handleArchive(loop.id)}
-                                        className="btn-small"
-                                    >
-                                        Archive
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <button onClick={handleAddLoop} className="btn-primary">Add</button>
                 </div>
-            )}
+
+                <div className="card-items">
+                    {activeLoops.length === 0 && completedLoops.length === 0 && (!showArchived || archivedLoops.length === 0) ? (
+                        <div className="empty-state">
+                            <p>All loops closed. Mind is clear.</p>
+                        </div>
+                    ) : (
+                        activeLoops.map(loop => (
+                            <div key={loop.id} className={`loop-item ${selectedLoopIds.includes(loop.id) ? 'selected' : ''}`}>
+                                <div className="drag-handle" title="Drag to reorder">
+                                    <svg width="14" height="10" viewBox="0 0 14 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                        <line x1="1" y1="3" x2="13" y2="3" />
+                                        <line x1="1" y1="7" x2="13" y2="7" />
+                                    </svg>
+                                </div>
+                                {selectionMode && (
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedLoopIds.includes(loop.id)}
+                                        onChange={() => handleToggleLoopSelection(loop.id)}
+                                        className="loop-checkbox"
+                                    />
+                                )}
+                                <input
+                                    type="text"
+                                    defaultValue={loop.content}
+                                    onBlur={(e) => {
+                                        if (e.target.value !== loop.content) {
+                                            handleUpdateLoop(loop.id, e.target.value);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.currentTarget.blur();
+                                    }}
+                                    className="loop-inline-input"
+                                />
+                                {!selectionMode && (
+                                    <div className="loop-actions">
+                                        <button
+                                            onClick={() => handleConvertToTask(loop)}
+                                            className="btn-small btn-convert"
+                                            title="Convert to Task"
+                                        >
+                                            Task →
+                                        </button>
+                                        <button
+                                            onClick={() => handleArchive(loop.id)}
+                                            className="btn-icon"
+                                            title="Archive"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
 
             {completedLoops.length > 0 && (
                 <div className="loop-section">
@@ -136,12 +179,19 @@ export default function OpenLoopsView() {
                     <div className="loops-list">
                         {completedLoops.map(loop => (
                             <div key={loop.id} className="loop-item completed">
-                                <div className="loop-content">
-                                    <p className="loop-text">{loop.content}</p>
-                                    <span className="loop-timestamp">
-                                        Completed: {new Date(loop.completedAt!).toLocaleString()}
-                                    </span>
-                                </div>
+                                <input
+                                    type="text"
+                                    defaultValue={loop.content}
+                                    onBlur={(e) => {
+                                        if (e.target.value !== loop.content) {
+                                            handleUpdateLoop(loop.id, e.target.value);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.currentTarget.blur();
+                                    }}
+                                    className="loop-inline-input"
+                                />
                                 <div className="loop-actions">
                                     <button
                                         onClick={() => handleToggleComplete(loop.id)}
@@ -151,9 +201,13 @@ export default function OpenLoopsView() {
                                     </button>
                                     <button
                                         onClick={() => handleArchive(loop.id)}
-                                        className="btn-small"
+                                        className="btn-icon"
+                                        title="Archive"
                                     >
-                                        Archive
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
@@ -168,21 +222,22 @@ export default function OpenLoopsView() {
                     <div className="loops-list">
                         {archivedLoops.map(loop => (
                             <div key={loop.id} className="loop-item archived">
-                                <div className="loop-content">
-                                    <p className="loop-text">{loop.content}</p>
-                                    <span className="loop-timestamp">
-                                        Archived: {new Date(loop.archivedAt!).toLocaleString()}
-                                    </span>
-                                </div>
+                                <input
+                                    type="text"
+                                    defaultValue={loop.content}
+                                    onBlur={(e) => {
+                                        if (e.target.value !== loop.content) {
+                                            handleUpdateLoop(loop.id, e.target.value);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.currentTarget.blur();
+                                    }}
+                                    className="loop-inline-input"
+                                />
                             </div>
                         ))}
                     </div>
-                </div>
-            )}
-
-            {activeLoops.length === 0 && completedLoops.length === 0 && (!showArchived || archivedLoops.length === 0) && (
-                <div className="empty-state">
-                    <p>No open loops yet. Add one above to get started!</p>
                 </div>
             )}
         </div>

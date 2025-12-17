@@ -387,6 +387,14 @@ export function registerIPCHandlers(
         }
     });
 
+    ipcMain.handle('openloop:update', async (_evt, loopId: string, updates: { content: string }) => {
+        try {
+            return await openLoopStorage.updateLoop(loopId, updates);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to update loop' };
+        }
+    });
+
     // ========== Journal Handlers ==========
 
     ipcMain.handle('journal:getAll', async (_evt, filterSessionId?: string) => {

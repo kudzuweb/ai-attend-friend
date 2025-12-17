@@ -10,7 +10,7 @@ export const AUTO_ANALYSIS_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 export const MAIN_WINDOW_MIN_WIDTH = 800;
 export const MAIN_WINDOW_MIN_HEIGHT = 600;
 export const MAIN_WINDOW_DEFAULT_WIDTH = 900;
-export const MAIN_WINDOW_DEFAULT_HEIGHT = 700;
+export const MAIN_WINDOW_DEFAULT_HEIGHT = 600;
 
 // Session widget dimensions
 export const SESSION_WIDGET_WIDTH = 280;

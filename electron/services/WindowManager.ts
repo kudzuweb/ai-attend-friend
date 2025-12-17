@@ -40,7 +40,8 @@ export class WindowManager {
             minWidth: MAIN_WINDOW_MIN_WIDTH,
             minHeight: MAIN_WINDOW_MIN_HEIGHT,
             show: true,
-            frame: true,
+            titleBarStyle: 'hiddenInset',
+            trafficLightPosition: { x: 16, y: 16 },
             webPreferences: {
                 preload: this.preloadPath,
                 contextIsolation: true,

@@ -28,11 +28,6 @@ export default function OpenLoopsView() {
         }
     }
 
-    async function handleArchive(loopId: string) {
-        await window.api.archiveOpenLoop(loopId);
-        await loadLoops();
-    }
-
     async function handleDelete(loopId: string) {
         await window.api.deleteOpenLoop(loopId);
         await loadLoops();
@@ -53,7 +48,7 @@ export default function OpenLoopsView() {
         });
 
         if (result.ok) {
-            await handleArchive(loop.id);
+            await handleDelete(loop.id);
         }
     }
 
@@ -123,9 +118,9 @@ export default function OpenLoopsView() {
                                         Task →
                                     </button>
                                     <button
-                                        onClick={() => handleArchive(loop.id)}
+                                        onClick={() => handleDelete(loop.id)}
                                         className="btn-icon"
-                                        title="Archive"
+                                        title="Delete"
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="3 6 5 6 21 6" />

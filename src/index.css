@@ -927,22 +927,28 @@ button:focus-visible {
 
 .card-input {
   flex: 1;
+  min-width: 0;
   padding: 8px 0;
   font-size: 14px;
   border: none;
   background: transparent;
   color: var(--text-dark);
   font-family: var(--font-elegant);
+  resize: none;
+  line-height: 1.4;
 }
 
 .card-input-lg {
   flex: 1;
+  min-width: 0;
   padding: 8px 0;
   font-size: 18px;
   border: none;
   background: transparent;
   color: var(--text-dark);
   font-family: var(--font-elegant);
+  resize: none;
+  line-height: 1.4;
 }
 
 .card-input-lg::placeholder {
@@ -1035,7 +1041,7 @@ button:focus-visible {
 }
 
 .btn-primary:hover {
-  background: var(--sidebar-bg);
+  background: var(--accent-primary-hover);
 }
 
 .btn-primary:active {
@@ -1188,12 +1194,17 @@ button:focus-visible {
 
 .task-inline-input {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   padding: 0;
   font-size: 16px;
   font-family: var(--font-elegant);
   color: var(--text-dark);
   border: none;
   background: transparent;
+  resize: none;
+  line-height: 1.4;
+  field-sizing: content;
 }
 
 .task-inline-input:focus {
@@ -1389,13 +1400,17 @@ button:focus-visible {
 
 .loop-inline-input {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   padding: 0;
   font-size: 18px;
   font-family: var(--font-elegant);
   color: var(--text-dark);
   border: none;
   background: transparent;
+  resize: none;
   line-height: 1.5;
+  field-sizing: content;
 }
 
 .loop-inline-input:focus {
@@ -1682,7 +1697,7 @@ button:focus-visible {
   gap: 6px;
 }
 
-.task-item {
+.widget-task-list .task-item {
   font-size: 13px;
   color: #333;
   padding: 8px;

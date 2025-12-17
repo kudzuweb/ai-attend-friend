@@ -164,8 +164,7 @@ export default function TasklistView() {
                         />
                     )}
 
-                    <input
-                        type="text"
+                    <textarea
                         defaultValue={task.content}
                         onBlur={(e) => {
                             if (e.target.value !== task.content) {
@@ -177,10 +176,12 @@ export default function TasklistView() {
                             }
                         }}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
                                 e.currentTarget.blur();
                             }
                         }}
+                        rows={1}
                         className={`task-inline-input ${task.isCompleted ? 'completed' : ''}`}
                     />
 
@@ -281,17 +282,18 @@ export default function TasklistView() {
 
                 <div className="unified-card">
                     <div className="card-input-row">
-                        <input
-                            type="text"
+                        <textarea
                             value={newTaskContent}
                             onChange={(e) => setNewTaskContent(e.target.value)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' && newTaskContent.trim()) {
+                                if (e.key === 'Enter' && !e.shiftKey && newTaskContent.trim()) {
+                                    e.preventDefault();
                                     handleAddTask();
                                 }
                             }}
                             placeholder="Add a new task..."
                             className="card-input"
+                            rows={1}
                         />
                         <button onClick={handleAddTask} className="btn-primary">Add</button>
                     </div>
@@ -341,15 +343,18 @@ export default function TasklistView() {
 
             <div className="unified-card">
                 <div className="card-input-row">
-                    <input
-                        type="text"
+                    <textarea
                         value={newTaskContent}
                         onChange={(e) => setNewTaskContent(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddTask();
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddTask();
+                            }
                         }}
                         placeholder="Add a new task..."
                         className="card-input"
+                        rows={1}
                     />
                     <button onClick={handleAddTask} className="btn-primary">Add</button>
                 </div>

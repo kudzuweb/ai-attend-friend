@@ -29,6 +29,13 @@ export default function OpenLoopsView() {
     }
 
     async function handleDelete(loopId: string) {
+        if (confirm('Delete this loop?')) {
+            await window.api.deleteOpenLoop(loopId);
+            await loadLoops();
+        }
+    }
+
+    async function handleDeleteSilent(loopId: string) {
         await window.api.deleteOpenLoop(loopId);
         await loadLoops();
     }
@@ -48,7 +55,7 @@ export default function OpenLoopsView() {
         });
 
         if (result.ok) {
-            await handleDelete(loop.id);
+            await handleDeleteSilent(loop.id);
         }
     }
 
@@ -65,15 +72,18 @@ export default function OpenLoopsView() {
 
             <div className="unified-card">
                 <div className="card-input-row">
-                    <input
-                        type="text"
+                    <textarea
                         value={newLoopContent}
                         onChange={(e) => setNewLoopContent(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleAddLoop();
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddLoop();
+                            }
                         }}
                         placeholder="What's on your mind?"
                         className="card-input-lg"
+                        rows={1}
                     />
                     <button onClick={handleAddLoop} className="btn-primary">Add</button>
                 </div>
@@ -92,21 +102,24 @@ export default function OpenLoopsView() {
                                         <line x1="1" y1="7" x2="13" y2="7" />
                                     </svg>
                                 </div>
-                                <input
-                                    type="text"
+                                <textarea
                                     defaultValue={loop.content}
                                     onBlur={(e) => {
                                         if (e.target.value !== loop.content) {
                                             if (!e.target.value.trim()) {
-                                                handleDelete(loop.id);
+                                                handleDeleteSilent(loop.id);
                                             } else {
                                                 handleUpdateLoop(loop.id, e.target.value);
                                             }
                                         }
                                     }}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') e.currentTarget.blur();
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                        }
                                     }}
+                                    rows={1}
                                     className="loop-inline-input"
                                 />
                                 <div className="loop-actions">

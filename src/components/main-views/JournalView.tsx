@@ -55,8 +55,6 @@ export default function JournalView() {
     }
 
     async function handleUpdateEntry(entryId: string, newContent: string) {
-        if (!newContent.trim()) return;
-
         const result = await window.api.updateJournalEntry(entryId, {
             content: newContent.trim(),
         });
@@ -71,6 +69,11 @@ export default function JournalView() {
             await window.api.deleteJournalEntry(entryId);
             await loadEntries();
         }
+    }
+
+    async function handleDeleteSilent(entryId: string) {
+        await window.api.deleteJournalEntry(entryId);
+        await loadEntries();
     }
 
     return (
@@ -132,7 +135,11 @@ export default function JournalView() {
                                     defaultValue={entry.content}
                                     onBlur={(e) => {
                                         if (e.target.value !== entry.content) {
-                                            handleUpdateEntry(entry.id, e.target.value);
+                                            if (!e.target.value.trim()) {
+                                                handleDeleteSilent(entry.id);
+                                            } else {
+                                                handleUpdateEntry(entry.id, e.target.value);
+                                            }
                                         }
                                     }}
                                     className="entry-textarea"

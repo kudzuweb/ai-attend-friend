@@ -190,6 +190,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('openloop:archive', loopId),
     updateOpenLoop: (loopId, updates) =>
         ipcRenderer.invoke('openloop:update', loopId, updates),
+    deleteOpenLoop: (loopId) =>
+        ipcRenderer.invoke('openloop:delete', loopId),
     // Journal APIs
     getJournalEntries: (filterSessionId) =>
         ipcRenderer.invoke('journal:getAll', filterSessionId),

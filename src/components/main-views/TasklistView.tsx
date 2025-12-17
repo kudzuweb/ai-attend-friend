@@ -63,10 +63,16 @@ export default function TasklistView() {
         }
     }
 
-    async function handleUpdateTask(taskId: string, newContent: string) {
-        if (!newContent.trim()) return;
-        await window.api.updateTask(taskId, { content: newContent.trim() });
+    async function handleDeleteSilent(taskId: string) {
+        await window.api.deleteTask(taskId);
         await loadTasks();
+    }
+
+    async function handleUpdateTask(taskId: string, newContent: string) {
+        const result = await window.api.updateTask(taskId, { content: newContent.trim() });
+        if (result.ok) {
+            await loadTasks();
+        }
     }
 
     function handleToggleTaskSelection(taskId: string) {
@@ -163,7 +169,11 @@ export default function TasklistView() {
                         defaultValue={task.content}
                         onBlur={(e) => {
                             if (e.target.value !== task.content) {
-                                handleUpdateTask(task.id, e.target.value);
+                                if (!e.target.value.trim()) {
+                                    handleDeleteSilent(task.id);
+                                } else {
+                                    handleUpdateTask(task.id, e.target.value);
+                                }
                             }
                         }}
                         onKeyDown={(e) => {

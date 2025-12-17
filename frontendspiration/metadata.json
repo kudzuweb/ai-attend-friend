@@ -1,0 +1,5 @@
+{
+  "name": "AI Attend Friend - Frontend Revamp",
+  "description": "A revamped frontend for the AI Attend Friend Electron app, featuring a friendly circular widget timer and a clean task management panel with AI integration.",
+  "requestFramePermissions": []
+}

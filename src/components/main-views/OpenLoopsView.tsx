@@ -33,10 +33,16 @@ export default function OpenLoopsView() {
         await loadLoops();
     }
 
-    async function handleUpdateLoop(loopId: string, newContent: string) {
-        if (!newContent.trim()) return;
-        await window.api.updateOpenLoop(loopId, { content: newContent.trim() });
+    async function handleDelete(loopId: string) {
+        await window.api.deleteOpenLoop(loopId);
         await loadLoops();
+    }
+
+    async function handleUpdateLoop(loopId: string, newContent: string) {
+        const result = await window.api.updateOpenLoop(loopId, { content: newContent.trim() });
+        if (result.ok) {
+            await loadLoops();
+        }
     }
 
     async function handleConvertToTask(loop: OpenLoop) {
@@ -96,7 +102,11 @@ export default function OpenLoopsView() {
                                     defaultValue={loop.content}
                                     onBlur={(e) => {
                                         if (e.target.value !== loop.content) {
-                                            handleUpdateLoop(loop.id, e.target.value);
+                                            if (!e.target.value.trim()) {
+                                                handleDelete(loop.id);
+                                            } else {
+                                                handleUpdateLoop(loop.id, e.target.value);
+                                            }
                                         }
                                     }}
                                     onKeyDown={(e) => {

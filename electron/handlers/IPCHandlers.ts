@@ -387,6 +387,22 @@ export function registerIPCHandlers(
         }
     });
 
+    ipcMain.handle('openloop:update', async (_evt, loopId: string, updates: { content: string }) => {
+        try {
+            return await openLoopStorage.updateLoop(loopId, updates);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to update loop' };
+        }
+    });
+
+    ipcMain.handle('openloop:delete', async (_evt, loopId: string) => {
+        try {
+            return await openLoopStorage.deleteLoop(loopId);
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to delete loop' };
+        }
+    });
+
     // ========== Journal Handlers ==========
 
     ipcMain.handle('journal:getAll', async (_evt, filterSessionId?: string) => {

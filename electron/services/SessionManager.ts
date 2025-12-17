@@ -17,7 +17,7 @@ type SessionPhase =
         sessionDate: string;
         endTime: number;
         focusGoal: string;
-        tasks?: [string, string, string];
+        tasks?: string[];
     }
     | {
         phase: 'paused';
@@ -25,7 +25,7 @@ type SessionPhase =
         sessionDate: string;
         endTime: number;
         focusGoal: string;
-        tasks?: [string, string, string];
+        tasks?: string[];
         pauseType: 'system' | 'user';
         suspendTime: number;
     }
@@ -35,7 +35,7 @@ type SessionPhase =
         sessionDate: string;
         endTime: number;
         focusGoal: string;
-        tasks?: [string, string, string];
+        tasks?: string[];
         pauseType: 'system' | 'user';
         suspendTime: number;
         wakeTime: number;
@@ -221,7 +221,7 @@ export class SessionManager {
     /**
      * Start a new session
      */
-    async startSession(lengthMs: number, focusGoal: string, tasks?: [string, string, string]): Promise<{ ok: true } | { ok: false; error: string }> {
+    async startSession(lengthMs: number, focusGoal: string, tasks?: string[]): Promise<{ ok: true } | { ok: false; error: string }> {
         if (this.sessionPhase.phase !== 'idle') {
             return { ok: false, error: 'session already active' };
         }

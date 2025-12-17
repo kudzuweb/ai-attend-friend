@@ -91,4 +91,31 @@ export class OpenLoopStorage {
         await this.saveLoops(loops);
         return { ok: true };
     }
+
+    async updateLoop(loopId: string, updates: { content: string }): Promise<{ ok: boolean }> {
+        const loops = await this.loadLoops();
+        const loop = loops.find(l => l.id === loopId);
+
+        if (!loop) {
+            return { ok: false };
+        }
+
+        loop.content = updates.content;
+
+        await this.saveLoops(loops);
+        return { ok: true };
+    }
+
+    async deleteLoop(loopId: string): Promise<{ ok: boolean }> {
+        const loops = await this.loadLoops();
+        const index = loops.findIndex(l => l.id === loopId);
+
+        if (index === -1) {
+            return { ok: false };
+        }
+
+        loops.splice(index, 1);
+        await this.saveLoops(loops);
+        return { ok: true };
+    }
 }

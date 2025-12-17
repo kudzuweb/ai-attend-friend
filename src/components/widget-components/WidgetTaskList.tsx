@@ -1,19 +1,21 @@
 interface WidgetTaskListProps {
-  tasks: [string, string, string];
+  tasks: string[];
 }
 
 export default function WidgetTaskList({ tasks }: WidgetTaskListProps) {
+  const nonEmptyTasks = tasks.filter(t => t);
+
+  if (nonEmptyTasks.length === 0) {
+    return null;
+  }
+
   return (
     <div className="widget-task-list">
       <div className="task-list-header">Tasks</div>
       <ul className="task-items">
-        {tasks.map((task, index) => (
+        {nonEmptyTasks.map((task, index) => (
           <li key={index} className="task-item">
-            {task ? (
-              <span className="task-content">{task}</span>
-            ) : (
-              <span className="task-empty">-</span>
-            )}
+            <span className="task-content">{task}</span>
           </li>
         ))}
       </ul>

@@ -1,4 +1,5 @@
 import { ipcMain, desktopCapturer, shell, systemPreferences, app } from 'electron';
+import type { SessionTask } from '../types/session.types.js';
 import type { WindowManager } from '../services/WindowManager.js';
 import type { SessionManager } from '../services/SessionManager.js';
 import type { ScreenshotService } from '../services/ScreenshotService.js';
@@ -126,7 +127,7 @@ export function registerIPCHandlers(
 
     // ========== Session Handlers ==========
 
-    ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => {
+    ipcMain.handle('session:start', async (_evt, lengthMs: number, focusGoal: string, tasks?: SessionTask[]) => {
         return await sessionManager.startSession(lengthMs, focusGoal, tasks);
     });
 
@@ -155,6 +156,11 @@ export function registerIPCHandlers(
     ipcMain.handle('session:pause', () => {
         console.log('[IPCHandlers] session:pause called');
         sessionManager.pauseSession();
+    });
+
+    ipcMain.handle('session:resume', () => {
+        console.log('[IPCHandlers] session:resume called');
+        sessionManager.resumeSession();
     });
 
     ipcMain.handle('session:handle-reflection', async (_evt, payload: { action: 'resume' | 'end', reflection: string }) => {
@@ -206,6 +212,43 @@ export function registerIPCHandlers(
             }
         } catch (e: any) {
             return { ok: false as const, error: e?.message ?? 'unknown error' };
+        }
+    });
+
+    ipcMain.handle('session:save-distraction-reflection', async (_evt, payload: {
+        content: string;
+        reasonType: string;
+    }) => {
+        console.log('[IPCHandlers] session:save-distraction-reflection called');
+        console.log('[IPCHandlers] payload.content:', payload.content);
+        try {
+            const { id: sessionId } = sessionManager.getCurrentSession();
+
+            const entry = await journalStorage.createEntry({
+                content: payload.content,
+                sessionId: sessionId || null,
+                tags: [`distraction:${payload.reasonType}`],
+            });
+
+            console.log('[IPCHandlers] created entry:', entry.id, 'content:', entry.content);
+            return { ok: true as const, entryId: entry.id };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to save distraction reflection' };
+        }
+    });
+
+    ipcMain.handle('window:open-reflection-entry', async (_evt, entryId: string) => {
+        console.log('[IPCHandlers] window:open-reflection-entry called');
+        try {
+            const mainWindow = windowManager.getMainWindow();
+            if (mainWindow) {
+                mainWindow.restore();
+                mainWindow.focus();
+                mainWindow.webContents.send('navigate-to-reflection', entryId);
+            }
+            return { ok: true as const };
+        } catch (e: any) {
+            return { ok: false as const, error: e?.message ?? 'failed to open reflection entry' };
         }
     });
 
@@ -289,6 +332,10 @@ export function registerIPCHandlers(
     ipcMain.handle('task:toggleComplete', async (_evt, taskId: string) => {
         try {
             const result = await taskStorage.toggleComplete(taskId);
+            if (result.ok && result.isCompleted !== undefined) {
+                sessionManager.updateTaskCompletion(taskId, result.isCompleted);
+                windowManager.broadcastTaskUpdated(taskId);
+            }
             return result;
         } catch (e: any) {
             return { ok: false as const, error: e?.message ?? 'failed to toggle task completion' };

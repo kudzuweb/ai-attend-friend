@@ -61,14 +61,23 @@ declare global {
         content: string;
     };
 
+    // Session task type (subset of Task for widget display)
+    type SessionTask = {
+        id: string;
+        content: string;
+        isCompleted: boolean;
+    };
+
     // session state type
     type SessionState = {
         isActive: boolean;
+        isPaused?: boolean;
+        suspendTime?: number;
         lengthMs: number;
         startTime: number;
         endTime: number;
         focusGoal: string;
-        tasks?: [string, string, string];
+        tasks?: SessionTask[];
     };
 
     // stored session with summaries grouped by date
@@ -78,7 +87,7 @@ declare global {
         endTime: number;
         lengthMs: number;
         focusGoal: string;
-        tasks?: [string, string, string];
+        tasks?: SessionTask[];
         interruptions: SessionInterruption[];
         distractions: DistractionReason[];
         reflections: Reflection[];
@@ -110,7 +119,7 @@ declare global {
             } | { ok: false; error: string }>;
             getSettings: () => Promise<{ windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean }>;
             updateSettings: (partial: { demoMode?: boolean; tasksEnabled?: boolean }) => Promise<{ windowPosition: 'top-left' | 'top-center' | 'top-right'; demoMode: boolean; tasksEnabled: boolean }>;
-            sessionStart: (lengthMs: number, focusGoal: string, tasks?: [string, string, string]) => Promise<{ ok: true } | { ok: false; error: string }>;
+            sessionStart: (lengthMs: number, focusGoal: string, tasks?: SessionTask[]) => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionGetState: () => Promise<SessionState>;
             sessionStop: () => Promise<{ ok: true } | { ok: false; error: string }>;
             sessionListByDate: (date: string) => Promise<{ ok: true; sessions: StoredSession[] } | { ok: false; error: string }>;
@@ -123,6 +132,7 @@ declare global {
             handleReflection: (action: 'resume' | 'end', reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             saveDistractionReason: (reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
             pauseSession: () => Promise<void>;
+            resumeSession: () => Promise<void>;
             pauseSessionForStuck: () => Promise<void>;
             resumeAfterStuck: (reflection: string, pauseDurationMs: number) => Promise<{ ok: true } | { ok: false; error: string }>;
             endAfterStuck: (reflection: string) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -136,7 +146,8 @@ declare global {
                 parentTaskId: string | null;
                 sourceLoopId?: string;
             }) => Promise<{ ok: true; task: Task } | { ok: false; error: string }>;
-            toggleTaskComplete: (taskId: string) => Promise<{ ok: boolean }>;
+            toggleTaskComplete: (taskId: string) => Promise<{ ok: boolean; isCompleted?: boolean }>;
+            onTaskUpdated: (callback: (taskId: string) => void) => () => void;
             updateTask: (taskId: string, payload: { content: string }) => Promise<{ ok: boolean }>;
             deleteTask: (taskId: string) => Promise<{ ok: boolean }>;
             restoreTask: (taskId: string) => Promise<{ ok: boolean }>;
@@ -156,6 +167,13 @@ declare global {
             }) => Promise<{ ok: true; entry: JournalEntry } | { ok: false; error: string }>;
             updateJournalEntry: (entryId: string, payload: { content: string }) => Promise<{ ok: boolean }>;
             deleteJournalEntry: (entryId: string) => Promise<{ ok: boolean }>;
+            // Distraction reflection APIs
+            saveDistractionReflection: (payload: {
+                content: string;
+                reasonType: string;
+            }) => Promise<{ ok: true; entryId: string } | { ok: false; error: string }>;
+            openReflectionEntry: (entryId: string) => Promise<{ ok: boolean }>;
+            onNavigateToReflection: (callback: (entryId: string) => void) => () => void;
             // Window control APIs
             showSessionWidget: () => Promise<void>;
             hideSessionWidget: () => Promise<void>;

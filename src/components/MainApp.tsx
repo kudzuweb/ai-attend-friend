@@ -8,6 +8,16 @@ type MainView = 'openloops' | 'focus' | 'reflection' | 'settings';
 
 export default function MainApp() {
     const [currentView, setCurrentView] = useState<MainView>('openloops');
+    const [focusedEntryId, setFocusedEntryId] = useState<string | null>(null);
+
+    // Listen for navigation to reflection entry (from distraction flow)
+    useEffect(() => {
+        const unsubscribe = window.api.onNavigateToReflection((entryId: string) => {
+            setCurrentView('reflection');
+            setFocusedEntryId(entryId);
+        });
+        return unsubscribe;
+    }, []);
 
     // Listen for screenshot capture requests from main process
     useEffect(() => {
@@ -80,7 +90,12 @@ export default function MainApp() {
             <div className="main-content">
                 {currentView === 'openloops' && <OpenLoopsView onNavigate={setCurrentView} />}
                 {currentView === 'focus' && <TasklistView />}
-                {currentView === 'reflection' && <JournalView />}
+                {currentView === 'reflection' && (
+                    <JournalView
+                        focusedEntryId={focusedEntryId}
+                        onFocusHandled={() => setFocusedEntryId(null)}
+                    />
+                )}
                 {currentView === 'settings' && <SettingsView />}
             </div>
         </div>

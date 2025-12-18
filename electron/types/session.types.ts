@@ -2,13 +2,19 @@
  * Shared type definitions for session management
  */
 
+export interface SessionTask {
+    id: string;
+    content: string;
+    isCompleted: boolean;
+}
+
 export interface SessionState {
     isActive: boolean;
     lengthMs: number;
     startTime: number;
     endTime: number;
     focusGoal: string;
-    tasks?: string[];
+    tasks?: SessionTask[];
 }
 
 export interface SessionInterruption {
@@ -34,7 +40,7 @@ export interface StoredSession {
     endTime: number;
     lengthMs: number;
     focusGoal: string;
-    tasks?: string[];
+    tasks?: SessionTask[];
     interruptions: SessionInterruption[];
     distractions: DistractionReason[];
     reflections: Reflection[];

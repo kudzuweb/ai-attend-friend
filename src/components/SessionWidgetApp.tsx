@@ -3,22 +3,26 @@ import TimerDisplay from './widget-components/TimerDisplay';
 import WidgetTaskList from './widget-components/WidgetTaskList';
 import InterruptionReflection from './widget-components/InterruptionReflection';
 import StuckPrompt from './widget-components/StuckPrompt';
-import DistractionPrompt from './widget-components/DistractionPrompt';
+import DistractionPrompt, { type PromptKey } from './widget-components/DistractionPrompt';
+import DistractionReflection from './widget-components/DistractionReflection';
 
 interface SessionState {
   isActive: boolean;
+  isPaused?: boolean;
+  suspendTime?: number;
   lengthMs: number;
   startTime: number;
   endTime: number;
   focusGoal: string;
-  tasks?: [string, string, string];
+  tasks?: SessionTask[];
 }
 
 type ModalState =
   | { type: 'none' }
   | { type: 'stuck'; startTime: number }
   | { type: 'interruption'; durationMs: number }
-  | { type: 'distraction' };
+  | { type: 'distraction' }
+  | { type: 'distraction_reflection'; reasonType: PromptKey; startTime: number };
 
 // UI state machine for widget lifecycle
 type WidgetUIPhase =
@@ -134,6 +138,10 @@ export default function SessionWidgetApp() {
     await window.api.pauseSession();
   }
 
+  async function handleResumeSession() {
+    await window.api.resumeSession();
+  }
+
   async function handleInterruptionResume(reflection: string) {
     await window.api.handleInterruption('resume', reflection);
     setModalState({ type: 'none' });
@@ -165,20 +173,48 @@ export default function SessionWidgetApp() {
     // Note: Phase transition to cleaning_up handled by handleSessionStateUpdate
   }
 
-  async function handleDistractionResume(reason: string) {
-    if (reason.trim()) {
-      await window.api.saveDistractionReason(reason);
+  async function handleDistractionReasonSelected(reasonType: PromptKey) {
+    const startTime = Date.now();
+    await window.api.pauseSessionForStuck();
+    setModalState({ type: 'distraction_reflection', reasonType, startTime });
+  }
+
+  async function handleDistractionReflectionResume(formattedContent: string, pauseDurationMs: number) {
+    if (formattedContent.trim() && modalState.type === 'distraction_reflection') {
+      await window.api.saveDistractionReflection({
+        content: formattedContent,
+        reasonType: modalState.reasonType,
+      });
     }
+    await window.api.resumeAfterStuck(formattedContent, pauseDurationMs);
     setModalState({ type: 'none' });
   }
 
-  async function handleDistractionEnd(reason: string) {
-    if (reason.trim()) {
-      await window.api.saveDistractionReason(reason);
+  async function handleDistractionReflectionEnd(formattedContent: string) {
+    if (formattedContent.trim() && modalState.type === 'distraction_reflection') {
+      await window.api.saveDistractionReflection({
+        content: formattedContent,
+        reasonType: modalState.reasonType,
+      });
     }
-    await window.api.sessionStop();
+    await window.api.endAfterStuck(formattedContent);
     setModalState({ type: 'none' });
     // Note: Phase transition to cleaning_up handled by handleSessionStateUpdate
+  }
+
+  async function handleDistractionOpenInMain(formattedContent: string, reasonType: PromptKey) {
+    console.log('[SessionWidgetApp] handleDistractionOpenInMain received:', formattedContent);
+    if (formattedContent.trim()) {
+      const result = await window.api.saveDistractionReflection({
+        content: formattedContent,
+        reasonType,
+      });
+      console.log('[SessionWidgetApp] saveDistractionReflection result:', result);
+      if (result.ok) {
+        await window.api.openReflectionEntry(result.entryId);
+      }
+    }
+    // Keep modal open - user can resume/end from main window later
   }
 
   // Guard: only show modals when in running phase
@@ -214,8 +250,22 @@ export default function SessionWidgetApp() {
     return (
       <div className="session-widget">
         <DistractionPrompt
-          onResume={handleDistractionResume}
-          onEnd={handleDistractionEnd}
+          onReasonSelected={handleDistractionReasonSelected}
+        />
+      </div>
+    );
+  }
+
+  // Show distraction reflection UI after user selects a reason
+  if (modalState.type === 'distraction_reflection' && isRunning) {
+    return (
+      <div className="session-widget">
+        <DistractionReflection
+          reasonType={modalState.reasonType}
+          startTime={modalState.startTime}
+          onResume={handleDistractionReflectionResume}
+          onEnd={handleDistractionReflectionEnd}
+          onOpenInMain={handleDistractionOpenInMain}
         />
       </div>
     );
@@ -234,19 +284,36 @@ export default function SessionWidgetApp() {
 
   // Running phase - show timer and controls
   const { sessionState } = uiPhase;
-  const timeElapsed = currentTime - sessionState.startTime;
+  // When paused, use suspendTime to freeze the timer display
+  const effectiveTime = sessionState.suspendTime || currentTime;
+  const timeElapsed = effectiveTime - sessionState.startTime;
   const timeRemaining = Math.max(0, sessionState.lengthMs - timeElapsed);
 
   return (
     <div className="session-widget">
       <div className="widget-header">
-        <div className="focus-goal">{sessionState.focusGoal}</div>
+        <button
+          className="play-pause-btn"
+          onClick={sessionState.isPaused ? handleResumeSession : handlePauseSession}
+          title={sessionState.isPaused ? "Resume" : "Pause"}
+        >
+          {sessionState.isPaused ? (
+            <svg className="play-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          ) : (
+            <svg className="pause-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          )}
+        </button>
+        <TimerDisplay
+          timeRemaining={timeRemaining}
+          totalTime={sessionState.lengthMs}
+        />
       </div>
 
-      <TimerDisplay
-        timeRemaining={timeRemaining}
-        totalTime={sessionState.lengthMs}
-      />
+      <div className="focus-goal">"{sessionState.focusGoal}"</div>
 
       <WidgetTaskList tasks={sessionState.tasks || []} />
 
@@ -256,21 +323,14 @@ export default function SessionWidgetApp() {
           onClick={handleStuckClick}
           title="I'm stuck"
         >
-          Stuck
-        </button>
-        <button
-          className="widget-btn widget-btn-pause"
-          onClick={handlePauseSession}
-          title="Pause session"
-        >
-          Pause
+          Stuck?
         </button>
         <button
           className="widget-btn widget-btn-stop"
           onClick={handleStopSession}
-          title="Stop session"
+          title="End session"
         >
-          Stop
+          End session
         </button>
       </div>
     </div>

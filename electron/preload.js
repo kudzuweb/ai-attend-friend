@@ -152,6 +152,8 @@ const api = Object.freeze({
         ipcRenderer.invoke('session:save-distraction-reason', reason),
     pauseSession: () =>
         ipcRenderer.invoke('session:pause'),
+    resumeSession: () =>
+        ipcRenderer.invoke('session:resume'),
     pauseSessionForStuck: () =>
         ipcRenderer.invoke('session:pause-for-stuck'),
     resumeAfterStuck: (reflection, pauseDurationMs) =>
@@ -169,6 +171,11 @@ const api = Object.freeze({
         ipcRenderer.invoke('task:create', payload),
     toggleTaskComplete: (taskId) =>
         ipcRenderer.invoke('task:toggleComplete', taskId),
+    onTaskUpdated: (callback) => {
+        const handler = (_event, taskId) => callback(taskId);
+        ipcRenderer.on('task:updated', handler);
+        return () => ipcRenderer.removeListener('task:updated', handler);
+    },
     updateTask: (taskId, payload) =>
         ipcRenderer.invoke('task:update', taskId, payload),
     deleteTask: (taskId) =>
@@ -201,6 +208,16 @@ const api = Object.freeze({
         ipcRenderer.invoke('journal:update', entryId, payload),
     deleteJournalEntry: (entryId) =>
         ipcRenderer.invoke('journal:delete', entryId),
+    // Distraction reflection APIs
+    saveDistractionReflection: (payload) =>
+        ipcRenderer.invoke('session:save-distraction-reflection', payload),
+    openReflectionEntry: (entryId) =>
+        ipcRenderer.invoke('window:open-reflection-entry', entryId),
+    onNavigateToReflection: (callback) => {
+        const handler = (_event, entryId) => callback(entryId);
+        ipcRenderer.on('navigate-to-reflection', handler);
+        return () => ipcRenderer.removeListener('navigate-to-reflection', handler);
+    },
     // Window control APIs
     showSessionWidget: () =>
         ipcRenderer.invoke('window:show-session-widget'),

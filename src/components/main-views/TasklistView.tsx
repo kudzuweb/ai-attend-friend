@@ -13,6 +13,12 @@ export default function TasklistView() {
 
     useEffect(() => {
         loadTasks();
+
+        const unsubscribe = window.api.onTaskUpdated(() => {
+            loadTasks();
+        });
+
+        return unsubscribe;
     }, []);
 
     async function loadTasks() {
@@ -78,11 +84,27 @@ export default function TasklistView() {
     }
 
     function handleToggleTaskSelection(taskId: string) {
-        setSelectedTaskIds(prev =>
-            prev.includes(taskId)
-                ? prev.filter(id => id !== taskId)
-                : [...prev, taskId]
-        );
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        // Get all subtask IDs (recursive helper to get nested subtasks)
+        function getAllSubtaskIds(parentId: string): string[] {
+            const subtasks = tasks.filter(t => t.parentTaskId === parentId);
+            return subtasks.flatMap(s => [s.id, ...getAllSubtaskIds(s.id)]);
+        }
+
+        const subtaskIds = getAllSubtaskIds(taskId);
+        const allIds = [taskId, ...subtaskIds];
+
+        setSelectedTaskIds(prev => {
+            if (prev.includes(taskId)) {
+                // Deselecting: remove task and all subtasks
+                return prev.filter(id => !allIds.includes(id));
+            } else {
+                // Selecting: add task and all subtasks
+                return [...new Set([...prev, ...allIds])];
+            }
+        });
     }
 
     async function handleStartSession() {
@@ -101,11 +123,15 @@ export default function TasklistView() {
             return;
         }
 
-        const taskContents = selectedTasks.map(t => t.content);
+        const sessionTasks: SessionTask[] = selectedTasks.map(t => ({
+            id: t.id,
+            content: t.content,
+            isCompleted: t.isCompleted,
+        }));
 
         const lengthMs = sessionLength * 60 * 1000;
 
-        const result = await window.api.sessionStart(lengthMs, focusGoal, taskContents);
+        const result = await window.api.sessionStart(lengthMs, focusGoal, sessionTasks);
 
         if (result.ok) {
             // Show session widget first to ensure seamless transition
@@ -155,6 +181,7 @@ export default function TasklistView() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleToggleTaskSelection(task.id)}
+                            onClick={(e) => e.stopPropagation()}
                             className="task-checkbox"
                         />
                     ) : (
@@ -162,6 +189,7 @@ export default function TasklistView() {
                             type="checkbox"
                             checked={task.isCompleted}
                             onChange={() => handleToggleComplete(task.id)}
+                            onClick={(e) => e.stopPropagation()}
                             className="task-checkbox"
                         />
                     )}
@@ -245,6 +273,25 @@ export default function TasklistView() {
     if (sessionSetupMode) {
         return (
             <div className="tasklist-view">
+                <button
+                    className="back-arrow-btn"
+                    onClick={handleCancelSessionSetup}
+                    title="Back to tasks"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <button
+                    className="start-session-round-btn"
+                    onClick={handleStartSession}
+                    title="Start Session"
+                >
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
                 <div className="view-header">
                     <h1>Start a Session</h1>
                     <p className="view-description">Select tasks and set your focus goal</p>
@@ -258,7 +305,7 @@ export default function TasklistView() {
                             value={focusGoal}
                             onChange={(e) => setFocusGoal(e.target.value)}
                             placeholder="What will you focus on?"
-                            className="task-input-large"
+                            className="session-focus-input"
                         />
                     </div>
 
@@ -273,8 +320,20 @@ export default function TasklistView() {
                             }}
                             min="1"
                             max="180"
-                            className="task-input-large"
+                            className="session-length-input"
                         />
+                        <div className="duration-presets">
+                            {[25, 30, 45, 60].map(mins => (
+                                <button
+                                    key={mins}
+                                    type="button"
+                                    className={`preset-btn ${sessionLength === mins ? 'active' : ''}`}
+                                    onClick={() => setSessionLength(mins)}
+                                >
+                                    {mins}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="form-section">
@@ -283,27 +342,10 @@ export default function TasklistView() {
                 </div>
 
                 <div className="unified-card">
-                    <div className="card-input-row">
-                        <textarea
-                            value={newTaskContent}
-                            onChange={(e) => setNewTaskContent(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey && newTaskContent.trim()) {
-                                    e.preventDefault();
-                                    handleAddTask();
-                                }
-                            }}
-                            placeholder="Add a new task..."
-                            className="card-input"
-                            rows={1}
-                        />
-                        <button onClick={handleAddTask} className="btn-primary">Add</button>
-                    </div>
-
                     <div className="card-items">
                         {topLevelTasks.length === 0 ? (
                             <div className="empty-state">
-                                <p>No tasks yet. Add one above to get started!</p>
+                                <p>No tasks available</p>
                             </div>
                         ) : (
                             topLevelTasks.map(task => renderTask(task))
@@ -311,18 +353,6 @@ export default function TasklistView() {
                     </div>
                 </div>
 
-                <div className="session-setup-actions" style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-                    <button onClick={handleStartSession} className="btn-primary btn-with-icon">
-                        <span>Start Session</span>
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </button>
-                    <button onClick={handleCancelSessionSetup} className="btn-small">
-                        Cancel
-                    </button>
-                </div>
             </div>
         );
     }
@@ -330,8 +360,9 @@ export default function TasklistView() {
     return (
         <div className="tasklist-view">
             <div className="view-header">
-                <div className="view-header-row">
-                    <h1>Focus</h1>
+                <h1>Focus</h1>
+                <p className="view-description">Set intentions for your session</p>
+                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
                     <button onClick={() => setSessionSetupMode(true)} className="btn-primary btn-with-icon">
                         <span>Start Session</span>
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -340,7 +371,6 @@ export default function TasklistView() {
                         </svg>
                     </button>
                 </div>
-                <p className="view-description">Set intentions for your session</p>
             </div>
 
             <div className="unified-card">

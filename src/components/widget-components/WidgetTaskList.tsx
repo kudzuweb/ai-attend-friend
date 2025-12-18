@@ -1,21 +1,33 @@
 interface WidgetTaskListProps {
-  tasks: string[];
+  tasks: SessionTask[];
 }
 
 export default function WidgetTaskList({ tasks }: WidgetTaskListProps) {
-  const nonEmptyTasks = tasks.filter(t => t);
-
-  if (nonEmptyTasks.length === 0) {
+  if (tasks.length === 0) {
     return null;
+  }
+
+  async function handleToggle(taskId: string) {
+    await window.api.toggleTaskComplete(taskId);
   }
 
   return (
     <div className="widget-task-list">
       <div className="task-list-header">Tasks</div>
       <ul className="task-items">
-        {nonEmptyTasks.map((task, index) => (
-          <li key={index} className="task-item">
-            <span className="task-content">{task}</span>
+        {tasks.map((task) => (
+          <li key={task.id} className="task-item">
+            <div className="task-row">
+              <input
+                type="checkbox"
+                checked={task.isCompleted}
+                onChange={() => handleToggle(task.id)}
+                className="task-checkbox"
+              />
+              <span className={`task-content ${task.isCompleted ? 'completed' : ''}`}>
+                {task.content}
+              </span>
+            </div>
           </li>
         ))}
       </ul>

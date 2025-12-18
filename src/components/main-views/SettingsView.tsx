@@ -42,7 +42,7 @@ export default function SettingsView() {
                         </label>
                     </div>
                     <p className="setting-description">
-                        When enabled, auto-analysis is disabled. Use this for testing without AI API calls.
+                        Fast mode for testing: screenshots every 3s, analysis every 15s.
                     </p>
                 </div>
 

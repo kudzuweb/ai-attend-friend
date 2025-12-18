@@ -6,6 +6,11 @@
 export const SCREENSHOT_INTERVAL_MS = 30_000; // 30 seconds
 export const AUTO_ANALYSIS_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
+// Demo mode intervals (fast loop for testing)
+export const DEMO_SCREENSHOT_INTERVAL_MS = 3_000; // 3 seconds
+export const DEMO_ANALYSIS_INTERVAL_MS = 15_000; // 15 seconds
+export const DEMO_SCREENSHOTS_LIMIT = 5;
+
 // Window dimensions
 export const MAIN_WINDOW_MIN_WIDTH = 800;
 export const MAIN_WINDOW_MIN_HEIGHT = 600;

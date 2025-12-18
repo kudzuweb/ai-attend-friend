@@ -6,7 +6,14 @@ import type { ScreenshotService } from './ScreenshotService.js';
 import type { AIAnalysisService } from './AIAnalysisService.js';
 import type { ConfigService } from './ConfigService.js';
 import type { CaptureOrchestrator } from './CaptureOrchestrator.js';
-import { AUTO_ANALYSIS_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT } from '../constants.js';
+import {
+    SCREENSHOT_INTERVAL_MS,
+    AUTO_ANALYSIS_INTERVAL_MS,
+    DEFAULT_RECENT_SCREENSHOTS_LIMIT,
+    DEMO_SCREENSHOT_INTERVAL_MS,
+    DEMO_ANALYSIS_INTERVAL_MS,
+    DEMO_SCREENSHOTS_LIMIT
+} from '../constants.js';
 
 // Session phase discriminated union - replaces multiple boolean flags
 type SessionPhase =
@@ -254,8 +261,10 @@ export class SessionManager {
             tasks,
         });
 
-        // Enable screenshot capture via orchestrator
-        await this.captureOrchestrator.enable();
+        // Enable screenshot capture with appropriate interval
+        const demoMode = this.configService.getDemoMode();
+        const captureInterval = demoMode ? DEMO_SCREENSHOT_INTERVAL_MS : SCREENSHOT_INTERVAL_MS;
+        await this.captureOrchestrator.enable(captureInterval);
 
         // Start the analysis timer
         this.startAnalysisTimer();
@@ -351,24 +360,27 @@ export class SessionManager {
     }
 
     /**
-     * Start the analysis timer if demo mode is OFF
+     * Start the analysis timer with appropriate intervals based on demo mode
      */
     private startAnalysisTimer(): void {
         this.stopAnalysisTimer();
 
-        const demoMode = this.configService.getDemoMode();
         const isActive = this.sessionPhase.phase === 'active';
-        if (demoMode || !isActive) {
-            console.log('[SessionManager] Analysis timer NOT started - demoMode:', demoMode, 'isActive:', isActive);
+        if (!isActive) {
+            console.log('[SessionManager] Analysis timer NOT started - session not active');
             return;
         }
 
-        console.log('[SessionManager] Starting auto-analysis timer (5 minutes)');
+        const demoMode = this.configService.getDemoMode();
+        const intervalMs = demoMode ? DEMO_ANALYSIS_INTERVAL_MS : AUTO_ANALYSIS_INTERVAL_MS;
+        const screenshotLimit = demoMode ? DEMO_SCREENSHOTS_LIMIT : DEFAULT_RECENT_SCREENSHOTS_LIMIT;
+
+        console.log(`[SessionManager] Starting analysis timer (${intervalMs / 1000}s interval, ${screenshotLimit} screenshots, demoMode: ${demoMode})`);
 
         this.analysisTimer = setInterval(async () => {
             console.log('[SessionManager] Auto-analysis triggered');
-            await this.handleDistractionAnalysis(DEFAULT_RECENT_SCREENSHOTS_LIMIT);
-        }, AUTO_ANALYSIS_INTERVAL_MS);
+            await this.handleDistractionAnalysis(screenshotLimit);
+        }, intervalMs);
     }
 
     /**
@@ -382,11 +394,20 @@ export class SessionManager {
     }
 
     /**
-     * Handle settings change - re-evaluate analysis timer state
+     * Handle settings change - re-evaluate timers and capture interval
      */
     handleSettingsChange(): void {
-        console.log('[SessionManager] Settings changed, re-evaluating analysis timer');
+        console.log('[SessionManager] Settings changed, re-evaluating timers');
+
+        // Restart analysis timer with new interval
         this.startAnalysisTimer();
+
+        // Update capture interval if session is running (any non-idle phase)
+        if (this.sessionPhase.phase !== 'idle' && this.sessionPhase.phase !== 'stopping') {
+            const demoMode = this.configService.getDemoMode();
+            const captureInterval = demoMode ? DEMO_SCREENSHOT_INTERVAL_MS : SCREENSHOT_INTERVAL_MS;
+            this.captureOrchestrator.setInterval(captureInterval);
+        }
     }
 
     /**

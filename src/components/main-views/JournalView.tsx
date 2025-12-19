@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 const reflectionPrompts = [
     "What's present for you right now?",
@@ -8,10 +8,17 @@ const reflectionPrompts = [
     "Take a breath. What's here?",
 ];
 
-export default function JournalView() {
+interface JournalViewProps {
+    focusedEntryId?: string | null;
+    onFocusHandled?: () => void;
+}
+
+export default function JournalView({ focusedEntryId, onFocusHandled }: JournalViewProps) {
     const [entries, setEntries] = useState<JournalEntry[]>([]);
     const [newEntryContent, setNewEntryContent] = useState('');
     const [filterMode, setFilterMode] = useState<'all' | 'sessions-only' | 'standalone'>('all');
+    const [highlightedEntryId, setHighlightedEntryId] = useState<string | null>(null);
+    const entriesListRef = useRef<HTMLDivElement>(null);
 
     const randomPlaceholder = useMemo(() =>
         reflectionPrompts[Math.floor(Math.random() * reflectionPrompts.length)],
@@ -21,6 +28,29 @@ export default function JournalView() {
         loadEntries();
     }, [filterMode]);
 
+    // Handle focusing on a specific entry (from distraction flow)
+    useEffect(() => {
+        if (focusedEntryId) {
+            console.log('[JournalView] focusedEntryId received:', focusedEntryId);
+            // Reload entries first to ensure the new entry is in the list
+            loadEntries().then(() => {
+                console.log('[JournalView] entries after reload:', entries.map(e => ({ id: e.id, content: e.content.substring(0, 100) })));
+                const targetEntry = entries.find(e => e.id === focusedEntryId);
+                console.log('[JournalView] target entry found:', targetEntry);
+                setTimeout(() => {
+                    const element = document.querySelector(`[data-entry-id="${focusedEntryId}"]`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setHighlightedEntryId(focusedEntryId);
+                        // Remove highlight after animation
+                        setTimeout(() => setHighlightedEntryId(null), 2000);
+                    }
+                    onFocusHandled?.();
+                }, 100);
+            });
+        }
+    }, [focusedEntryId]);
+
     async function loadEntries() {
         let result;
         if (filterMode === 'sessions-only') {
@@ -28,6 +58,7 @@ export default function JournalView() {
         } else {
             result = await window.api.getJournalEntries();
         }
+        console.log('[JournalView] loadEntries raw result:', result);
 
         if (result.ok) {
             let filtered = result.entries;
@@ -131,7 +162,11 @@ export default function JournalView() {
                     </div>
                 ) : (
                     entries.map(entry => (
-                        <div key={entry.id} className="journal-entry">
+                        <div
+                            key={entry.id}
+                            data-entry-id={entry.id}
+                            className={`journal-entry ${highlightedEntryId === entry.id ? 'entry-highlighted' : ''}`}
+                        >
                             <div className="entry-row">
                                 <textarea
                                     defaultValue={entry.content}

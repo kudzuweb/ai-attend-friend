@@ -47,6 +47,7 @@ export class JournalStorage {
         content: string;
         sessionId?: string | null;
         sourceLoopId?: string | null;
+        tags?: string[];
     }): Promise<JournalEntry> {
         const entries = await this.loadEntries();
 
@@ -57,7 +58,7 @@ export class JournalStorage {
             updatedAt: Date.now(),
             sessionId: payload.sessionId ?? null,
             sourceLoopId: payload.sourceLoopId ?? null,
-            tags: [],
+            tags: payload.tags ?? [],
         };
 
         entries.push(newEntry);

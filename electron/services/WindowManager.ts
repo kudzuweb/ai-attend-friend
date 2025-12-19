@@ -87,11 +87,10 @@ export class WindowManager {
             height: SESSION_WIDGET_HEIGHT,
             show: false,
             frame: false,
-            transparent: false,
-            backgroundColor: '#F6F4EE',
+            transparent: true,
             resizable: false,
             movable: true,
-            hasShadow: true,
+            hasShadow: false,
             fullscreenable: false,
             skipTaskbar: true,
             webPreferences: {
@@ -101,7 +100,7 @@ export class WindowManager {
             }
         });
 
-        this.sessionWidget.setAlwaysOnTop(true, 'floating', 1);
+        this.sessionWidget.setAlwaysOnTop(true, 'screen-saver');
         this.sessionWidget.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
         if (process.env.NODE_ENV !== 'production') {
@@ -115,23 +114,35 @@ export class WindowManager {
 
     /**
      * Show the session widget
+     * Always creates fresh to ensure it appears on the current Space
      */
     async showSessionWidget(): Promise<void> {
+        // Wait for any in-progress creation to complete
         if (this.sessionWidgetLoading) {
             await this.sessionWidgetLoading;
-        } else if (!this.sessionWidget) {
-            this.sessionWidgetLoading = this.createSessionWidget();
-            await this.sessionWidgetLoading;
-            this.sessionWidgetLoading = null;
         }
-        this.sessionWidget?.show();
+
+        // Destroy any existing widget first (ensures fresh creation on current Space)
+        if (this.sessionWidget) {
+            this.sessionWidget.close();
+            this.sessionWidget = null;
+        }
+
+        // Create fresh widget on current space and show it
+        this.sessionWidgetLoading = this.createSessionWidget();
+        const widget = await this.sessionWidgetLoading;
+        this.sessionWidgetLoading = null;
+        widget.show();
     }
 
     /**
-     * Hide the session widget
+     * Hide the session widget (destroys it so next show creates fresh)
      */
     hideSessionWidget(): void {
-        this.sessionWidget?.hide();
+        if (this.sessionWidget) {
+            this.sessionWidget.close();
+            this.sessionWidget = null;
+        }
     }
 
     /**
@@ -168,6 +179,14 @@ export class WindowManager {
      */
     broadcastDistraction(): void {
         this.sessionWidget?.webContents.send('session:distraction');
+    }
+
+    /**
+     * Broadcast task updated event to all windows
+     */
+    broadcastTaskUpdated(taskId: string): void {
+        this.mainWindow?.webContents.send('task:updated', taskId);
+        this.sessionWidget?.webContents.send('task:updated', taskId);
     }
 
     /**

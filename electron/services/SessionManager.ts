@@ -1,12 +1,19 @@
 import { powerMonitor } from 'electron';
-import type { SessionState, SessionInterruption, Reflection } from '../types/session.types.js';
+import type { SessionState, SessionTask, SessionInterruption, Reflection } from '../types/session.types.js';
 import type { WindowManager } from './WindowManager.js';
 import type { StorageService } from './StorageService.js';
 import type { ScreenshotService } from './ScreenshotService.js';
 import type { AIAnalysisService } from './AIAnalysisService.js';
 import type { ConfigService } from './ConfigService.js';
 import type { CaptureOrchestrator } from './CaptureOrchestrator.js';
-import { AUTO_ANALYSIS_INTERVAL_MS, DEFAULT_RECENT_SCREENSHOTS_LIMIT } from '../constants.js';
+import {
+    SCREENSHOT_INTERVAL_MS,
+    AUTO_ANALYSIS_INTERVAL_MS,
+    DEFAULT_RECENT_SCREENSHOTS_LIMIT,
+    DEMO_SCREENSHOT_INTERVAL_MS,
+    DEMO_ANALYSIS_INTERVAL_MS,
+    DEMO_SCREENSHOTS_LIMIT
+} from '../constants.js';
 
 // Session phase discriminated union - replaces multiple boolean flags
 type SessionPhase =
@@ -17,7 +24,7 @@ type SessionPhase =
         sessionDate: string;
         endTime: number;
         focusGoal: string;
-        tasks?: string[];
+        tasks?: SessionTask[];
     }
     | {
         phase: 'paused';
@@ -25,7 +32,7 @@ type SessionPhase =
         sessionDate: string;
         endTime: number;
         focusGoal: string;
-        tasks?: string[];
+        tasks?: SessionTask[];
         pauseType: 'system' | 'user';
         suspendTime: number;
     }
@@ -35,7 +42,7 @@ type SessionPhase =
         sessionDate: string;
         endTime: number;
         focusGoal: string;
-        tasks?: string[];
+        tasks?: SessionTask[];
         pauseType: 'system' | 'user';
         suspendTime: number;
         wakeTime: number;
@@ -117,8 +124,11 @@ export class SessionManager {
         }
 
         // active, paused, or awaiting_reflection - session is "active" from UI perspective
+        const isPaused = phase.phase === 'paused' || phase.phase === 'awaiting_reflection';
         return {
             isActive: true,
+            isPaused,
+            suspendTime: isPaused ? phase.suspendTime : undefined,
             lengthMs: this.lengthMs,
             startTime: this.startTime,
             endTime: phase.endTime,
@@ -175,9 +185,11 @@ export class SessionManager {
             const focusGoal = phase.phase !== 'idle' && phase.phase !== 'stopping'
                 ? phase.focusGoal
                 : '';
-            const tasks = phase.phase !== 'idle' && phase.phase !== 'stopping'
+            const sessionTasks = phase.phase !== 'idle' && phase.phase !== 'stopping'
                 ? phase.tasks
                 : undefined;
+            // Extract just task content strings for AI analysis
+            const taskContents = sessionTasks?.slice(0, 3).map(t => t.content) as [string, string, string] | undefined;
 
             const recentFiles = await this.screenshotService.getRecentScreenshots(limit ?? DEFAULT_RECENT_SCREENSHOTS_LIMIT);
 
@@ -189,7 +201,7 @@ export class SessionManager {
                 recentFiles.map(file => this.screenshotService.fileToDataUrl(file))
             );
 
-            const res = await this.aiService.analyzeScreenshots(dataUrls, focusGoal, tasks);
+            const res = await this.aiService.analyzeScreenshots(dataUrls, focusGoal, taskContents);
 
             if (res?.ok && res?.structured) {
                 // Re-check phase after async call - session may have changed
@@ -221,7 +233,7 @@ export class SessionManager {
     /**
      * Start a new session
      */
-    async startSession(lengthMs: number, focusGoal: string, tasks?: string[]): Promise<{ ok: true } | { ok: false; error: string }> {
+    async startSession(lengthMs: number, focusGoal: string, tasks?: SessionTask[]): Promise<{ ok: true } | { ok: false; error: string }> {
         if (this.sessionPhase.phase !== 'idle') {
             return { ok: false, error: 'session already active' };
         }
@@ -254,8 +266,10 @@ export class SessionManager {
             tasks,
         });
 
-        // Enable screenshot capture via orchestrator
-        await this.captureOrchestrator.enable();
+        // Enable screenshot capture with appropriate interval
+        const demoMode = this.configService.getDemoMode();
+        const captureInterval = demoMode ? DEMO_SCREENSHOT_INTERVAL_MS : SCREENSHOT_INTERVAL_MS;
+        await this.captureOrchestrator.enable(captureInterval);
 
         // Start the analysis timer
         this.startAnalysisTimer();
@@ -351,24 +365,27 @@ export class SessionManager {
     }
 
     /**
-     * Start the analysis timer if demo mode is OFF
+     * Start the analysis timer with appropriate intervals based on demo mode
      */
     private startAnalysisTimer(): void {
         this.stopAnalysisTimer();
 
-        const demoMode = this.configService.getDemoMode();
         const isActive = this.sessionPhase.phase === 'active';
-        if (demoMode || !isActive) {
-            console.log('[SessionManager] Analysis timer NOT started - demoMode:', demoMode, 'isActive:', isActive);
+        if (!isActive) {
+            console.log('[SessionManager] Analysis timer NOT started - session not active');
             return;
         }
 
-        console.log('[SessionManager] Starting auto-analysis timer (5 minutes)');
+        const demoMode = this.configService.getDemoMode();
+        const intervalMs = demoMode ? DEMO_ANALYSIS_INTERVAL_MS : AUTO_ANALYSIS_INTERVAL_MS;
+        const screenshotLimit = demoMode ? DEMO_SCREENSHOTS_LIMIT : DEFAULT_RECENT_SCREENSHOTS_LIMIT;
+
+        console.log(`[SessionManager] Starting analysis timer (${intervalMs / 1000}s interval, ${screenshotLimit} screenshots, demoMode: ${demoMode})`);
 
         this.analysisTimer = setInterval(async () => {
             console.log('[SessionManager] Auto-analysis triggered');
-            await this.handleDistractionAnalysis(DEFAULT_RECENT_SCREENSHOTS_LIMIT);
-        }, AUTO_ANALYSIS_INTERVAL_MS);
+            await this.handleDistractionAnalysis(screenshotLimit);
+        }, intervalMs);
     }
 
     /**
@@ -382,11 +399,40 @@ export class SessionManager {
     }
 
     /**
-     * Handle settings change - re-evaluate analysis timer state
+     * Update a task's completion status in the current session
+     */
+    updateTaskCompletion(taskId: string, isCompleted: boolean): void {
+        const phase = this.sessionPhase;
+
+        // Only update if we have tasks in the session
+        if (phase.phase === 'idle' || phase.phase === 'stopping' || !phase.tasks) {
+            return;
+        }
+
+        const updatedTasks = phase.tasks.map(t =>
+            t.id === taskId ? { ...t, isCompleted } : t
+        );
+
+        // Update the phase with new tasks
+        this.sessionPhase = { ...phase, tasks: updatedTasks };
+        this.broadcastSessionState();
+    }
+
+    /**
+     * Handle settings change - re-evaluate timers and capture interval
      */
     handleSettingsChange(): void {
-        console.log('[SessionManager] Settings changed, re-evaluating analysis timer');
+        console.log('[SessionManager] Settings changed, re-evaluating timers');
+
+        // Restart analysis timer with new interval
         this.startAnalysisTimer();
+
+        // Update capture interval if session is running (any non-idle phase)
+        if (this.sessionPhase.phase !== 'idle' && this.sessionPhase.phase !== 'stopping') {
+            const demoMode = this.configService.getDemoMode();
+            const captureInterval = demoMode ? DEMO_SCREENSHOT_INTERVAL_MS : SCREENSHOT_INTERVAL_MS;
+            this.captureOrchestrator.setInterval(captureInterval);
+        }
     }
 
     /**
@@ -428,6 +474,42 @@ export class SessionManager {
                 pauseType: 'system',
                 suspendTime,
             });
+        });
+    }
+
+    /**
+     * Resume session after manual pause (pauseType='system')
+     * Extends end time by the pause duration
+     */
+    resumeSession(): void {
+        this.enqueueOperation(async () => {
+            console.log('[SessionManager] resumeSession called');
+
+            const phase = this.sessionPhase;
+
+            // Must be in paused state with pauseType='system'
+            if (phase.phase !== 'paused' || phase.pauseType !== 'system') {
+                console.log('[SessionManager] Error: not paused from system pause');
+                return;
+            }
+
+            // Calculate pause duration and extend end time
+            const pauseDurationMs = Date.now() - phase.suspendTime;
+            const newEndTime = phase.endTime + pauseDurationMs;
+            const remainingMs = Math.max(0, newEndTime - Date.now());
+            console.log('[SessionManager] Extended session end time by', pauseDurationMs, 'ms');
+
+            // Transition back to active
+            this.transitionTo({
+                phase: 'active',
+                sessionId: phase.sessionId,
+                sessionDate: phase.sessionDate,
+                endTime: newEndTime,
+                focusGoal: phase.focusGoal,
+                tasks: phase.tasks,
+            });
+
+            this.resumeSessionTimers(remainingMs);
         });
     }
 

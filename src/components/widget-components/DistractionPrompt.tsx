@@ -1,13 +1,10 @@
-import { useState, useMemo } from 'react';
-
-type PromptKey = 'feeling' | 'need' | 'resistance' | 'avoidance' | 'pull';
+export type PromptKey = 'feeling' | 'need' | 'resistance' | 'avoidance' | 'pull';
 
 interface Props {
-    onResume: (reason: string) => void;
-    onEnd: (reason: string) => void;
+    onReasonSelected: (reasonType: PromptKey) => void;
 }
 
-const curatedPrompts: Record<PromptKey, string> = {
+export const curatedPrompts: Record<PromptKey, string> = {
     'feeling': "What were you feeling just before you drifted?",
     'need': "What need was this activity meeting?",
     'resistance': "What's making the focus goal feel hard right now?",
@@ -23,27 +20,9 @@ const promptLabels: Record<PromptKey, string> = {
     'pull': 'Pull',
 };
 
-const promptKeys = Object.keys(curatedPrompts) as PromptKey[];
-
-export default function DistractionPrompt({ onResume, onEnd }: Props) {
-    // Pick a random prompt on mount
-    const initialPrompt = useMemo(() => {
-        return promptKeys[Math.floor(Math.random() * promptKeys.length)];
-    }, []);
-
-    const [reason, setReason] = useState('');
-    const [selectedPrompt, setSelectedPrompt] = useState<PromptKey>(initialPrompt);
-
-    function getPromptText(): string {
-        return curatedPrompts[selectedPrompt];
-    }
-
-    function handleResume() {
-        onResume(reason);
-    }
-
-    function handleEnd() {
-        onEnd(reason);
+export default function DistractionPrompt({ onReasonSelected }: Props) {
+    function handleReasonClick(key: PromptKey) {
+        onReasonSelected(key);
     }
 
     return (
@@ -53,43 +32,18 @@ export default function DistractionPrompt({ onResume, onEnd }: Props) {
                 That's okay. Let's understand what happened.
             </p>
 
+            <p className="prompt-instruction">What drew you away?</p>
+
             <div className="prompt-selector">
                 {(Object.keys(promptLabels) as PromptKey[]).map((key) => (
                     <button
                         key={key}
-                        className={`prompt-option ${selectedPrompt === key ? 'active' : ''}`}
-                        onClick={() => setSelectedPrompt(key)}
+                        className="prompt-option"
+                        onClick={() => handleReasonClick(key)}
                     >
                         {promptLabels[key]}
                     </button>
                 ))}
-            </div>
-
-            <p className="current-prompt">{getPromptText()}</p>
-
-            <div className="reflection-input">
-                <textarea
-                    id="distraction-reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="I was feeling..."
-                    rows={3}
-                />
-            </div>
-
-            <div className="distraction-actions">
-                <button
-                    className="btn-resume"
-                    onClick={handleResume}
-                >
-                    Resume Session
-                </button>
-                <button
-                    className="btn-end"
-                    onClick={handleEnd}
-                >
-                    End Session
-                </button>
             </div>
         </div>
     );

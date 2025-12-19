@@ -97,7 +97,7 @@ export class TaskStorage {
         return newTask;
     }
 
-    async toggleComplete(taskId: string): Promise<{ ok: boolean }> {
+    async toggleComplete(taskId: string): Promise<{ ok: boolean; isCompleted?: boolean }> {
         const tasks = await this.loadTasks();
         const task = tasks.find(t => t.id === taskId);
 
@@ -115,7 +115,7 @@ export class TaskStorage {
             await this.recalculateParentCompletion(task.parentTaskId);
         }
 
-        return { ok: true };
+        return { ok: true, isCompleted: task.isCompleted };
     }
 
     async updateTask(taskId: string, payload: { content: string }): Promise<{ ok: boolean }> {

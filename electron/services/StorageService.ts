@@ -1,4 +1,4 @@
-import type { SessionInterruption, DistractionReason, Reflection, StoredSession } from '../types/session.types.js';
+import type { SessionInterruption, DistractionReason, Reflection, StoredSession, SessionTask } from '../types/session.types.js';
 import * as sessionStorage from '../session-storage.js';
 
 /**
@@ -9,7 +9,7 @@ export class StorageService {
     /**
      * Create a new session file
      */
-    async createSession(startTime: number, lengthMs: number, focusGoal: string = '', tasks?: [string, string, string]): Promise<string> {
+    async createSession(startTime: number, lengthMs: number, focusGoal: string = '', tasks?: SessionTask[]): Promise<string> {
         return await (sessionStorage as any).createSession(startTime, lengthMs, focusGoal, tasks);
     }
 

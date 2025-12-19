@@ -111,6 +111,21 @@ export class CaptureOrchestrator {
         }
     }
 
+    /**
+     * Update capture interval (restarts loop if running)
+     */
+    setInterval(intervalMs: number): void {
+        const wasRunning = this.captureTimer !== null;
+        this.intervalMs = intervalMs;
+
+        if (wasRunning && (this.phase.phase === 'idle' || this.phase.phase === 'error')) {
+            console.log(`[CaptureOrchestrator] Interval updated to ${intervalMs}ms, restarting loop`);
+            this.startCaptureLoop();
+        } else {
+            console.log(`[CaptureOrchestrator] Interval updated to ${intervalMs}ms`);
+        }
+    }
+
     private checkPermission(): string {
         try {
             return systemPreferences.getMediaAccessStatus('screen');

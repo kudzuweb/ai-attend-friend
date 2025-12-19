@@ -44,6 +44,10 @@ export default function DistractionReflection({
     const [reflection, setReflection] = useState('');
 
     function formatFullReflection(): string {
+        // Only include prompt text if user actually typed something
+        if (!reflection.trim()) {
+            return '';
+        }
         const deeperPrompt = reflectionPrompts[reasonType];
         return `${deeperPrompt}\n\n${reflection}`;
     }
@@ -59,9 +63,6 @@ export default function DistractionReflection({
 
     function handleOpenInMain() {
         const formatted = formatFullReflection();
-        console.log('[DistractionReflection] handleOpenInMain called');
-        console.log('[DistractionReflection] reflection state:', reflection);
-        console.log('[DistractionReflection] formatted content:', formatted);
         onOpenInMain(formatted, reasonType);
     }
 

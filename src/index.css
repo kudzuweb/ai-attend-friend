@@ -1774,6 +1774,13 @@ button:focus-visible {
   outline: none;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  -webkit-app-region: drag;
+}
+
+.session-widget button,
+.session-widget input,
+.session-widget textarea {
+  -webkit-app-region: no-drag;
 }
 
 .widget-empty {

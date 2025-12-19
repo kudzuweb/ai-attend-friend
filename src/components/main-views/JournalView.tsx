@@ -31,8 +31,12 @@ export default function JournalView({ focusedEntryId, onFocusHandled }: JournalV
     // Handle focusing on a specific entry (from distraction flow)
     useEffect(() => {
         if (focusedEntryId) {
+            console.log('[JournalView] focusedEntryId received:', focusedEntryId);
             // Reload entries first to ensure the new entry is in the list
             loadEntries().then(() => {
+                console.log('[JournalView] entries after reload:', entries.map(e => ({ id: e.id, content: e.content.substring(0, 100) })));
+                const targetEntry = entries.find(e => e.id === focusedEntryId);
+                console.log('[JournalView] target entry found:', targetEntry);
                 setTimeout(() => {
                     const element = document.querySelector(`[data-entry-id="${focusedEntryId}"]`);
                     if (element) {
@@ -54,6 +58,7 @@ export default function JournalView({ focusedEntryId, onFocusHandled }: JournalV
         } else {
             result = await window.api.getJournalEntries();
         }
+        console.log('[JournalView] loadEntries raw result:', result);
 
         if (result.ok) {
             let filtered = result.entries;

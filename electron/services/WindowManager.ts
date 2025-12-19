@@ -19,6 +19,7 @@ const __dirname = path.dirname(__filename);
 export class WindowManager {
     private mainWindow: BrowserWindow | null = null;
     private sessionWidget: BrowserWindow | null = null;
+    private sessionWidgetLoading: Promise<BrowserWindow> | null = null;
     private preloadPath: string;
     private configService: ConfigService;
 
@@ -116,6 +117,11 @@ export class WindowManager {
      * Always creates fresh to ensure it appears on the current Space
      */
     async showSessionWidget(): Promise<void> {
+        // Wait for any in-progress creation to complete
+        if (this.sessionWidgetLoading) {
+            await this.sessionWidgetLoading;
+        }
+
         // Destroy any existing widget first (ensures fresh creation on current Space)
         if (this.sessionWidget) {
             this.sessionWidget.close();
@@ -123,7 +129,9 @@ export class WindowManager {
         }
 
         // Create fresh widget on current space and show it
-        const widget = await this.createSessionWidget();
+        this.sessionWidgetLoading = this.createSessionWidget();
+        const widget = await this.sessionWidgetLoading;
+        this.sessionWidgetLoading = null;
         widget.show();
     }
 
